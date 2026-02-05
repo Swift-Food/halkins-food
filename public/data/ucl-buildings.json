@@ -1,0 +1,1460 @@
+[
+  {
+    "name": "Aberdeen Mansions, 20",
+    "zipcode": "WC1N 1NN",
+    "city": "London",
+    "addressLine1": "Kenton Street"
+  },
+  {
+    "name": "Alexandra House, 17-19 Queen Square",
+    "zipcode": "WC1N 3AZ",
+    "city": "London",
+    "addressLine1": "17-19 Queen Square"
+  },
+  {
+    "name": "Andrew Huxley Building",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Anechoic Room",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Rear Of 21 Gordon Square"
+  },
+  {
+    "name": "Ann Stephenson House",
+    "zipcode": "NW1 9HZ",
+    "city": "London",
+    "addressLine1": "Camden Campus"
+  },
+  {
+    "name": "Arthur Tattersall House",
+    "zipcode": "WC1E 6AT",
+    "city": "London",
+    "addressLine1": "119-131 Gower Street"
+  },
+  {
+    "name": "Astor College",
+    "zipcode": "W1T 4QB",
+    "city": "London",
+    "addressLine1": "99 Charlotte Street"
+  },
+  {
+    "name": "Base KX, 103C Camley Street",
+    "zipcode": "N1C 4PF",
+    "city": "London",
+    "addressLine1": "103C Camley Street"
+  },
+  {
+    "name": "Bedford Way, 26",
+    "zipcode": "WC1H 0DS",
+    "city": "London",
+    "addressLine1": "26 Bedford Way"
+  },
+  {
+    "name": "Belnor House",
+    "zipcode": "SS11 8YW",
+    "city": "Wickford",
+    "addressLine1": "Fulmar Way, Wickford Business Park"
+  },
+  {
+    "name": "Bentham House",
+    "zipcode": "WC1H 0EG",
+    "city": "London",
+    "addressLine1": "4-8 Endsleigh Gardens"
+  },
+  {
+    "name": "Bernard Johnson House",
+    "zipcode": "N2 9EX",
+    "city": "London",
+    "addressLine1": "78 Fortis Green"
+  },
+  {
+    "name": "Bernard Katz Building",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Bernard Street, 40",
+    "zipcode": "WC1N 1LG",
+    "city": "London",
+    "addressLine1": "40 Bernard Street"
+  },
+  {
+    "name": "Bidborough House",
+    "zipcode": "WC1H 9BT",
+    "city": "London",
+    "addressLine1": "38-50 Bidborough Street"
+  },
+  {
+    "name": "Blakeney Point, Bunk House",
+    "zipcode": "NR25 7BJ",
+    "city": "Blakeney Holt",
+    "addressLine1": "Old Lifeboat Station"
+  },
+  {
+    "name": "Blakeney Point, Main Building",
+    "zipcode": "NR25 7BJ",
+    "city": "Blakeney Holt",
+    "addressLine1": "Old Lifeboat Station"
+  },
+  {
+    "name": "Bloomsbury Theatre",
+    "zipcode": "WC1H 0AH",
+    "city": "London",
+    "addressLine1": "15 Gordon Street"
+  },
+  {
+    "name": "Bungalows, 109 Camden Road",
+    "zipcode": "NW1 9HZ",
+    "city": "London",
+    "addressLine1": "Camden Campus"
+  },
+  {
+    "name": "CAVE (Clean Active Ventilation Envir)",
+    "zipcode": "RM10 7FN",
+    "city": "Dagenham",
+    "addressLine1": "Yew Tree Avenue"
+  },
+  {
+    "name": "Campbell House East",
+    "zipcode": "WC1H 0BX",
+    "city": "London",
+    "addressLine1": "5-10 Taviton Street"
+  },
+  {
+    "name": "Campbell House West",
+    "zipcode": "WC1H 0BW",
+    "city": "London",
+    "addressLine1": "20-24 Taviton Street"
+  },
+  {
+    "name": "Canada Square, 1 - L38, L49 & L50",
+    "zipcode": "E14 5AB",
+    "city": "London",
+    "addressLine1": "1 Canada Square, Canary Wharf"
+  },
+  {
+    "name": "Cartwright Gardens",
+    "zipcode": "WC1H 9EP",
+    "city": "London",
+    "addressLine1": "31 Leigh Street"
+  },
+  {
+    "name": "Central House",
+    "zipcode": "WC1H 0NN",
+    "city": "London",
+    "addressLine1": "14 Upper Woburn Place"
+  },
+  {
+    "name": "Chadwick Building",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Chandler House",
+    "zipcode": "WC1N 1PF",
+    "city": "London",
+    "addressLine1": "2 Wakefield Street"
+  },
+  {
+    "name": "Chapel Place, 1-2 Portslade Brighton",
+    "zipcode": "BN41 1DR",
+    "city": "Portslade",
+    "addressLine1": "1-2 Chapel Place"
+  },
+  {
+    "name": "Charles Bell House",
+    "zipcode": "W1W 7TS",
+    "city": "London",
+    "addressLine1": "43-45 Foley Street"
+  },
+  {
+    "name": "Chenies Mews, 86-98",
+    "zipcode": "WC1E 6HX",
+    "city": "London",
+    "addressLine1": "86-96 & 96A-98 Chenies Mews"
+  },
+  {
+    "name": "Christopher Ingold Building",
+    "zipcode": "WC1H 0AJ",
+    "city": "London",
+    "addressLine1": "20 Gordon Street"
+  },
+  {
+    "name": "Clare Hall - Block A Ash",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block B Birch",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block C Cedar",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block C Stores",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block D Dogwood",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block E Elm",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block F Fir",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block G St Antholins",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block H Crossoaks Cot",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block I The Lodge",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block J Gatehouse",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block P Boilers Plant Room",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block P Generator",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block P Poplar",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block P Sub Station",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Clare Hall - Block T Teak",
+    "zipcode": "EN6 3LD",
+    "city": "Potters Bar",
+    "addressLine1": "Blanche Lane, South Mimms"
+  },
+  {
+    "name": "Contemplation Room 1",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Courtauld Building",
+    "zipcode": "W1W 7FF",
+    "city": "London",
+    "addressLine1": "33 Cleveland Street"
+  },
+  {
+    "name": "Cruciform Building",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "DMS Watson Building",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Darwin Building",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Denys Holland House",
+    "zipcode": "NW1 9HZ",
+    "city": "London",
+    "addressLine1": "Camden Campus"
+  },
+  {
+    "name": "Dr Williams Library",
+    "zipcode": "WC1H 0AR",
+    "city": "London",
+    "addressLine1": "14-15 Gordon Square"
+  },
+  {
+    "name": "Drayton House",
+    "zipcode": "WC1H 0AX",
+    "city": "London",
+    "addressLine1": "30 Gordon Street"
+  },
+  {
+    "name": "EDI - Grays Inn Road 123",
+    "zipcode": "WC1X 8TU",
+    "city": "London",
+    "addressLine1": "123, Grays Inn Road"
+  },
+  {
+    "name": "Ear Institute - Grays Inn Rd 332",
+    "zipcode": "WC1X 8EE",
+    "city": "London",
+    "addressLine1": "332, Grays Inn Road"
+  },
+  {
+    "name": "Ear Institute - Grays Inn Rd 334-336",
+    "zipcode": "WC1X 8EE",
+    "city": "London",
+    "addressLine1": "334-336 Grays Inn Road"
+  },
+  {
+    "name": "Ear Institute - Wicklow Street 75",
+    "zipcode": "WC1X 9JY",
+    "city": "London",
+    "addressLine1": "75 Wicklow Street"
+  },
+  {
+    "name": "Eastman Building (Plot 2)",
+    "zipcode": "WC1X 8LD",
+    "city": "London",
+    "addressLine1": "123 Grays Inn Road"
+  },
+  {
+    "name": "Egyptology",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Endsleigh Gardens, 9-11",
+    "zipcode": "WC1H 0EH",
+    "city": "London",
+    "addressLine1": "9-11 Endsleigh Gardens"
+  },
+  {
+    "name": "Engineering Front Building",
+    "zipcode": "WC1E 7JE",
+    "city": "London",
+    "addressLine1": "Torrington Place"
+  },
+  {
+    "name": "Euston Road, 169",
+    "zipcode": "NW1 2AE",
+    "city": "London",
+    "addressLine1": "169 Euston Road"
+  },
+  {
+    "name": "Euston Road, 222",
+    "zipcode": "NW1 2DA",
+    "city": "London",
+    "addressLine1": "222, Euston Road"
+  },
+  {
+    "name": "Foster Court",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Frances Gardner House",
+    "zipcode": "WC1X 0HD",
+    "city": "London",
+    "addressLine1": "Wren Street, Grays Inn Road"
+  },
+  {
+    "name": "Front Lodges",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "GOSH (3 Rooms)",
+    "zipcode": "WC1N 3JH",
+    "city": "London",
+    "addressLine1": "Great Ormond Street"
+  },
+  {
+    "name": "Goldsmid House (Wilton Plaza)",
+    "zipcode": "SW1V 1HU",
+    "city": "London",
+    "addressLine1": "34-36 Gillingham Street"
+  },
+  {
+    "name": "Gordon House",
+    "zipcode": "WC1H 0PP",
+    "city": "London",
+    "addressLine1": "29 Gordon Square"
+  },
+  {
+    "name": "Gordon Sq 31-34 & 14 Taviton Street",
+    "zipcode": "WC1H 0PY",
+    "city": "London",
+    "addressLine1": "31-34 Gordon Square"
+  },
+  {
+    "name": "Gordon Square, 16-18",
+    "zipcode": "WC1H 0AG",
+    "city": "London",
+    "addressLine1": "16-18 Gordon Square"
+  },
+  {
+    "name": "Gordon Square, 19",
+    "zipcode": "WC1H 0AW",
+    "city": "London",
+    "addressLine1": "19 Gordon Square"
+  },
+  {
+    "name": "Gordon Square, 20",
+    "zipcode": "WC1H 0AW",
+    "city": "London",
+    "addressLine1": "20 Gordon Square"
+  },
+  {
+    "name": "Gordon Square, 21",
+    "zipcode": "WC1H 0AW",
+    "city": "London",
+    "addressLine1": "21 Gordon Square"
+  },
+  {
+    "name": "Gordon Square, 22",
+    "zipcode": "WC1H 0AG",
+    "city": "London",
+    "addressLine1": "22 Gordon Square"
+  },
+  {
+    "name": "Gordon Square, 23",
+    "zipcode": "WC1H 0AG",
+    "city": "London",
+    "addressLine1": "23 Gordon Square"
+  },
+  {
+    "name": "Gordon Square, 24",
+    "zipcode": "WC1H 0AG",
+    "city": "London",
+    "addressLine1": "24 Gordon Square"
+  },
+  {
+    "name": "Gordon Square, 25",
+    "zipcode": "WC1H 0AG",
+    "city": "London",
+    "addressLine1": "25 Gordon Square"
+  },
+  {
+    "name": "Gordon Square, 26",
+    "zipcode": "WC1H 0AG",
+    "city": "London",
+    "addressLine1": "26 Gordon Square"
+  },
+  {
+    "name": "Gordon Square, 36-38",
+    "zipcode": "WC1H 0PD",
+    "city": "London",
+    "addressLine1": "36-38 Gordon Square"
+  },
+  {
+    "name": "Gordon Square, 48",
+    "zipcode": "WC1H 0PJ",
+    "city": "London",
+    "addressLine1": "48 Gordon Square"
+  },
+  {
+    "name": "Gordon Square, 49-51",
+    "zipcode": "WC1H 0PN",
+    "city": "London",
+    "addressLine1": "49 - 51 Gordon Square"
+  },
+  {
+    "name": "Gordon Street, 22",
+    "zipcode": "WC1H 0QB",
+    "city": "London",
+    "addressLine1": "22 Gordon Street"
+  },
+  {
+    "name": "Gordon Street, 25",
+    "zipcode": "WC1H 0AY",
+    "city": "London",
+    "addressLine1": "25 Gordon Street"
+  },
+  {
+    "name": "Gospel Oak Store Unit",
+    "zipcode": "NW5 4RA",
+    "city": "London",
+    "addressLine1": "Lismore Circus"
+  },
+  {
+    "name": "Gower Place, 23",
+    "zipcode": "WC1E 6BN",
+    "city": "London",
+    "addressLine1": "23 Gower Place"
+  },
+  {
+    "name": "Gower Place, 3 (Former Health Cntr)",
+    "zipcode": "WC1E 6BN",
+    "city": "London",
+    "addressLine1": "3 Gower Place"
+  },
+  {
+    "name": "Gower St, 115-117",
+    "zipcode": "WC1E 6AP",
+    "city": "London",
+    "addressLine1": "115-117 Gower Street"
+  },
+  {
+    "name": "Gower Street, 134-136 (Lewis's Bldg)",
+    "zipcode": "WC1E 6BP",
+    "city": "London",
+    "addressLine1": "134-136 Gower Street"
+  },
+  {
+    "name": "Gower Street, 66-72",
+    "zipcode": "WC1E 6EA",
+    "city": "London",
+    "addressLine1": "66-72 Gower Street"
+  },
+  {
+    "name": "Gower Street, 91",
+    "zipcode": "WC1E 6AA",
+    "city": "London",
+    "addressLine1": "91 Gower Street"
+  },
+  {
+    "name": "Hampstead Road, 62-64",
+    "zipcode": "NW1 2NU",
+    "city": "London",
+    "addressLine1": "62 - 64 Hampstead Road"
+  },
+  {
+    "name": "Hatter Institute",
+    "zipcode": "WC1E 6HX",
+    "city": "London",
+    "addressLine1": "51-67 Chenies Mews"
+  },
+  {
+    "name": "Hawkridge Administration Building",
+    "zipcode": "NW5 4SA",
+    "city": "London",
+    "addressLine1": "Warden Road"
+  },
+  {
+    "name": "Hawkridge Annex",
+    "zipcode": "NW5 4SA",
+    "city": "London",
+    "addressLine1": "Warden Road"
+  },
+  {
+    "name": "Hawkridge House",
+    "zipcode": "NW5 4SA",
+    "city": "London",
+    "addressLine1": "Warden Road"
+  },
+  {
+    "name": "Henry Morley",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Here East UCL",
+    "zipcode": "E15 2GW",
+    "city": "London",
+    "addressLine1": "8-9 East Bay Lane"
+  },
+  {
+    "name": "High Holborn, 90",
+    "zipcode": "WC1V 6LJ",
+    "city": "London",
+    "addressLine1": "90 High Holborn"
+  },
+  {
+    "name": "IOE - Bedford Way, 20",
+    "zipcode": "WC1H 0AL",
+    "city": "London",
+    "addressLine1": "20 Bedford Way"
+  },
+  {
+    "name": "IOE - Emerald Street, 23-29",
+    "zipcode": "WC1N 3QS",
+    "city": "London",
+    "addressLine1": "23-29 Emerald Street"
+  },
+  {
+    "name": "IOE - Gordon Square, 55-59",
+    "zipcode": "WC1H 0NU",
+    "city": "London",
+    "addressLine1": "55-59 Gordon Square"
+  },
+  {
+    "name": "IOE - Thornhaugh Mews Site",
+    "zipcode": "WC1H 0NS",
+    "city": "London",
+    "addressLine1": "Woburn Square"
+  },
+  {
+    "name": "IOE - Woburn Square, 10",
+    "zipcode": "WC1H 0NS",
+    "city": "London",
+    "addressLine1": "10 Woburn Square"
+  },
+  {
+    "name": "IOE - Woburn Square, 11",
+    "zipcode": "WC1H 0NS",
+    "city": "London",
+    "addressLine1": "11 Woburn Square"
+  },
+  {
+    "name": "IOE - Woburn Square, 15",
+    "zipcode": "WC1H 0NS",
+    "city": "London",
+    "addressLine1": "15 Woburn Square"
+  },
+  {
+    "name": "ION / DRI Building (Plot 1)",
+    "zipcode": "WC1X 8LD",
+    "city": "London",
+    "addressLine1": "Grays Inn Road, 256"
+  },
+  {
+    "name": "Ian Baker House",
+    "zipcode": "W1T 5BD",
+    "city": "London",
+    "addressLine1": "1-2 Hertford Place"
+  },
+  {
+    "name": "Ifor Evans Hall",
+    "zipcode": "NW1 9HZ",
+    "city": "London",
+    "addressLine1": "Camden Campus"
+  },
+  {
+    "name": "Inst Archaeology - 27 Eastways",
+    "zipcode": "CM8 3YQ",
+    "city": "Witham",
+    "addressLine1": "27 Eastways"
+  },
+  {
+    "name": "Inst Neurology - 1 Wakefield St",
+    "zipcode": "WC1N 1PJ",
+    "city": "London",
+    "addressLine1": "1 Wakefield Street"
+  },
+  {
+    "name": "Inst Neurology - 12 Queen Square",
+    "zipcode": "WC1N 3AR",
+    "city": "London",
+    "addressLine1": "12 Queen Square"
+  },
+  {
+    "name": "Inst Neurology - 23 Queen Square",
+    "zipcode": "WC1N 3RX",
+    "city": "London",
+    "addressLine1": "23 Queen Square"
+  },
+  {
+    "name": "Inst Neurology - 33 Queen Square",
+    "zipcode": "WC1N 3BG",
+    "city": "London",
+    "addressLine1": "33 Queen Square"
+  },
+  {
+    "name": "Inst Neurology - 7 Queen Square",
+    "zipcode": "WC1N 3AR",
+    "city": "London",
+    "addressLine1": "7 Queen Square"
+  },
+  {
+    "name": "Inst Neurology - 8/11 Queen Square",
+    "zipcode": "WC1N 3AR",
+    "city": "London",
+    "addressLine1": "8 - 11 Queen Square"
+  },
+  {
+    "name": "Inst Neurology - Queen Square House",
+    "zipcode": "WC1N 3RX",
+    "city": "London",
+    "addressLine1": "22 Queen Square"
+  },
+  {
+    "name": "Inst Of Ophthalm - Ashton Building",
+    "zipcode": "EC1V 9EL",
+    "city": "London",
+    "addressLine1": "11-43 Bath Street"
+  },
+  {
+    "name": "Inst Of Ophthalm - Cayton St, 17-25",
+    "zipcode": "EC1V 9EH",
+    "city": "London",
+    "addressLine1": "17-25 Cayton Street"
+  },
+  {
+    "name": "Inst Of Ophthalm - Lecture Cabin",
+    "zipcode": "EC1V 9EL",
+    "city": "London",
+    "addressLine1": "11-43 Bath Street"
+  },
+  {
+    "name": "Inst Of Ophthalm - Phase 6A Bath St",
+    "zipcode": "EC1V 9EL",
+    "city": "London",
+    "addressLine1": "11-43 Bath Street"
+  },
+  {
+    "name": "Inst Of Ophthalm - Phase 6B Bath St",
+    "zipcode": "EC1V 9EL",
+    "city": "London",
+    "addressLine1": "11-43 Bath Street"
+  },
+  {
+    "name": "Inst Of Ophthalm - Wolfson Bldg",
+    "zipcode": "EC1V 9EJ",
+    "city": "London",
+    "addressLine1": "27-29 Cayton Street"
+  },
+  {
+    "name": "Inst Of Orth - Aspire Cntr (Create)",
+    "zipcode": "HA7 4LP",
+    "city": "Stanmore",
+    "addressLine1": "Brockley Hill"
+  },
+  {
+    "name": "Inst Of Orth - Goat House",
+    "zipcode": "HA7 4LP",
+    "city": "Stanmore",
+    "addressLine1": "Brockley Hill"
+  },
+  {
+    "name": "Inst Of Orth - Research Block",
+    "zipcode": "HA7 4LP",
+    "city": "Stanmore",
+    "addressLine1": "Brockley Hill"
+  },
+  {
+    "name": "Inst Of Orth - Student Centre",
+    "zipcode": "HA7 4LP",
+    "city": "Stanmore",
+    "addressLine1": "Brockley Hill"
+  },
+  {
+    "name": "Inst Of Orth - Teaching Centre",
+    "zipcode": "HA7 4LP",
+    "city": "Stanmore",
+    "addressLine1": "Brockley Hill"
+  },
+  {
+    "name": "Inst Of Orth - Workshop",
+    "zipcode": "HA7 4LP",
+    "city": "Stanmore",
+    "addressLine1": "Brockley Hill"
+  },
+  {
+    "name": "James Lighthill House",
+    "zipcode": "WC1X 9EN",
+    "city": "London",
+    "addressLine1": "3 Penton Rise"
+  },
+  {
+    "name": "James Lighthill Lodge",
+    "zipcode": "WC1X 9EN",
+    "city": "London",
+    "addressLine1": "3 Penton Rise"
+  },
+  {
+    "name": "John Adams Hall",
+    "zipcode": "WC1H 0DP",
+    "city": "London",
+    "addressLine1": "15-23 Endsleigh Street"
+  },
+  {
+    "name": "John Dodgson House",
+    "zipcode": "WC1H 9BL",
+    "city": "London",
+    "addressLine1": "24-36 Bidborough Street"
+  },
+  {
+    "name": "John Tovell House, Gower St, 89",
+    "zipcode": "WC1E 6AA",
+    "city": "London",
+    "addressLine1": "89 Gower Street"
+  },
+  {
+    "name": "John Tovell House, Gower St, 93-97",
+    "zipcode": "WC1E 6AD",
+    "city": "London",
+    "addressLine1": "93-97 Gower Street"
+  },
+  {
+    "name": "Kathleen Lonsdale Building",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Langton Close",
+    "zipcode": "WC1X 0HD",
+    "city": "London",
+    "addressLine1": "Wren Street, Gray's Inn Road"
+  },
+  {
+    "name": "London Centre For Nanotechnology",
+    "zipcode": "WC1H 0AH",
+    "city": "London",
+    "addressLine1": "17/19 Gordon Street"
+  },
+  {
+    "name": "MNH GOSH (4 Rooms)",
+    "zipcode": "WC1N 3JH",
+    "city": "London",
+    "addressLine1": "Great Ormond Street"
+  },
+  {
+    "name": "MRC Building",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "MSSL Holmbury St Mary, Ariel House",
+    "zipcode": "RH5 6NT",
+    "city": "Dorking",
+    "addressLine1": "Holmbury St Mary"
+  },
+  {
+    "name": "MSSL Holmbury St Mary, Boyd Centre",
+    "zipcode": "RH5 6NT",
+    "city": "Dorking",
+    "addressLine1": "Holmbury St Mary"
+  },
+  {
+    "name": "MSSL Holmbury St Mary, Holmbury House",
+    "zipcode": "RH5 6NT",
+    "city": "Dorking",
+    "addressLine1": "Holmbury St Mary"
+  },
+  {
+    "name": "MSSL Holmbury St Mary, Stable Block",
+    "zipcode": "RH5 6NT",
+    "city": "Dorking",
+    "addressLine1": "Holmbury St Mary"
+  },
+  {
+    "name": "MSSL Holmbury St Mary, Workshops",
+    "zipcode": "RH5 6NT",
+    "city": "Dorking",
+    "addressLine1": "Holmbury St Mary"
+  },
+  {
+    "name": "MSSL Holmbury Swimming Pool Changing",
+    "zipcode": "RH5 6NT",
+    "city": "Dorking",
+    "addressLine1": "Holmbury St Mary"
+  },
+  {
+    "name": "MSSL Holmbury The \"Nu\" Building",
+    "zipcode": "RH5 6NT",
+    "city": "Dorking",
+    "addressLine1": "Holmbury St Mary"
+  },
+  {
+    "name": "Malet Place Engineering Building",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Malet Place, 1-4",
+    "zipcode": "WC1E 7JG",
+    "city": "London",
+    "addressLine1": "1-4 Malet Place"
+  },
+  {
+    "name": "Maple House",
+    "zipcode": "W1T 7DN",
+    "city": "London",
+    "addressLine1": "149 Tottenham Court Road"
+  },
+  {
+    "name": "Marshgate",
+    "zipcode": "E20 2AE",
+    "city": "London",
+    "addressLine1": "7 Siding Street"
+  },
+  {
+    "name": "Max Rayne House",
+    "zipcode": "NW1 9HZ",
+    "city": "London",
+    "addressLine1": "Camden Campus"
+  },
+  {
+    "name": "Medawar Building",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Medical School Building",
+    "zipcode": "WC1E 6AU",
+    "city": "London",
+    "addressLine1": "74, Huntley Street"
+  },
+  {
+    "name": "Medical Sciences And Anatomy",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Mill Hill - Fry Observatory",
+    "zipcode": "NW7 2QS",
+    "city": "London",
+    "addressLine1": "553 Watford Way"
+  },
+  {
+    "name": "Mill Hill - Radcliffe Observatory",
+    "zipcode": "NW7 2QS",
+    "city": "London",
+    "addressLine1": "553 Watford Way"
+  },
+  {
+    "name": "Mill Hill - Wilson Observatory",
+    "zipcode": "NW7 2QS",
+    "city": "London",
+    "addressLine1": "553 Watford Way"
+  },
+  {
+    "name": "Montague Street, 11",
+    "zipcode": "WC1B 5BP",
+    "city": "London",
+    "addressLine1": "11 Montague Street"
+  },
+  {
+    "name": "Moorfields Eye Hospital",
+    "zipcode": "EC1V 2PD",
+    "city": "London",
+    "addressLine1": "162 City Road"
+  },
+  {
+    "name": "Mortimer Market Centre",
+    "zipcode": "WC1E 6LB",
+    "city": "London",
+    "addressLine1": "Capper Street"
+  },
+  {
+    "name": "N & S Transit Houses",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Neil Sharp House",
+    "zipcode": "NW1 9HZ",
+    "city": "London",
+    "addressLine1": "Camden Campus"
+  },
+  {
+    "name": "New Hall",
+    "zipcode": "N7 9GU",
+    "city": "London",
+    "addressLine1": "465 Caledonian Road"
+  },
+  {
+    "name": "North - West Wing",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Old QCR Portacabin",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "One Pool Street",
+    "zipcode": "E20 2AF",
+    "city": "London",
+    "addressLine1": "1 Pool Street"
+  },
+  {
+    "name": "Oriel Building",
+    "zipcode": "NW1 0PE",
+    "city": "London",
+    "addressLine1": "St. Pancras Way, 4"
+  },
+  {
+    "name": "PEARL",
+    "zipcode": "RM10 7FN",
+    "city": "Dagenham",
+    "addressLine1": "Yew Tree Avenue"
+  },
+  {
+    "name": "Paul O'Gorman Building",
+    "zipcode": "WC1E 6DD",
+    "city": "London",
+    "addressLine1": "72 Huntley Street"
+  },
+  {
+    "name": "Pears Building",
+    "zipcode": "NW3 2PP",
+    "city": "London",
+    "addressLine1": "Pond Street"
+  },
+  {
+    "name": "Physics Building",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Plot 3",
+    "zipcode": "WC1X 8LD",
+    "city": "London",
+    "addressLine1": "Grays Inn Road, 256"
+  },
+  {
+    "name": "Pop Up Teaching Space",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Prankerd House",
+    "zipcode": "NW1 2NJ",
+    "city": "London",
+    "addressLine1": "195 North Gower Street"
+  },
+  {
+    "name": "Ramsay Hall (London,Paris,New York)",
+    "zipcode": "W1T 5HB",
+    "city": "London",
+    "addressLine1": "20 Maple Street"
+  },
+  {
+    "name": "Ramsay Hall (Rome)",
+    "zipcode": "W1P 5LH",
+    "city": "London",
+    "addressLine1": "49 Grafton Way"
+  },
+  {
+    "name": "Rayne Institute",
+    "zipcode": "WC1E 6JJ",
+    "city": "London",
+    "addressLine1": "5 University Street"
+  },
+  {
+    "name": "Reception Building - Ifor Evans Site",
+    "zipcode": "NW1 9HZ",
+    "city": "London",
+    "addressLine1": "Camden Campus"
+  },
+  {
+    "name": "Ridgmount Street, 8",
+    "zipcode": "WC1E 7AA",
+    "city": "London",
+    "addressLine1": "8 Ridgmount Street"
+  },
+  {
+    "name": "Roberts Building",
+    "zipcode": "WC1E 7JE",
+    "city": "London",
+    "addressLine1": "Torrington Place"
+  },
+  {
+    "name": "Rockefeller Boiler House",
+    "zipcode": "WC1E 6HX",
+    "city": "London",
+    "addressLine1": "Chenies Mews"
+  },
+  {
+    "name": "Rockefeller Building",
+    "zipcode": "WC1E 6DE",
+    "city": "London",
+    "addressLine1": "21 University Street"
+  },
+  {
+    "name": "Roger Williams Building",
+    "zipcode": "WC1E 6HX",
+    "city": "London",
+    "addressLine1": "69 - 75 Chenies Mews"
+  },
+  {
+    "name": "Rothamsted",
+    "zipcode": "AL5 2JQ",
+    "city": "Harpenden",
+    "addressLine1": "Unit 7, Building 37"
+  },
+  {
+    "name": "Royal Free Hospital",
+    "zipcode": "NW3 2PF",
+    "city": "London",
+    "addressLine1": "Rowland Hill St"
+  },
+  {
+    "name": "Royal Institution, The (9 Rooms)",
+    "zipcode": "W1S 4BS",
+    "city": "London",
+    "addressLine1": "21 Albemarle Street"
+  },
+  {
+    "name": "Rubin Building, 29-30 Tavistock Sq",
+    "zipcode": "WC1H 9EZ",
+    "city": "London",
+    "addressLine1": "29-30 Tavistock Square"
+  },
+  {
+    "name": "Russell Square House",
+    "zipcode": "WC1B 5EH",
+    "city": "London",
+    "addressLine1": "10-12 Russell Square"
+  },
+  {
+    "name": "Rutherford Appleton Lab (Harwell)",
+    "zipcode": "OX11 0QX",
+    "city": "Didcot",
+    "addressLine1": "Harwell Campus"
+  },
+  {
+    "name": "SSEES",
+    "zipcode": "WC1H 0BW",
+    "city": "London",
+    "addressLine1": "16 Taviton Street"
+  },
+  {
+    "name": "Sainsbury Wellcome Centre, The",
+    "zipcode": "W1T 4JG",
+    "city": "London",
+    "addressLine1": "25 Howland Street"
+  },
+  {
+    "name": "Schafer House",
+    "zipcode": "NW1 3HZ",
+    "city": "London",
+    "addressLine1": "168-182 Drummond Street"
+  },
+  {
+    "name": "School of Pharmacy",
+    "zipcode": "WC1N 1AX",
+    "city": "London",
+    "addressLine1": "29-39 Brunswick Square"
+  },
+  {
+    "name": "Senate House",
+    "zipcode": "WC1E 7HU",
+    "city": "London",
+    "addressLine1": "Malet Street"
+  },
+  {
+    "name": "Shenley Asst.Gdman's House 325",
+    "zipcode": "AL2 1BZ",
+    "city": "London Colney",
+    "addressLine1": "Bell Lane, Shenley"
+  },
+  {
+    "name": "Shenley Asst.Gdman's House 326",
+    "zipcode": "AL2 1BZ",
+    "city": "London Colney",
+    "addressLine1": "Bell Lane, Shenley"
+  },
+  {
+    "name": "Shenley Athletic Ground Changing Room",
+    "zipcode": "AL2 1BZ",
+    "city": "London Colney",
+    "addressLine1": "Bell Lane, Shenley"
+  },
+  {
+    "name": "Shenley Athletic Ground Fitness Tra",
+    "zipcode": "AL2 1BZ",
+    "city": "London Colney",
+    "addressLine1": "Bell Lane, Shenley"
+  },
+  {
+    "name": "Shenley Athletic Ground Pavilion",
+    "zipcode": "AL2 1BZ",
+    "city": "London Colney",
+    "addressLine1": "Bell Lane, Shenley"
+  },
+  {
+    "name": "Shenley Athletic Ground Workshop &",
+    "zipcode": "AL2 1BZ",
+    "city": "London Colney",
+    "addressLine1": "Bell Lane, Shenley"
+  },
+  {
+    "name": "Shenley Dep.Gd.Man.House",
+    "zipcode": "AL2 1BZ",
+    "city": "London Colney",
+    "addressLine1": "Bell Lane, Shenley"
+  },
+  {
+    "name": "Shenley Gd.Managers House",
+    "zipcode": "AL2 1BZ",
+    "city": "London Colney",
+    "addressLine1": "Bell Lane, Shenley"
+  },
+  {
+    "name": "Shenley Steward's House",
+    "zipcode": "AL2 1BZ",
+    "city": "London Colney",
+    "addressLine1": "Bell Lane, Shenley"
+  },
+  {
+    "name": "Shropshire House",
+    "zipcode": "WC1E 6JA",
+    "city": "London",
+    "addressLine1": "2-20 Capper Street"
+  },
+  {
+    "name": "Slade School - North Wing",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Slade School - Woburn Square",
+    "zipcode": "WC1H 0AB",
+    "city": "London",
+    "addressLine1": "Woburn Sq."
+  },
+  {
+    "name": "Solar House",
+    "zipcode": "E15 4LJ",
+    "city": "London",
+    "addressLine1": "1-9 Romford Road"
+  },
+  {
+    "name": "South Quad Pop Up Learning Hub",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "South Wing",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Student Centre, The",
+    "zipcode": "WC1H 0AW",
+    "city": "London",
+    "addressLine1": "27-28 Gordon Square"
+  },
+  {
+    "name": "Tavistock House",
+    "zipcode": "WC1H 9JP",
+    "city": "London",
+    "addressLine1": "13 Tavistock Square"
+  },
+  {
+    "name": "Tavistock Square, 31",
+    "zipcode": "WC1H 9EZ",
+    "city": "London",
+    "addressLine1": "31 Tavistock Square"
+  },
+  {
+    "name": "Tavistock Square, 34",
+    "zipcode": "WC1H 9EZ",
+    "city": "London",
+    "addressLine1": "34 Tavistock Square"
+  },
+  {
+    "name": "Tavistock Square, 35",
+    "zipcode": "WC1H 9EZ",
+    "city": "London",
+    "addressLine1": "35 Tavistock Square"
+  },
+  {
+    "name": "Taviton Street, 2",
+    "zipcode": "WC1H 0BT",
+    "city": "London",
+    "addressLine1": "2 Taviton Street"
+  },
+  {
+    "name": "Taviton Street, 3-4",
+    "zipcode": "WC1H 0BT",
+    "city": "London",
+    "addressLine1": "3-4 Taviton Street"
+  },
+  {
+    "name": "Torrington Place, 1-19",
+    "zipcode": "WC1E 7HB",
+    "city": "London",
+    "addressLine1": "1-19 Torrington Place"
+  },
+  {
+    "name": "Torrington Place, 33-35",
+    "zipcode": "WC1E 7HG",
+    "city": "London",
+    "addressLine1": "33-35 Torrington Place"
+  },
+  {
+    "name": "Tottenham Court Road, 170",
+    "zipcode": "W1T 7HA",
+    "city": "London",
+    "addressLine1": "170 Tottenham Court Road"
+  },
+  {
+    "name": "Tottenham Court Road, 188",
+    "zipcode": "W1T 7PH",
+    "city": "London",
+    "addressLine1": "188 Tottenham Court Road"
+  },
+  {
+    "name": "Tottenham Court Road, 90",
+    "zipcode": "W1T 4TJ",
+    "city": "London",
+    "addressLine1": "90 Tottenham Court Road"
+  },
+  {
+    "name": "Tufnell Park",
+    "zipcode": "N19 5UN",
+    "city": "London",
+    "addressLine1": "Unit 1, Station Road"
+  },
+  {
+    "name": "UCL Crystal Growth Laboratory (1 Room)",
+    "zipcode": "OX11 0QX",
+    "city": "Didcot",
+    "addressLine1": "Harwell Campus"
+  },
+  {
+    "name": "UCL GOSICH - Camelia Botnar Building",
+    "zipcode": "WC1N 3LH",
+    "city": "London",
+    "addressLine1": "85 Lambs Conduit Street"
+  },
+  {
+    "name": "UCL GOSICH - Main Building",
+    "zipcode": "WC1N 1EH",
+    "city": "London",
+    "addressLine1": "30 Guilford Street"
+  },
+  {
+    "name": "UCL GOSICH - Philip Ullman Wing",
+    "zipcode": "WC1N 1EH",
+    "city": "London",
+    "addressLine1": "30 Guilford Street"
+  },
+  {
+    "name": "UCL GOSICH - Wellcome Trust Bldg",
+    "zipcode": "WC1N 1EH",
+    "city": "London",
+    "addressLine1": "30 Guilford Street"
+  },
+  {
+    "name": "UCL GOSICH - Wolfson Centre",
+    "zipcode": "WC1N2AD",
+    "city": "London",
+    "addressLine1": "Mecklenburgh Square"
+  },
+  {
+    "name": "UCL Hospital",
+    "zipcode": "NW1 2BU",
+    "city": "London",
+    "addressLine1": "235 Euston Road"
+  },
+  {
+    "name": "UCL Sport East",
+    "zipcode": "TBC",
+    "city": "London",
+    "addressLine1": "TBC"
+  },
+  {
+    "name": "Virtus SDC",
+    "zipcode": "SL1 4PF",
+    "city": "Slough",
+    "addressLine1": "14 Liverpool Road"
+  },
+  {
+    "name": "Whittington Hospital - Highgate Wing",
+    "zipcode": "N19 5JG",
+    "city": "London",
+    "addressLine1": "Dartmouth Park Hill"
+  },
+  {
+    "name": "Whittington Hospital - Main Site",
+    "zipcode": "N19 5NF",
+    "city": "London",
+    "addressLine1": "Magdala Avenue"
+  },
+  {
+    "name": "Wicklow Street, 44",
+    "zipcode": "WC1X 9HL",
+    "city": "London",
+    "addressLine1": "44 Wicklow Street"
+  },
+  {
+    "name": "Wicklow Street, 77",
+    "zipcode": "WC1X 9JY",
+    "city": "London",
+    "addressLine1": "77 Wicklow Street"
+  },
+  {
+    "name": "Wilkins Building (Main Building)",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Wilkins Terrace And Service Area",
+    "zipcode": "WC1E 6BT",
+    "city": "London",
+    "addressLine1": "Gower Street"
+  },
+  {
+    "name": "Wilson Street, 69",
+    "zipcode": "EC2A 2BB",
+    "city": "London",
+    "addressLine1": "69 Wilson Street"
+  },
+  {
+    "name": "Woburn Square, 25 & 26",
+    "zipcode": "WC1H 0AA",
+    "city": "London",
+    "addressLine1": "25 & 26 Woburn Square"
+  },
+  {
+    "name": "Zayed Centre For Research",
+    "zipcode": "WC1N 1DZ",
+    "city": "London",
+    "addressLine1": "20 Guilford Street"
+  }
+]

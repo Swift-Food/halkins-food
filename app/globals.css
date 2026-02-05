@@ -1,0 +1,298 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* Custom Swift Food Theme - Modern Design with Pink Accents */
+@plugin "daisyui/theme" {
+  name: "Swift";
+  default: true;
+  prefersdark: false;
+
+
+  /* Primary colors - Hot Pink */
+  --color-primary: #fa43ad; /* Hot Pink */
+  --color-primary-content: #ffffff;
+
+  /* Secondary colors */
+  --color-secondary: hsl(340, 100%, 88%); /* Light Pink */
+  --color-secondary-content: #282828;
+
+  --color-text-grey: #6A6A6A;
+
+  /* Accent colors */
+  --color-accent: #ffdd83; /* Yellow/Gold */
+  --color-accent-content: #282828;
+
+  /* Neutral colors */
+  --color-neutral: #282828; /* Dark Gray */
+  --color-neutral-content: #f6f5f3;
+
+  /* Base colors */
+  --color-base-100: #f7f8f9; /* White background */
+  --color-base-200: #efeae0; /* Light gray */
+  --color-base-300: #e5e7eb; /* Border color */
+  --color-base-content: #282828; /* Dark text */
+
+
+  /* Status colors */
+  --color-info: #94daf0; /* Light blue */
+  --color-success: #4ade80; /* Green */
+  --color-warning: #ffcd5e; /* Yellow */
+  --color-error: #f87171; /* Red */
+}
+
+/* Additional custom color classes for direct use */
+:root {
+  --dark-pink: #FA43AD;
+  --hot-pink: #FFB3E6;
+  --beige: #EFEAE0;
+  --swift-pink: #fa43ad;
+}
+
+/* Custom utility classes */
+.bg-dark-pink {
+  background-color: var(--dark-pink);
+}
+
+.bg-hot-pink {
+  background-color: var(--hot-pink);
+}
+
+.bg-beige {
+  background-color: var(--beige);
+}
+
+.text-dark-pink {
+  color: var(--dark-pink);
+}
+
+.text-hot-pink {
+  color: var(--hot-pink);
+}
+
+.border-dark-pink {
+  border-color: var(--dark-pink);
+}
+
+.border-hot-pink {
+  border-color: var(--hot-pink);
+}
+
+/* Grid pattern for hero background */
+.grid-pattern {
+  background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Marquee animation for social proof */
+.marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-content {
+  display: inline-flex;
+  animation: marquee 50s linear infinite;
+}
+
+.marquee-content:hover {
+  animation-play-state: paused;
+}
+
+/* Float animations for hero background blobs */
+@keyframes float {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-20px, 20px); }
+}
+
+@keyframes float-alt {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(20px, -20px); }
+}
+
+.animate-float {
+  animation: float 15s ease-in-out infinite;
+}
+
+.animate-float-alt {
+  animation: float-alt 18s ease-in-out infinite;
+}
+
+/* Organic drifting animations for mesh gradient */
+@keyframes drift {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(150px, -80px) scale(1.15); }
+  66% { transform: translate(80px, 60px) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes drift-alt {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-120px, 60px) scale(0.95); }
+  66% { transform: translate(100px, -50px) scale(1.1); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes drift-wide {
+  0% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(40vw, 40vh) scale(1.1); }
+  50% { transform: translate(50vw, 20vh) scale(0.95); }
+  75% { transform: translate(30vw, 50vh) scale(1.05); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+.animate-drift {
+  animation: drift 8s ease-in-out infinite;
+}
+
+.animate-drift-wide {
+  animation: drift-wide 12s ease-in-out infinite;
+}
+
+.animate-drift-alt {
+  animation: drift-alt 10s ease-in-out infinite;
+}
+
+.animate-drift-reverse {
+  animation: drift 9s ease-in-out infinite reverse;
+}
+
+.animate-drift-alt-delayed {
+  animation: drift-alt 12s ease-in-out infinite 0.5s;
+}
+
+/* Line fill animation for scroll indicator - runway style */
+@keyframes line-fill {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.animate-line-fill {
+  animation: line-fill 1.5s ease-in-out infinite;
+}
+
+/* Reveal animation for scroll-based sections */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  background-color: #ffffff;
+  color: #282828;
+}
+.marquee-text {
+  overflow: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+.marquee-text-track {
+  display: flex;
+  padding-left: 4.8rem;
+  gap: 4.8rem;
+  width: max-content;
+  /* background-color: --color-secondary; */
+  background-color: var(--color-primary);
+  animation: marquee-move-text var(--speed, 30s) linear infinite
+    var(--direction, forwards);
+}
+
+.marquee-text p {
+  /* border: 1px solid white; */
+  /* background-color: #141414; */
+  border-radius: 999px;
+  padding: 0.3rem 2.5rem;
+  color: white
+}
+
+@keyframes marquee-move-text {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* This wrapper div is only there so we know for sure we have enough text to fill your screen.
+   If you want to have this marquee loop on devices with a very large width, you simply need to add more text.*/
+.wrapper {
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden;
+  margin: 0 auto;
+  color: var(--color-primary);
+  background-color: var(--color-primary);
+}
+@font-face {
+  font-family: 'Mont';
+  src: url('/fonts/Mont-HeavyDEMO.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.montFont {
+  font-family: 'Mont', Arial, sans-serif;
+}
+
+/* html, body {
+  overflow-x: hidden;
+} */
+
+/* Session navigation animations */
+@keyframes expandIn {
+  from {
+    opacity: 0;
+    transform: scaleX(0.8);
+    transform-origin: left center;
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
