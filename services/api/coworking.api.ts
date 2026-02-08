@@ -160,6 +160,9 @@ class CoworkingService {
       if (response.status === 400) {
         throw new Error('Invalid or expired verification link');
       }
+      if (response.status === 404) {
+        throw new Error('Coworking space not found');
+      }
       throw new Error('Failed to verify link');
     }
 

@@ -91,18 +91,17 @@ export interface CreateCoworkingOrderRequest {
 
 /**
  * Coworking space public info
+ * Backend: SpaceInfoResponse in coworking.service.ts
  */
 export interface CoworkingSpaceInfo {
-  id: string;
   name: string;
   slug: string;
   address: string;
   deliveryInstructions: string | null;
-  timezone: string | null;
-  minLeadTimeHours: number;
-  minOrderValue: number;
-  operatingHoursStart: string | null;
-  operatingHoursEnd: string | null;
+  operatingHours: {
+    start: string;
+    end: string;
+  } | null;
 }
 
 /**
