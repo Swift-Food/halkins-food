@@ -25,21 +25,36 @@ import {
   GetOrderDetailResponse,
 } from '@/types/api';
 
-class CoworkingService {
-  private sessionToken: string | null = null;
+const SESSION_TOKEN_KEY = 'coworking_session_token';
 
+class CoworkingService {
   /**
    * Set the session token for authenticated requests
+   * Uses sessionStorage to persist across page refreshes but clear on tab close
    */
   setSessionToken(token: string | null): void {
-    this.sessionToken = token;
+    if (typeof window === 'undefined') return;
+
+    if (token) {
+      sessionStorage.setItem(SESSION_TOKEN_KEY, token);
+    } else {
+      sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    }
   }
 
   /**
    * Get the current session token
    */
   getSessionToken(): string | null {
-    return this.sessionToken;
+    if (typeof window === 'undefined') return null;
+    return sessionStorage.getItem(SESSION_TOKEN_KEY);
+  }
+
+  /**
+   * Clear the session (logout)
+   */
+  clearSession(): void {
+    this.setSessionToken(null);
   }
 
   /**
@@ -49,7 +64,8 @@ class CoworkingService {
     url: string,
     options: RequestInit = {}
   ): Promise<Response> {
-    if (!this.sessionToken) {
+    const token = this.getSessionToken();
+    if (!token) {
       throw new Error('No session token set. Please authenticate first.');
     }
 
@@ -57,7 +73,7 @@ class CoworkingService {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.sessionToken}`,
+        Authorization: `Bearer ${token}`,
         ...options.headers,
       },
     });
@@ -113,7 +129,7 @@ class CoworkingService {
     }
 
     const result = await response.json();
-    this.sessionToken = result.sessionToken;
+    this.setSessionToken(result.sessionToken);
     return result;
   }
 
@@ -167,7 +183,7 @@ class CoworkingService {
     }
 
     const result = await response.json();
-    this.sessionToken = result.sessionToken;
+    this.setSessionToken(result.sessionToken);
     return result;
   }
 
@@ -199,7 +215,7 @@ class CoworkingService {
     }
 
     const result = await response.json();
-    this.sessionToken = result.sessionToken;
+    this.setSessionToken(result.sessionToken);
     return result;
   }
 
