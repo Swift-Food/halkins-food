@@ -26,6 +26,16 @@ export const API_ENDPOINTS = {
 
   // Catering Bundles
   CATERING_BUNDLE: (id: string) => `/catering-bundles/${id}`,
+
+  // Coworking Dashboard
+  COWORKING_DASHBOARD_ME: (spaceId: string) =>
+    `/coworking-dashboard/${spaceId}/me`,
+  COWORKING_DASHBOARD_ORDERS: (spaceId: string) =>
+    `/coworking-dashboard/${spaceId}/orders`,
+  COWORKING_DASHBOARD_ORDER: (spaceId: string, orderId: string) =>
+    `/coworking-dashboard/${spaceId}/orders/${orderId}`,
+  COWORKING_DASHBOARD_STATS: (spaceId: string) =>
+    `/coworking-dashboard/${spaceId}/stats`,
 } as const;
 
 export const EXTERNAL_APIS = {

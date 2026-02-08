@@ -17,3 +17,6 @@ export * from './catering.api.types';
 // Catering order types (requests)
 export * from './catering.request.types';
 
+// Coworking dashboard types (requests & responses)
+export * from './coworking-dashboard.api.types';
+
