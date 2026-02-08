@@ -16,7 +16,7 @@
  * See: /types/api/README.md for migration guide
  */
 
-import { MenuItem } from "@/lib/components/catering/Step2MenuItems";
+import { MenuItem } from "./restaurant.types";
 import { PricingMenuItem } from "./api";
 import { deprecate } from "util";
 
@@ -112,79 +112,6 @@ export interface SearchFilters {
   allergens?: string[];
 }
 
-export enum CorporateUserRole {
-  employee = "EMPLOYEE",
-  manager = "MANAGER",
-  admin = "ADMIN",
-}
-
-export enum CorporateUserStatus {
-  PENDING = "PENDING",
-  ACTIVE = "ACTIVE",
-  INACTIVE = "INACTIVE",
-  SUSPENDED = "SUSPENDED",
-}
-
-export interface CorporateUser {
-  id: string;
-  userId: string;
-  organizationId: string;
-  corporateRole: CorporateUserRole;
-  email: string;
-
-  // Employee info
-  employeeCode?: string;
-  fullName: string;
-  phoneNumber: string;
-  firstName?: string;
-  lastName?: string;
-  department?: string;
-  designation?: string;
-
-  // Budget configuration
-  dailyBudgetLimit?: number;
-  monthlyBudgetLimit?: number;
-
-  // Budget tracking
-  dailyBudgetSpent: number;
-  monthlyBudgetSpent: number;
-  lastMonthlyReset?: Date | string;
-  lastDailyReset?: Date | string;
-
-  // Preferences
-  dietaryRestrictions?: string[];
-  defaultDeliveryAddressId?: string;
-
-  // Status
-  status: CorporateUserStatus;
-  canOrder: boolean;
-
-  // Approval info
-  approvedBy?: string;
-  approvedAt?: Date | string;
-
-  // Timestamps
-  createdAt: Date | string;
-  updatedAt: Date | string;
-
-  // Job Title
-  jobTitleId?: string | null;
-
-  // Relations (optional - populate when needed)
-  user?: {
-    email?: string;
-    phoneNumber?: string;
-    [key: string]: any;
-  };
-  organization?: {
-    name?: string;
-    [key: string]: any;
-  };
-  // user?: User; // TODO: Define User type if needed
-  // organization?: Organization; // TODO: Define Organization type if needed
-  // subOrders?: CorporateSubOrder[]; // TODO: Define CorporateSubOrder type if needed
-  // jobTitle?: JobTitle; // TODO: Define JobTitle type if needed
-}
 
 export interface EventDetails {
   eventType: string;
@@ -194,7 +121,6 @@ export interface EventDetails {
   specialRequests?: string;
   address: string;
   userType: "guest" | "corporate";
-  // corporateUser: null | CorporateUser;
 }
 
 export interface SelectedMenuItem {
@@ -440,9 +366,6 @@ export interface CreateCateringOrderDto {
   orderItems: OrderItemDto[];
   estimatedTotal?: number;
   promoCodes?: string[];
-  corporateUserId?: string;
-  organizationId?: string;
-  useOrganizationWallet?: boolean;
   paymentMethodId?: string;
   paymentIntentId?: string;
 }
@@ -664,13 +587,6 @@ export interface CateringOrderDetails {
   transferFailureReason?: string;
   transferRetryCount?: number;
 
-  // Corporate/Organization
-  organizationId?: string;
-  corporateUserId?: string;
-
-  // Wallet payment
-  isPaidWithWallet?: boolean;
-  walletAmountUsed?: number;
 
   // Event relationship
   eventId?: string | null;

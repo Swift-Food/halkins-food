@@ -104,13 +104,6 @@ class CateringService {
     contactInfo: ContactInfo,
     promoCodes: string[],
     ccEmails?: string[],
-    paymentInfo?: {
-      corporateUserId?: string;
-      organizationId?: string;
-      useOrganizationWallet?: boolean;
-      paymentMethodId?: string;
-      paymentIntentId?: string;
-    },
     eventId?: string,
     specialInstructions?: string
   ) {
@@ -260,11 +253,6 @@ class CateringService {
       mealSessions: mealSessionRequests,
       estimatedTotal,
       promoCodes,
-      corporateUserId: paymentInfo?.corporateUserId,
-      organizationId: paymentInfo?.organizationId,
-      useOrganizationWallet: paymentInfo?.useOrganizationWallet,
-      paymentMethodId: paymentInfo?.paymentMethodId,
-      paymentIntentId: paymentInfo?.paymentIntentId,
       paymentMethod: "stripe_direct",
     };
 
@@ -973,41 +961,8 @@ class CateringService {
     return response.json();
   }
 
-  /**
-   * Get detailed pricing breakdown for a corporate order
-   * Returns complete pricing calculation from the pricing engine
-   */
-  async getCorporateOrderPricingBreakdown(
-    orderId: string
-  ): Promise<OrderPricingBreakdown> {
-    const response = await fetchWithAuth(
-      `${API_BASE_URL}/corporate-orders/${orderId}/pricing-breakdown`
-    );
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch pricing breakdown");
-    }
 
-    return response.json();
-  }
-
-  /**
-   * Get restaurant payout information for a corporate order
-   * Shows exactly what each restaurant will receive
-   */
-  async getCorporateOrderRestaurantPayouts(
-    orderId: string
-  ): Promise<RestaurantPayoutsResponse> {
-    const response = await fetchWithAuth(
-      `${API_BASE_URL}/corporate-orders/${orderId}/restaurant-payouts`
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch restaurant payouts");
-    }
-
-    return response.json();
-  }
 }
 
 export const cateringService = new CateringService();

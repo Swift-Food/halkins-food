@@ -231,11 +231,17 @@ export interface GetOrderDetailResponse {
 
 /**
  * Response for POST /orders (order creation)
- * Returns the created catering order
+ * Backend: CreateOrderResult
  */
 export interface CreateOrderResponse {
-  id: string;
+  orderId: string;
   status: string;
-  estimatedTotal: number;
-  createdAt: string;
+  total: {
+    subtotal: number;
+    deliveryFee: number;
+    serviceFee: number;
+    total: number;
+  };
+  deliveryAddress: string;
+  estimatedDelivery: string;
 }

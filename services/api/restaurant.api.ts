@@ -8,9 +8,7 @@ import {
   AnalyticsDashboard,
   PaymentAccounts,
 } from "@/types/restaurant.types";
-import { CorporateUser } from "@/types/catering.types";
 import {
-  UpdateCorporateInventoryDto,
   UpdateCateringPortionsLimitDto,
   CateringPortionsAvailabilityResponse,
   UpdateOrderSettingsDto,
@@ -31,18 +29,7 @@ export const restaurantApi = {
     return response.json();
   },
 
-  loginCorporate: async (credentials: {
-    email: string;
-    password: string;
-  }): Promise<TokenPair> => {
-    const response = await fetch(`${API_BASE_URL}/auth/corporate-login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(credentials),
-    });
-    if (!response.ok) throw new Error("Corporate login failed");
-    return response.json();
-  },
+
 
   refreshToken: async (refreshToken: string): Promise<TokenPair> => {
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
@@ -296,23 +283,9 @@ export const restaurantApi = {
     return response.json();
   },
 
-  // Corporate user endpoints
-  getCorporateUser: async (corporateUserId: string): Promise<CorporateUser> => {
-    const response = await fetchWithAuth(
-      `${API_BASE_URL}/corporate-users/${corporateUserId}`
-    );
-    if (!response.ok) throw new Error("Failed to fetch corporate user");
-    return response.json();
-  },
 
-  // Organization endpoints
-  getOrganization: async (organizationId: string): Promise<any> => {
-    const response = await fetchWithAuth(
-      `${API_BASE_URL}/organizations/${organizationId}`
-    );
-    if (!response.ok) throw new Error("Failed to fetch organization");
-    return response.json();
-  },
+
+
 
   // Inventory Management endpoints
 
@@ -358,49 +331,6 @@ export const restaurantApi = {
     return result;
   },
 
-  // Get corporate inventory settings
-  getCorporateInventorySettings: async (restaurantId: string): Promise<any> => {
-    const url = `${API_BASE_URL}/restaurant/${restaurantId}/corporate-inventory`;
-
-
-    const response = await fetchWithAuth(url);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("🟣 Failed to get corporate inventory:", errorText);
-      throw new Error(
-        `Failed to get corporate inventory settings: ${response.status} - ${errorText}`
-      );
-    }
-
-    const result = await response.json();
-    return result;
-  },
-
-  // Update corporate inventory settings
-  updateCorporateInventory: async (
-    restaurantId: string,
-    data: UpdateCorporateInventoryDto
-  ): Promise<any> => {
-    const url = `${API_BASE_URL}/restaurant/${restaurantId}/corporate-inventory`;
-
-
-    const response = await fetchWithAuth(url, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("🟣 Corporate Error Response:", errorText);
-      throw new Error(
-        `Failed to update corporate inventory: ${response.status} - ${errorText}`
-      );
-    }
-
-    const result = await response.json();
-    return result;
-  },
 
   // Get restaurant details (includes inventory settings)
   getRestaurantDetails: async (restaurantId: string): Promise<any> => {

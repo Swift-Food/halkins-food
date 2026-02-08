@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCatering } from "@/context/CateringContext";
 import { cateringService } from "@/services/api/catering.api";
 import { CateringPricingResult, ContactInfo } from "@/types/catering.types";
-import { PaymentMethodSelector } from "../PaymentMethodSelector";
 import AllMealSessionsItems from "./AllMealSessionsItems";
 import {
   LocalMealSession,
@@ -22,6 +21,8 @@ import PromoCodeSection from "./contact/PromoCodeSection";
 import PricingSummary from "./contact/PricingSummary";
 import { fetchWithAuth } from "@/lib/api-client/auth-client";
 import { API_BASE_URL } from "@/lib/constants/api";
+import { coworkingService } from "@/services/api";
+import { CreateCoworkingOrderRequest } from "@/types/api";
 
 interface ValidationErrors {
   organization?: string;
@@ -54,7 +55,7 @@ export default function Step3ContactInfo() {
     getAllItems,
     resetOrder,
     markOrderAsSubmitted,
-    corporateUser,
+
     updateMealSession,
   } = useCatering();
 
@@ -88,8 +89,6 @@ export default function Step3ContactInfo() {
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [corporateUserId, setCorporateUserId] = useState<string>("");
-  const [organizationId, setOrganizationId] = useState<string>("");
   const [specialInstructions, setSpecialInstructions] = useState<string>("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
     "wallet" | "card" | null
@@ -138,21 +137,6 @@ export default function Step3ContactInfo() {
     return undefined;
   };
 
-  const checkCorporateUser = async () => {
-    try {
-      if (eventDetails?.userType === "corporate") {
-        if (corporateUser) {
-          setCorporateUserId(corporateUser.id);
-          setOrganizationId(corporateUser.organizationId);
-        }
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error(error);
-      return false;
-    }
-  };
   
 
   const validatePhone = (phone: string): string | undefined => {
@@ -369,23 +353,11 @@ export default function Step3ContactInfo() {
       return;
     }
 
-    // setSubmitting(true);
-
-    const isCorporate = await checkCorporateUser();
-    if (isCorporate) {
-      // Show payment modal for corporate users
-      setShowPaymentModal(true);
-      return;
-    }
 
     await submitOrder();
   };
 
-  const submitOrder = async (paymentInfo?: {
-    useOrganizationWallet?: boolean;
-    paymentMethodId?: string;
-    paymentIntentId?: string;
-  }) => {
+  const submitOrder = async () => {
     setSubmitting(true);
 
     try {
@@ -398,14 +370,7 @@ export default function Step3ContactInfo() {
 
       setContactInfo(formData);
 
-      const paymentData = paymentInfo
-        ? {
-            corporateUserId,
-            organizationId,
-            ...paymentInfo,
-          }
-        : undefined;
-
+      
       const createCateringOrderResponse =
         await cateringService.submitCateringOrder(
           eventDetails!,
@@ -413,10 +378,11 @@ export default function Step3ContactInfo() {
           formData,
           promoCodes,
           ccEmails,
-          paymentData,
+     
           eventId || undefined,
           specialInstructions
         );
+
 
      
 
@@ -493,61 +459,6 @@ export default function Step3ContactInfo() {
     }
   };
 
-  const handleWalletPayment = async () => {
-    // Validation
-    if (!organizationId || !corporateUserId) {
-      console.error("ERROR: Missing organization or user information");
-      console.error("- Organization ID:", organizationId);
-      console.error("- Corporate User ID:", corporateUserId);
-      alert(
-        "Missing organization or user information. Please try logging in again."
-      );
-      return;
-    }
-
-    if (!pricing || !pricing.total) {
-      console.error("ERROR: Pricing information not available");
-      console.error("Pricing:", pricing);
-      alert("Pricing information not available. Please refresh and try again.");
-      return;
-    }
-
-    try {
-      await submitOrder({ useOrganizationWallet: true });
-    } catch (error: any) {
-      console.error("=== WALLET PAYMENT ERROR ===");
-      console.error("Error:", error);
-      console.error("Error Message:", error?.message);
-      console.error("Error Stack:", error?.stack);
-      console.error("=== END WALLET PAYMENT ERROR ===");
-      // Error is already handled in submitOrder
-    }
-  };
-
-  const handleCardPaymentComplete = async (
-    paymentMethodId: string,
-    paymentIntentId: string
-  ) => {
-    // Validation
-    if (!paymentMethodId || !paymentIntentId) {
-      console.error("ERROR: Missing payment information");
-      console.error("- Payment Method ID:", paymentMethodId);
-      console.error("- Payment Intent ID:", paymentIntentId);
-      alert("Payment information missing. Please try again.");
-      return;
-    }
-
-    try {
-      await submitOrder({ paymentMethodId, paymentIntentId });
-    } catch (error: any) {
-      console.error("=== CARD PAYMENT ERROR ===");
-      console.error("Error:", error);
-      console.error("Error Message:", error?.message);
-      console.error("Error Stack:", error?.stack);
-      console.error("=== END CARD PAYMENT ERROR ===");
-      // Error is already handled in submitOrder
-    }
-  };
 
   const calculatePricing = async () => {
     setCalculatingPricing(true);
@@ -590,7 +501,6 @@ export default function Step3ContactInfo() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  // Update form data when contactInfo changes (e.g., after corporate login)
   useEffect(() => {
     if (contactInfo) {
       setFormData({
@@ -1457,51 +1367,12 @@ export default function Step3ContactInfo() {
                     </div>
                   </button>
                 </div>
-
-                {/* ONLY show PaymentMethodSelector for CARD payment */}
-                {selectedPaymentMethod === "card" && (
-                  <PaymentMethodSelector
-                    organizationId={organizationId}
-                    managerId={corporateUserId}
-                    amount={pricing?.total || 0}
-                    onPaymentComplete={handleCardPaymentComplete}
-                    onCancel={() => setShowPaymentModal(false)}
-                  />
-                )}
-
-                {/* Wallet Confirm Button - NO Stripe needed */}
-                {selectedPaymentMethod === "wallet" && (
-                  <button
-                    onClick={handleWalletPayment}
-                    disabled={submitting}
-                    className="w-full bg-dark-pink hover:opacity-90 text-white py-4 rounded-xl font-bold text-lg transition-all disabled:bg-base-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {submitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                        Processing Payment...
-                      </>
-                    ) : (
-                      `Pay £${pricing?.total.toFixed(2)} from Wallet`
-                    )}
-                  </button>
-                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* Mobile Submit Button (Below Form) */}
-        {/* <div className="lg:hidden mt-6">
-          <button
-            type="submit"
-            disabled={submitting}
-            onClick={handleSubmit}
-            className="w-full bg-dark-pink hover:opacity-90 text-white py-4 rounded-full font-bold text-lg transition-all disabled:bg-base-300 disabled:cursor-not-allowed"
-          >
-            {submitting ? 'Submitting...' : 'Submit'}
-          </button>
-        </div> */}
+
       </div>
     </div>
   );

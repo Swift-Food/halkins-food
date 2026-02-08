@@ -22,37 +22,7 @@ export interface CateringPortionsStatus extends CateringPortionsConfig {
  */
 export type SessionResetPeriod = 'daily' | 'lunch_dinner' | null;
 
-export interface CorporateInventoryConfig {
-  // When to reset inventory
-  sessionResetPeriod: SessionResetPeriod;
 
-  // Optional: Limit total portions per session
-  maxPortionsPerSession: number | null;
-
-  // Optional: Limit specific ingredients per session
-  // Key = ingredient name (e.g., "chicken", "lobster")
-  // Value = max quantity for that ingredient
-  limitedIngredientsPerSession: { [ingredientName: string]: number } | null;
-}
-
-export interface CorporateInventoryStatus extends CorporateInventoryConfig {
-  // Read-only: Current remaining portions in this session
-  portionsRemaining: number | null;
-
-  // Read-only: Current remaining ingredients in this session
-  limitedIngredientsRemaining: { [ingredientName: string]: number } | null;
-
-  // Calculated fields
-  portionsUsed?: number; // maxPortionsPerSession - portionsRemaining
-  ingredientsStatus?: {
-    [ingredientName: string]: {
-      max: number;
-      remaining: number;
-      used: number;
-      percentageUsed: number;
-    };
-  };
-}
 
 /**
  * Complete Restaurant Inventory Settings
@@ -69,11 +39,7 @@ export interface RestaurantInventorySettings {
     dailyPortionsLimit: CateringPortionsConfig;
   };
 
-  // Corporate settings
-  corporate: {
-    enabled: boolean;
-    sessionConfig: CorporateInventoryConfig;
-  };
+
 }
 
 /**

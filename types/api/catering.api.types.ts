@@ -227,13 +227,6 @@ export interface CateringOrderResponse {
   transferFailureReason?: string;
   transferRetryCount?: number;
 
-  // Corporate/Organization
-  organizationId?: string;
-  corporateUserId?: string;
-
-  // Wallet payment
-  isPaidWithWallet?: boolean;
-  walletAmountUsed?: number;
 
   // Event relationship
   eventId?: string | null;

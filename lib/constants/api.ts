@@ -10,9 +10,6 @@ export const API_ENDPOINTS = {
   RESTAURANT_DETAILS: (id: string) => `/restaurant/${id}`,
   RESTAURANT_CATERING: '/restaurant/catering/restaurants',
 
-  // Corporate
-  CORPORATE_WALLET_PAYMENT_INTENT: (orgId: string) =>
-    `/corporate/organization/wallet/organization/wallet/catering-payment-intent/${orgId}`,
 
   // Image Upload
   IMAGE_UPLOAD: '/image-upload',

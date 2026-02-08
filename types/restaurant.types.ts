@@ -1,3 +1,86 @@
+
+export interface Restaurant {
+  id: string;
+  restaurant_name: string;
+  restaurantType: string;
+  images: string[];
+  eventImages?: string[];
+  averageRating: string;
+  minCateringOrderQuantity?: number;
+  minimumDeliveryNoticeHours?: number;
+  contactEmail?: string;
+  contactNumber?: string;
+  cateringMinOrderSettings: {
+    required?: Array<{
+      minQuantity: number;
+      applicableSections: string[];
+    }>;
+    optional?: Array<{
+      minQuantity: number;
+      applicableSections: string[];
+    }>;
+  } | null;
+  cateringOperatingHours?:
+    | {
+        day: string;
+        open: string | null;
+        close: string | null;
+        enabled: boolean;
+      }[]
+    | null;
+}
+
+export interface Addon {
+  name: string;
+  price: string;
+  allergens: string;
+  dietaryRestrictions?: string[];
+  groupTitle: string;
+  isRequired: boolean;
+  selectionType: "single" | "multiple";
+}
+
+export interface MenuItem {
+  id: string;
+  menuItemName: string;
+  description?: string;
+  price: string;
+  discountPrice?: string;
+  allergens?: string[];
+  isDiscount: boolean;
+  image?: string;
+  averageRating?: string;
+  cateringQuantityUnit?: number;
+  feedsPerUnit?: number;
+  restaurantId: string;
+  restaurantName?: string;
+  groupTitle?: string;
+  status?: string;
+  itemDisplayOrder: number;
+  addons: Addon[];
+  selectedAddons?: {
+    name: string;
+    price: number;
+    quantity: number;
+    groupTitle: string;
+    allergens?: string | string[];
+    dietaryRestrictions?: string[];
+  }[];
+  addonPrice?: number;
+  portionQuantity?: number;
+  restaurant?: {
+    id: string;
+    name: string;
+    restaurantId: string;
+    menuGroupSettings?: Record<string, any>;
+  };
+  dietaryFilters?: string[];
+  categoryId?: string;
+  categoryName?: string;
+  subcategoryId?: string;
+  subcategoryName?: string;
+}
+
 // types/restaurant.types.ts
 export interface TokenPair {
   access_token: string;

@@ -12,10 +12,9 @@ import {
   EventDetails,
   SelectedMenuItem,
   ContactInfo,
-  CorporateUser,
   MealSessionState,
 } from "@/types/catering.types";
-import { Restaurant } from "@/lib/components/catering/Step2MenuItems";
+import { Restaurant } from "@/types/restaurant.types";
 
 // Default session for new orders
 const createDefaultSession = (): MealSessionState => ({
@@ -31,7 +30,6 @@ interface CateringContextType {
   contactInfo: ContactInfo | null;
   promoCodes: string[] | null;
   selectedRestaurants: Restaurant[];
-  corporateUser: CorporateUser | null;
   restaurantPromotions: Record<string, any[]>;
   restaurantDiscounts: Record<string, { discount: number; promotion: any }>;
 
@@ -65,7 +63,6 @@ interface CateringContextType {
   setContactInfo: (info: ContactInfo) => void;
   setPromoCodes: (codes: string[]) => void;
   setSelectedRestaurants: (restaurants: Restaurant[]) => void;
-  setCorporateUser: (user: CorporateUser | null) => void;
   setRestaurantPromotions: (promotions: Record<string, any[]>) => void;
   resetOrder: () => void;
   markOrderAsSubmitted: () => void;
@@ -84,7 +81,6 @@ const STORAGE_KEYS = {
   CONTACT_INFO: "catering_contact_info",
   PROMO_CODES: "catering_promo_codes",
   SELECTED_RESTAURANTS: "catering_selected_restaurants",
-  CORPORATE_USER: "catering_corporate_user",
   ORDER_SUBMITTED: "catering_order_submitted",
   RESTAURANT_PROMOTIONS: "catering_restaurant_promotions",
   // Legacy key for migration
@@ -98,7 +94,6 @@ export function CateringProvider({ children }: { children: ReactNode }) {
   const [contactInfo, setContactInfoState] = useState<ContactInfo | null>(null);
   const [promoCodes, setPromoCodesState] = useState<string[]>([]);
   const [selectedRestaurants, setSelectedRestaurantsState] = useState<Restaurant[]>([]);
-  const [corporateUser, setCorporateUserState] = useState<CorporateUser | null>(null);
   const [restaurantPromotions, setRestaurantPromotionsState] = useState<Record<string, any[]>>({});
 
   // Meal sessions state (replaces selectedItems)
@@ -358,7 +353,6 @@ export function CateringProvider({ children }: { children: ReactNode }) {
       const savedContactInfo = localStorage.getItem(STORAGE_KEYS.CONTACT_INFO);
       const savedPromoCodes = localStorage.getItem(STORAGE_KEYS.PROMO_CODES);
       const savedRestaurants = localStorage.getItem(STORAGE_KEYS.SELECTED_RESTAURANTS);
-      const savedCorporateUser = localStorage.getItem(STORAGE_KEYS.CORPORATE_USER);
       const savedPromotions = localStorage.getItem(STORAGE_KEYS.RESTAURANT_PROMOTIONS);
 
       // Legacy migration: if old SELECTED_ITEMS exists, migrate to mealSessions
@@ -369,7 +363,6 @@ export function CateringProvider({ children }: { children: ReactNode }) {
       if (savedContactInfo) setContactInfoState(JSON.parse(savedContactInfo));
       if (savedPromoCodes) setPromoCodesState(JSON.parse(savedPromoCodes));
       if (savedRestaurants) setSelectedRestaurantsState(JSON.parse(savedRestaurants));
-      if (savedCorporateUser) setCorporateUserState(JSON.parse(savedCorporateUser));
       if (savedPromotions) setRestaurantPromotionsState(JSON.parse(savedPromotions));
 
       if (savedMealSessions) {
@@ -607,14 +600,6 @@ export function CateringProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEYS.PROMO_CODES, JSON.stringify(codes));
   };
 
-  const setCorporateUser = (user: CorporateUser | null) => {
-    setCorporateUserState(user);
-    if (user) {
-      localStorage.setItem(STORAGE_KEYS.CORPORATE_USER, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.CORPORATE_USER);
-    }
-  };
 
   const setRestaurantPromotions = (promotions: Record<string, any[]>) => {
     setRestaurantPromotionsState(promotions);
@@ -629,7 +614,6 @@ export function CateringProvider({ children }: { children: ReactNode }) {
     setContactInfoState(null);
     setPromoCodesState([]);
     setSelectedRestaurantsState([]);
-    setCorporateUserState(null);
     setRestaurantPromotionsState({});
 
     Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
@@ -651,7 +635,6 @@ export function CateringProvider({ children }: { children: ReactNode }) {
         contactInfo,
         promoCodes,
         selectedRestaurants,
-        corporateUser,
         restaurantPromotions,
         restaurantDiscounts,
 
@@ -685,7 +668,6 @@ export function CateringProvider({ children }: { children: ReactNode }) {
         setContactInfo,
         setPromoCodes,
         setSelectedRestaurants,
-        setCorporateUser,
         setRestaurantPromotions,
         resetOrder,
         markOrderAsSubmitted,
