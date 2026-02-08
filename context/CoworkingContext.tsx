@@ -76,8 +76,15 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
     return new Date() > sessionExpiresAt;
   }, [sessionExpiresAt]);
 
-  // Derived state
-  const isAuthenticated = !!member && !isSessionExpired();
+  // Check if we have a valid token - this is the source of truth
+  const hasValidToken = useCallback((): boolean => {
+    if (typeof window === "undefined") return false;
+    return !!coworkingService.getSessionToken();
+  }, []);
+
+  // Derived state - token is the authoritative source
+  // Must have: token + member info + not expired
+  const isAuthenticated = hasValidToken() && !!member && !isSessionExpired();
 
   // Load session from storage on mount
   useEffect(() => {
@@ -110,6 +117,9 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
           // Session expired, clear everything
           clearSession();
         }
+      } else if (!token && savedMember) {
+        // Token was cleared externally but we have stale member data - sync up
+        clearSession();
       }
     } catch (error) {
       console.error("Error loading coworking session:", error);
@@ -118,6 +128,25 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       setIsHydrated(true);
     }
+  }, []);
+
+  // Sync: Listen for storage changes (e.g., token cleared in another tab)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleStorageChange = (e: StorageEvent) => {
+      // If the token was removed from sessionStorage
+      if (e.key === "coworking_session_token" && e.newValue === null) {
+        // Clear our state to stay in sync
+        setMember(null);
+        setBookingsState([]);
+        setIsOfficeRnDVerified(false);
+        setSessionExpiresAt(null);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   // Clear all session data
