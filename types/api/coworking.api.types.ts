@@ -109,8 +109,9 @@ export interface CoworkingSpaceInfo {
  * Backend: StartSessionResult
  */
 export interface StartSessionResponse {
-  sessionToken: string;
-  expiresAt: string; // ISO datetime
+  access_token: string;
+  refresh_token: string;
+  expires_in: number; // seconds
   email: string;
   name: string;
   isOfficeRnDVerified: boolean;
@@ -152,8 +153,9 @@ export interface BookingInfo {
  * Backend: VerifyMagicLinkResult
  */
 export interface VerifyMagicLinkResponse {
-  sessionToken: string;
-  expiresAt: string; // ISO datetime
+  access_token: string;
+  refresh_token: string;
+  expires_in: number; // seconds
   member: MemberInfo;
   bookings: BookingInfo[];
 }
@@ -163,10 +165,21 @@ export interface VerifyMagicLinkResponse {
  * Backend: VerifyBookingResult
  */
 export interface VerifyBookingResponse {
-  sessionToken: string;
-  expiresAt: string; // ISO datetime
+  access_token: string;
+  refresh_token: string;
+  expires_in: number; // seconds
   member: MemberInfo;
   booking: BookingInfo;
+}
+
+/**
+ * Response for POST /refresh
+ * Backend: RefreshTokenResult
+ */
+export interface RefreshTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number; // seconds
 }
 
 /**

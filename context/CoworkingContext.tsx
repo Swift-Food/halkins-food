@@ -23,13 +23,6 @@ const STORAGE_KEYS = {
   SESSION_EXPIRY: "coworking_session_expiry",
 } as const;
 
-interface CoworkingSessionState {
-  member: MemberInfo | null;
-  bookings: BookingInfo[];
-  spaceInfo: CoworkingSpaceInfo | null;
-  isOfficeRnDVerified: boolean;
-}
-
 interface CoworkingContextType {
   // Session state
   isAuthenticated: boolean;
@@ -39,13 +32,15 @@ interface CoworkingContextType {
   spaceInfo: CoworkingSpaceInfo | null;
   isOfficeRnDVerified: boolean;
   sessionExpiresAt: Date | null;
+  sessionExpiringWarning: boolean; // True when session expires in <5 minutes
+  minutesUntilExpiry: number | null; // Minutes until session expires
 
   // Actions
   setSpaceInfo: (info: CoworkingSpaceInfo) => void;
   setSession: (data: {
     member: MemberInfo;
     bookings?: BookingInfo[];
-    expiresAt: Date;
+    expiresIn: number; // seconds until expiry
     isOfficeRnDVerified: boolean;
   }) => void;
   setBookings: (bookings: BookingInfo[]) => void;
@@ -69,6 +64,8 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
   const [spaceInfo, setSpaceInfoState] = useState<CoworkingSpaceInfo | null>(null);
   const [isOfficeRnDVerified, setIsOfficeRnDVerified] = useState(false);
   const [sessionExpiresAt, setSessionExpiresAt] = useState<Date | null>(null);
+  const [minutesUntilExpiry, setMinutesUntilExpiry] = useState<number | null>(null);
+  const [sessionExpiringWarning, setSessionExpiringWarning] = useState(false);
 
   // Check if session is expired
   const isSessionExpired = useCallback((): boolean => {
@@ -85,6 +82,24 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
   // Derived state - token is the authoritative source
   // Must have: token + member info + not expired
   const isAuthenticated = hasValidToken() && !!member && !isSessionExpired();
+
+  // Clear all session data
+  const clearSession = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    coworkingService.clearSession();
+    sessionStorage.removeItem(STORAGE_KEYS.MEMBER_INFO);
+    sessionStorage.removeItem(STORAGE_KEYS.BOOKINGS);
+    sessionStorage.removeItem(STORAGE_KEYS.SESSION_EXPIRY);
+    // Keep space info as it's public data
+
+    setMember(null);
+    setBookingsState([]);
+    setIsOfficeRnDVerified(false);
+    setSessionExpiresAt(null);
+    setMinutesUntilExpiry(null);
+    setSessionExpiringWarning(false);
+  }, []);
 
   // Load session from storage on mount
   useEffect(() => {
@@ -128,20 +143,22 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       setIsHydrated(true);
     }
-  }, []);
+  }, [clearSession]);
 
   // Sync: Listen for storage changes (e.g., token cleared in another tab)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const handleStorageChange = (e: StorageEvent) => {
-      // If the token was removed from sessionStorage
-      if (e.key === "coworking_session_token" && e.newValue === null) {
+      // If the access token was removed from sessionStorage
+      if (e.key === "coworking_access_token" && e.newValue === null) {
         // Clear our state to stay in sync
         setMember(null);
         setBookingsState([]);
         setIsOfficeRnDVerified(false);
         setSessionExpiresAt(null);
+        setMinutesUntilExpiry(null);
+        setSessionExpiringWarning(false);
       }
     };
 
@@ -149,21 +166,44 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // Clear all session data
-  const clearSession = useCallback(() => {
+  // Listen for session expired events from the API service
+  useEffect(() => {
     if (typeof window === "undefined") return;
 
-    coworkingService.clearSession();
-    sessionStorage.removeItem(STORAGE_KEYS.MEMBER_INFO);
-    sessionStorage.removeItem(STORAGE_KEYS.BOOKINGS);
-    sessionStorage.removeItem(STORAGE_KEYS.SESSION_EXPIRY);
-    // Keep space info as it's public data
+    const handleSessionExpired = () => {
+      clearSession();
+    };
 
-    setMember(null);
-    setBookingsState([]);
-    setIsOfficeRnDVerified(false);
-    setSessionExpiresAt(null);
-  }, []);
+    window.addEventListener("coworking-session-expired", handleSessionExpired);
+    return () => window.removeEventListener("coworking-session-expired", handleSessionExpired);
+  }, [clearSession]);
+
+  // Update expiry warning timer
+  useEffect(() => {
+    if (!sessionExpiresAt) {
+      setMinutesUntilExpiry(null);
+      setSessionExpiringWarning(false);
+      return;
+    }
+
+    const updateExpiry = () => {
+      const now = new Date();
+      const diffMs = sessionExpiresAt.getTime() - now.getTime();
+      const diffMinutes = Math.floor(diffMs / 60000);
+
+      setMinutesUntilExpiry(diffMinutes > 0 ? diffMinutes : 0);
+      setSessionExpiringWarning(diffMinutes > 0 && diffMinutes < 5);
+
+      if (diffMs <= 0) {
+        clearSession();
+      }
+    };
+
+    updateExpiry();
+    const interval = setInterval(updateExpiry, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [sessionExpiresAt, clearSession]);
 
   // Set space info (public, doesn't require auth)
   const setSpaceInfo = useCallback((info: CoworkingSpaceInfo) => {
@@ -178,14 +218,17 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
     (data: {
       member: MemberInfo;
       bookings?: BookingInfo[];
-      expiresAt: Date;
+      expiresIn: number;
       isOfficeRnDVerified: boolean;
     }) => {
       if (typeof window === "undefined") return;
 
+      // Calculate expiry from expires_in (seconds)
+      const expiresAt = new Date(Date.now() + data.expiresIn * 1000);
+
       setMember(data.member);
       setIsOfficeRnDVerified(data.isOfficeRnDVerified);
-      setSessionExpiresAt(data.expiresAt);
+      setSessionExpiresAt(expiresAt);
 
       sessionStorage.setItem(
         STORAGE_KEYS.MEMBER_INFO,
@@ -193,7 +236,7 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
       );
       sessionStorage.setItem(
         STORAGE_KEYS.SESSION_EXPIRY,
-        data.expiresAt.toISOString()
+        expiresAt.toISOString()
       );
 
       if (data.bookings) {
@@ -225,13 +268,10 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
         setBookings(response.bookings);
       } catch (error) {
         console.error("Failed to refresh bookings:", error);
-        // If 401, session is invalid
-        if (error instanceof Error && error.message.includes("expired")) {
-          clearSession();
-        }
+        // SessionExpiredError is already handled by the service
       }
     },
-    [isAuthenticated, setBookings, clearSession]
+    [isAuthenticated, setBookings]
   );
 
   // Logout
@@ -263,6 +303,8 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
         spaceInfo,
         isOfficeRnDVerified,
         sessionExpiresAt,
+        sessionExpiringWarning,
+        minutesUntilExpiry,
 
         // Actions
         setSpaceInfo,
@@ -314,7 +356,7 @@ export function useRequireCoworkingAuth() {
  * Hook to get the currently selected booking for an order
  */
 export function useSelectedBooking(bookingId: string | null) {
-  const { getSelectedBooking, bookings } = useCoworking();
+  const { getSelectedBooking } = useCoworking();
 
   if (!bookingId) {
     return null;

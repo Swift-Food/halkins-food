@@ -23,53 +23,134 @@ import {
   CreateOrderResponse,
   GetOrdersResponse,
   GetOrderDetailResponse,
+  RefreshTokenResponse,
 } from '@/types/api';
 
-const SESSION_TOKEN_KEY = 'coworking_session_token';
+const ACCESS_TOKEN_KEY = 'coworking_access_token';
+const REFRESH_TOKEN_KEY = 'coworking_refresh_token';
+const SPACE_SLUG_KEY = 'coworking_space_slug';
+
+/**
+ * Custom error for session expiration
+ * Components can catch this to redirect to login
+ */
+export class SessionExpiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SessionExpiredError';
+  }
+}
+
+// Track if we're currently refreshing to avoid multiple refresh calls
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: unknown) => void;
+}> = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
 
 class CoworkingService {
   /**
-   * Set the session token for authenticated requests
-   * Uses sessionStorage to persist across page refreshes but clear on tab close
+   * Store tokens after authentication
    */
-  setSessionToken(token: string | null): void {
+  setTokens(accessToken: string, refreshToken: string, spaceSlug?: string): void {
     if (typeof window === 'undefined') return;
 
-    if (token) {
-      sessionStorage.setItem(SESSION_TOKEN_KEY, token);
-    } else {
-      sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+    sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    if (spaceSlug) {
+      sessionStorage.setItem(SPACE_SLUG_KEY, spaceSlug);
     }
   }
 
   /**
-   * Get the current session token
+   * Get the current access token
    */
   getSessionToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return sessionStorage.getItem(SESSION_TOKEN_KEY);
+    return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+  }
+
+  /**
+   * Get the current refresh token
+   */
+  getRefreshToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return sessionStorage.getItem(REFRESH_TOKEN_KEY);
+  }
+
+  /**
+   * Get the stored space slug
+   */
+  getSpaceSlug(): string | null {
+    if (typeof window === 'undefined') return null;
+    return sessionStorage.getItem(SPACE_SLUG_KEY);
   }
 
   /**
    * Clear the session (logout)
    */
   clearSession(): void {
-    this.setSessionToken(null);
+    if (typeof window === 'undefined') return;
+
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+    sessionStorage.removeItem(SPACE_SLUG_KEY);
+  }
+
+  /**
+   * Refresh tokens using the refresh token
+   */
+  private async refreshTokens(): Promise<RefreshTokenResponse> {
+    const refreshToken = this.getRefreshToken();
+    const spaceSlug = this.getSpaceSlug();
+
+    if (!refreshToken || !spaceSlug) {
+      throw new SessionExpiredError('No refresh token available');
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_REFRESH(spaceSlug)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new SessionExpiredError('Token refresh failed');
+    }
+
+    const data = await response.json();
+    this.setTokens(data.access_token, data.refresh_token);
+    return data;
   }
 
   /**
    * Make an authenticated request with the session token
+   * Automatically refreshes on 401 and retries the request
    */
   private async fetchWithSession(
     url: string,
-    options: RequestInit = {}
+    options: RequestInit & { _retry?: boolean } = {}
   ): Promise<Response> {
     const token = this.getSessionToken();
     if (!token) {
-      throw new Error('No session token set. Please authenticate first.');
+      throw new SessionExpiredError('No session token. Please authenticate first.');
     }
 
-    return fetch(url, {
+    const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -77,6 +158,62 @@ class CoworkingService {
         ...options.headers,
       },
     });
+
+    // Handle 401 with refresh logic
+    if (response.status === 401 && !options._retry) {
+      // Skip refresh for refresh endpoint itself
+      if (url.includes('/refresh')) {
+        this.clearSession();
+        throw new SessionExpiredError('Session expired. Please authenticate again.');
+      }
+
+      if (isRefreshing) {
+        // If already refreshing, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((newToken) => {
+          return this.fetchWithSession(url, {
+            ...options,
+            headers: {
+              ...options.headers,
+              Authorization: `Bearer ${newToken}`,
+            },
+            _retry: true,
+          });
+        });
+      }
+
+      isRefreshing = true;
+
+      try {
+        const refreshResult = await this.refreshTokens();
+        processQueue(null, refreshResult.access_token);
+        isRefreshing = false;
+
+        // Retry original request with new token
+        return this.fetchWithSession(url, {
+          ...options,
+          headers: {
+            ...options.headers,
+            Authorization: `Bearer ${refreshResult.access_token}`,
+          },
+          _retry: true,
+        });
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        this.clearSession();
+
+        // Dispatch event for UI to handle
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('coworking-session-expired'));
+        }
+
+        throw new SessionExpiredError('Session expired. Please authenticate again.');
+      }
+    }
+
+    return response;
   }
 
   // ============================================================
@@ -129,7 +266,7 @@ class CoworkingService {
     }
 
     const result = await response.json();
-    this.setSessionToken(result.sessionToken);
+    this.setTokens(result.access_token, result.refresh_token, spaceSlug);
     return result;
   }
 
@@ -183,7 +320,7 @@ class CoworkingService {
     }
 
     const result = await response.json();
-    this.setSessionToken(result.sessionToken);
+    this.setTokens(result.access_token, result.refresh_token, spaceSlug);
     return result;
   }
 
@@ -215,7 +352,7 @@ class CoworkingService {
     }
 
     const result = await response.json();
-    this.setSessionToken(result.sessionToken);
+    this.setTokens(result.access_token, result.refresh_token, spaceSlug);
     return result;
   }
 
@@ -233,9 +370,6 @@ class CoworkingService {
     );
 
     if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('Session expired. Please authenticate again.');
-      }
       throw new Error('Failed to fetch bookings');
     }
 
@@ -258,9 +392,6 @@ class CoworkingService {
     );
 
     if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('Session expired. Please authenticate again.');
-      }
       if (response.status === 400) {
         const error = await response.json().catch(() => ({}));
         throw new Error(error.message || 'Invalid order data');
@@ -280,9 +411,6 @@ class CoworkingService {
     );
 
     if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('Session expired. Please authenticate again.');
-      }
       throw new Error('Failed to fetch orders');
     }
 
@@ -301,9 +429,6 @@ class CoworkingService {
     );
 
     if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('Session expired. Please authenticate again.');
-      }
       if (response.status === 404) {
         throw new Error('Order not found');
       }

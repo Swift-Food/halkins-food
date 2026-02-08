@@ -46,6 +46,8 @@ export const API_ENDPOINTS = {
   COWORKING_VERIFY: (spaceSlug: string) => `/coworking/${spaceSlug}/verify`,
   COWORKING_VERIFY_BOOKING: (spaceSlug: string) =>
     `/coworking/${spaceSlug}/verify-booking`,
+  COWORKING_REFRESH: (spaceSlug: string) =>
+    `/coworking/${spaceSlug}/refresh`,
   COWORKING_BOOKINGS: (spaceSlug: string) =>
     `/coworking/${spaceSlug}/bookings`,
   COWORKING_ORDERS: (spaceSlug: string) => `/coworking/${spaceSlug}/orders`,
