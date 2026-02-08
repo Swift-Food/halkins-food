@@ -69,12 +69,20 @@ export interface CoworkingRestaurantOrder {
   specialInstructions?: string; // max 500 chars
 }
 
+
+export interface LocationDto {
+
+  latitude: number;
+  longitude: number;
+}
+
 /**
  * Create coworking order request
  * Backend: CreateCoworkingOrderDto
  */
 export interface CreateCoworkingOrderRequest {
   deliveryAddress: string; // 10-500 chars
+  deliveryLocation: LocationDto;
   bookingId?: string;
   bookingReference?: string;
   roomLocation?: string; // max 200 chars
@@ -244,4 +252,5 @@ export interface CreateOrderResponse {
   };
   deliveryAddress: string;
   estimatedDelivery: string;
+  accessToken?: string;
 }

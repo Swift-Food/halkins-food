@@ -21,6 +21,7 @@ export default function CoworkingOrderFlow() {
     isLoading,
     isOfficeRnDVerified,
     bookings,
+    member,
     spaceInfo,
     setSpaceInfo,
     sessionExpiringWarning,
@@ -44,7 +45,7 @@ export default function CoworkingOrderFlow() {
           setSpaceError(err instanceof Error ? err.message : "Failed to load space info")
         );
     }
-  }, [spaceSlug, spaceInfo, setSpaceInfo]);
+  }, [spaceSlug, spaceInfo]);
 
   // When authenticated, hide auth form
   useEffect(() => {
@@ -63,13 +64,29 @@ export default function CoworkingOrderFlow() {
     return () => window.removeEventListener("coworking-session-expired", handleExpired);
   }, []);
 
+  // Pre-fill contact info from member data when authenticated
+  useEffect(() => {
+    if (isAuthenticated && member) {
+      setContactInfo({
+        organization: member.name || "",
+        fullName:  "",
+        email: member.email,
+        phone: "",
+        addressLine1: "",
+        addressLine2: "",
+        city: "",
+        zipcode: "",
+      });
+    }
+  }, [ member, setContactInfo]);
+
   // When a booking is selected, pre-fill the catering contact info with room details
   const handleBookingSelect = (booking: BookingInfo | null) => {
     setSelectedBooking(booking);
     if (booking) {
       setContactInfo({
-        organization: "",
-        fullName: "",
+        organization: member?.name || "",
+        fullName: member?.email || "",
         email: "",
         phone: "",
         addressLine1: booking.roomLocationDetails || "",

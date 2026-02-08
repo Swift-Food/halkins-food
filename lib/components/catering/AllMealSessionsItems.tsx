@@ -189,7 +189,7 @@ export default function AllMealSessionsItems({
     sessionIndex: number
   ) => {
     const { item, quantity, originalIndex } = groupedItem;
-    console.log("item", item)
+    console.log("item ifoherg", item)
     const price = parseFloat(item.price?.toString() || "0");
     const discountPrice = parseFloat(item.discountPrice?.toString() || "0");
     const itemPrice =

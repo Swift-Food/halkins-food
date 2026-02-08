@@ -6,7 +6,7 @@ export default function Home() {
       <h1 className="text-4xl font-bold text-gray-900 mb-4">Halkins</h1>
       <p className="text-lg text-gray-600 mb-8">Catering made easy.</p>
       <Link
-        href="/event-order"
+        href="/coworking/testi/"
         className="btn btn-primary text-white px-8 py-3 rounded-lg text-lg"
       >
         Start Your Order

@@ -17,7 +17,12 @@ export default function AddressAutocomplete({
 }: AddressAutocompleteProps) {
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const onPlaceSelectRef = useRef(onPlaceSelect);
   const [inputValue, setInputValue] = useState("");
+
+  useEffect(() => {
+    onPlaceSelectRef.current = onPlaceSelect;
+  }, [onPlaceSelect]);
 
   useEffect(() => {
     const initAutocomplete = () => {
@@ -39,7 +44,7 @@ export default function AddressAutocomplete({
       autocompleteRef.current.addListener("place_changed", () => {
         const place = autocompleteRef.current?.getPlace();
         if (place && place.geometry) {
-          onPlaceSelect(place);
+          onPlaceSelectRef.current(place);
           setInputValue(inputRef.current?.value || "");
         }
       });
@@ -52,7 +57,7 @@ export default function AddressAutocomplete({
         google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
-  }, [onPlaceSelect]);
+  }, []);
 
   const handleClear = () => {
     if (inputRef.current) {

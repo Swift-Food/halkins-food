@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, FormEvent, useEffect, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCatering } from "@/context/CateringContext";
 import { cateringService } from "@/services/api/catering.api";
 import { CateringPricingResult, ContactInfo } from "@/types/catering.types";
@@ -19,8 +19,6 @@ import DeliveryAddressForm from "./contact/DeliveryAddressForm";
 import ContactInfoForm from "./contact/ContactInfoForm";
 import PromoCodeSection from "./contact/PromoCodeSection";
 import PricingSummary from "./contact/PricingSummary";
-import { fetchWithAuth } from "@/lib/api-client/auth-client";
-import { API_BASE_URL } from "@/lib/constants/api";
 import { coworkingService } from "@/services/api";
 import { CreateCoworkingOrderRequest } from "@/types/api";
 
@@ -45,7 +43,6 @@ interface ValidationErrors {
 
 export default function Step3ContactInfo() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const {
     contactInfo,
     setContactInfo,
@@ -56,7 +53,6 @@ export default function Step3ContactInfo() {
     resetOrder,
     markOrderAsSubmitted,
 
-    updateMealSession,
   } = useCatering();
 
   // Get all items from all sessions for pricing calculations
@@ -87,19 +83,11 @@ export default function Step3ContactInfo() {
   const [ccEmails, setCcEmails] = useState<string[]>([]);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [termsAccepted, setTermsAccepted] = useState(false);
-
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [specialInstructions, setSpecialInstructions] = useState<string>("");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
-    "wallet" | "card" | null
-  >(null);
+
 
   const [importantNotesOpen, setImportantNotesOpen] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
-
-  // Event integration state
-  const [eventId, setEventId] = useState<string | null>(null);
-  const [loadingEventData, setLoadingEventData] = useState(false);
 
   // PDF generation state
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -357,6 +345,48 @@ export default function Step3ContactInfo() {
     await submitOrder();
   };
 
+  const buildCoworkingOrderData = (): { spaceSlug: string; orderData: CreateCoworkingOrderRequest } => {
+    // Group order items by restaurant
+    const orderItemsByRestaurant = new Map<string, { menuItemId: string; quantity: number; selectedAddons?: { name: string; quantity: number }[] }[]>();
+    mealSessions.forEach(session => {
+      session.orderItems.forEach(({ item, quantity }) => {
+        const restaurantId = item.restaurantId;
+        if (!orderItemsByRestaurant.has(restaurantId)) {
+          orderItemsByRestaurant.set(restaurantId, []);
+        }
+        orderItemsByRestaurant.get(restaurantId)!.push({
+          menuItemId: item.id,
+          quantity,
+          selectedAddons: item.selectedAddons?.map(addon => ({
+            name: addon.name,
+            quantity: addon.quantity,
+          })),
+        });
+      });
+    });
+
+    const SPACE_SLUG = 'testi';
+
+    return {
+      spaceSlug: SPACE_SLUG,
+      orderData: {
+        deliveryAddress: [formData.addressLine1, formData.addressLine2, formData.city, formData.zipcode].filter(Boolean).join(', '),
+        deliveryLocation: {
+          latitude: formData.latitude || 0,
+          longitude: formData.longitude || 0,
+        },
+        customerPhone: formData.phone,
+        orderItems: Array.from(orderItemsByRestaurant.entries()).map(([restaurantId, menuItems]) => ({
+          restaurantId,
+          menuItems,
+        })),
+        specialInstructions: specialInstructions || undefined,
+        scheduledFor: mealSessions[0]?.sessionDate,
+        scheduledTime: mealSessions[0]?.eventTime || eventDetails?.eventTime || '',
+      },
+    };
+  };
+
   const submitOrder = async () => {
     setSubmitting(true);
 
@@ -371,30 +401,16 @@ export default function Step3ContactInfo() {
       setContactInfo(formData);
 
       
-      const createCateringOrderResponse =
-        await cateringService.submitCateringOrder(
-          eventDetails!,
-          mealSessions,
-          formData,
-          promoCodes,
-          ccEmails,
-     
-          eventId || undefined,
-          specialInstructions
-        );
-
-
-     
+      const { spaceSlug, orderData } = buildCoworkingOrderData();
+      const createOrderResponse = await coworkingService.createOrder(spaceSlug, orderData);
 
       markOrderAsSubmitted();
-      setShowPaymentModal(false);
 
-      // Navigate to the order view page using the access token
-      const accessToken = createCateringOrderResponse?.sharedAccessUsers?.[0]?.accessToken;
+
+      const accessToken = createOrderResponse?.accessToken;
       if (accessToken) {
         router.push(`/event-order/view/${accessToken}`);
       } else {
-        // Fallback to success screen if no token available
         setSuccess(true);
       }
     } catch (error: any) {
@@ -410,7 +426,7 @@ export default function Step3ContactInfo() {
           ...prev,
           addressLine1: error.message,
         }));
-        setShowPaymentModal(false);
+
         console.error("=== END ERROR LOG ===");
         return;
       }
@@ -501,105 +517,6 @@ export default function Step3ContactInfo() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  useEffect(() => {
-    if (contactInfo) {
-      setFormData({
-        organization: contactInfo.organization || "",
-        fullName: contactInfo.fullName || "",
-        email: contactInfo.email || "",
-        phone: contactInfo.phone || "",
-        addressLine1: contactInfo.addressLine1 || "",
-        addressLine2: contactInfo.addressLine2 || "",
-        city: contactInfo.city || "",
-        zipcode: contactInfo.zipcode || "",
-        latitude: contactInfo.latitude,
-        longitude: contactInfo.longitude,
-        billingAddress: contactInfo.billingAddress,
-      });
-    }
-  }, [contactInfo]);
-
-  // Fetch event details if eventId is provided in URL
-  useEffect(() => {
-    const eventIdParam = searchParams.get("eventId");
-    if (eventIdParam && !loadingEventData) {
-      setEventId(eventIdParam);
-      setLoadingEventData(true);
-
-      // Fetch event details from the API
-      fetchWithAuth(`${API_BASE_URL}/events/${eventIdParam}`)
-        .then(async (response) => {
-          if (response.ok) {
-            const eventData = await response.json();
-
-            // Prefill form with event address and owner details
-            if (eventData.address) {
-              const addressUpdates: Partial<ContactInfo> = {};
-
-              if (eventData.address.addressLine1) {
-                addressUpdates.addressLine1 = eventData.address.addressLine1;
-              }
-              if (eventData.address.addressLine2) {
-                addressUpdates.addressLine2 = eventData.address.addressLine2;
-              }
-              if (eventData.address.city) {
-                addressUpdates.city = eventData.address.city;
-              }
-              if (eventData.address.zipcode) {
-                addressUpdates.zipcode = eventData.address.zipcode;
-              }
-              if (eventData.address.location?.latitude && eventData.address.location?.longitude) {
-                addressUpdates.latitude = eventData.address.location.latitude;
-                addressUpdates.longitude = eventData.address.location.longitude;
-              }
-
-              setFormData((prev) => ({ ...prev, ...addressUpdates }));
-            }
-
-            // Prefill owner information
-            if (eventData.owner) {
-              const ownerUpdates: Partial<ContactInfo> = {};
-
-              if (eventData.owner.organizationName) {
-                ownerUpdates.organization = eventData.owner.organizationName;
-              }
-              if (eventData.owner.user) {
-                if (eventData.owner.user.email) {
-                  ownerUpdates.email = eventData.owner.user.email;
-                }
-                if (eventData.owner.user.username) {
-                  ownerUpdates.fullName = eventData.owner.user.username;
-                }
-              }
-
-              setFormData((prev) => ({ ...prev, ...ownerUpdates }));
-            }
-
-            // Prefill first meal session date with event start date
-            if (eventData.startDateTime && mealSessions.length > 0 && !mealSessions[0].sessionDate) {
-              const eventStartDate = new Date(eventData.startDateTime);
-              const sessionDate = eventStartDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-
-              // Also extract time from startDateTime (HH:MM format)
-              const hours = eventStartDate.getHours();
-              const minutes = eventStartDate.getMinutes();
-              const eventTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-
-              updateMealSession(0, {
-                sessionDate,
-                eventTime,
-              });
-            }
-          }
-        })
-        .catch((error) => {
-          console.error("Failed to fetch event details:", error);
-        })
-        .finally(() => {
-          setLoadingEventData(false);
-        });
-    }
-  }, [searchParams, loadingEventData, mealSessions, updateMealSession]);
 
   useEffect(() => {
     calculatePricing();
@@ -641,7 +558,7 @@ export default function Step3ContactInfo() {
     setPromoCodes(updatedCodes);
     setPromoSuccess("");
     setPromoError("");
-    // The useEffect will automatically trigger calculatePricing when promoCodes changes
+   
   };
 
   const handlePlaceSelect = (place: google.maps.places.PlaceResult) => {
@@ -1155,8 +1072,7 @@ export default function Step3ContactInfo() {
                       className="mt-2 text-xs text-base-content/80 leading-relaxed"
                     >
                       <p>
-                        For accurate allergen information, please contact stalls
-                        or restaurants directly.
+                        For accurate allergen information, please contact restaurants directly.
                       </p>
                       <p>
                         For any last-minute changes, please contact us at least
@@ -1216,161 +1132,6 @@ export default function Step3ContactInfo() {
           />
         )}
 
-        {/* Payment Modal JSX */}
-        {showPaymentModal && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-base-100 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-base-100 border-b border-base-300 px-6 py-4 flex items-center justify-between">
-                <h3 className="text-xl font-bold text-base-content">
-                  Select Payment Method
-                </h3>
-                <button
-                  onClick={() => {
-                    setShowPaymentModal(false);
-                    setSelectedPaymentMethod(null);
-                  }}
-                  className="text-base-content/60 hover:text-base-content"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <div className="bg-base-200/50 rounded-xl p-4 border border-base-300">
-                  <p className="text-sm text-base-content/70 mb-2">
-                    Order Total
-                  </p>
-                  <p className="text-2xl font-bold text-primary">
-                    £{pricing?.total.toFixed(2)}
-                  </p>
-                </div>
-
-                {/* Payment Method Selection */}
-                <div className="space-y-3">
-                  <button
-                    onClick={() => setSelectedPaymentMethod("wallet")}
-                    className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
-                      selectedPaymentMethod === "wallet"
-                        ? "border-primary bg-primary/10"
-                        : "border-base-300 hover:border-base-content/20"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                          <svg
-                            className="w-6 h-6 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="font-semibold text-base-content">
-                            Organization Wallet
-                          </p>
-                          <p className="text-sm text-base-content/60">
-                            Pay from your organization balance
-                          </p>
-                        </div>
-                      </div>
-                      {selectedPaymentMethod === "wallet" && (
-                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                          <svg
-                            className="w-4 h-4 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => setSelectedPaymentMethod("card")}
-                    className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
-                      selectedPaymentMethod === "card"
-                        ? "border-primary bg-primary/10"
-                        : "border-base-300 hover:border-base-content/20"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
-                          <svg
-                            className="w-6 h-6 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="font-semibold text-base-content">
-                            Credit/Debit Card
-                          </p>
-                          <p className="text-sm text-base-content/60">
-                            Pay securely with Stripe
-                          </p>
-                        </div>
-                      </div>
-                      {selectedPaymentMethod === "card" && (
-                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                          <svg
-                            className="w-4 h-4 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
 
       </div>
