@@ -20,3 +20,8 @@ export * from './catering.request.types';
 // Coworking dashboard types (requests & responses)
 export * from './coworking-dashboard.api.types';
 
+// Coworking public types (member flow)
+export * from './coworking.api.types';
+
+// Coworking admin types
+export * from './coworking-admin.api.types';

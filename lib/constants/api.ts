@@ -27,7 +27,7 @@ export const API_ENDPOINTS = {
   // Catering Bundles
   CATERING_BUNDLE: (id: string) => `/catering-bundles/${id}`,
 
-  // Coworking Dashboard
+  // Coworking Dashboard (Partner)
   COWORKING_DASHBOARD_ME: (spaceId: string) =>
     `/coworking-dashboard/${spaceId}/me`,
   COWORKING_DASHBOARD_ORDERS: (spaceId: string) =>
@@ -36,6 +36,31 @@ export const API_ENDPOINTS = {
     `/coworking-dashboard/${spaceId}/orders/${orderId}`,
   COWORKING_DASHBOARD_STATS: (spaceId: string) =>
     `/coworking-dashboard/${spaceId}/stats`,
+
+  // Coworking Public (Member Flow)
+  COWORKING_SPACE: (spaceSlug: string) => `/coworking/${spaceSlug}`,
+  COWORKING_START_SESSION: (spaceSlug: string) =>
+    `/coworking/${spaceSlug}/start-session`,
+  COWORKING_VERIFY_EMAIL: (spaceSlug: string) =>
+    `/coworking/${spaceSlug}/verify-email`,
+  COWORKING_VERIFY: (spaceSlug: string) => `/coworking/${spaceSlug}/verify`,
+  COWORKING_VERIFY_BOOKING: (spaceSlug: string) =>
+    `/coworking/${spaceSlug}/verify-booking`,
+  COWORKING_BOOKINGS: (spaceSlug: string) =>
+    `/coworking/${spaceSlug}/bookings`,
+  COWORKING_ORDERS: (spaceSlug: string) => `/coworking/${spaceSlug}/orders`,
+  COWORKING_ORDER: (spaceSlug: string, orderId: string) =>
+    `/coworking/${spaceSlug}/orders/${orderId}`,
+
+  // Coworking Admin
+  ADMIN_COWORKING: '/admin/coworking',
+  ADMIN_COWORKING_SPACE: (id: string) => `/admin/coworking/${id}`,
+  ADMIN_COWORKING_RESTORE: (id: string) => `/admin/coworking/${id}/restore`,
+  ADMIN_COWORKING_CREDENTIALS: (id: string) =>
+    `/admin/coworking/${id}/credentials`,
+  ADMIN_COWORKING_USERS: (id: string) => `/admin/coworking/${id}/users`,
+  ADMIN_COWORKING_USER: (id: string, userId: string) =>
+    `/admin/coworking/${id}/users/${userId}`,
 } as const;
 
 export const EXTERNAL_APIS = {
