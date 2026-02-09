@@ -153,6 +153,7 @@ class CoworkingService {
       }
       throw new SessionExpiredError('No session token. Please authenticate first.');
     }
+    console.log("token is", token)
 
     const response = await fetch(url, {
       ...options,
@@ -387,6 +388,7 @@ class CoworkingService {
     spaceSlug: string,
     data: CreateCoworkingOrderRequest
   ): Promise<CreateOrderResponse> {
+    console.log("data is", JSON.stringify(data))
     const response = await this.fetchWithSession(
       `${API_BASE_URL}${API_ENDPOINTS.COWORKING_ORDERS(spaceSlug)}`,
       {

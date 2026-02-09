@@ -2,10 +2,19 @@
 import React, { useMemo } from 'react';
 import { CateringOrderResponse } from '@/types/api';
 import { MapPin, FileText, Calendar } from 'lucide-react';
-import { formatDeliveryAddress } from '@/app/restaurant/dashboard/catering/utils/address.utils';
+
 
 interface OrderDetailsProps {
   order: CateringOrderResponse;
+}
+
+export function formatDeliveryAddress(address: any): string {
+  if (typeof address === 'string') return address;
+  if (typeof address === 'object' && address !== null) {
+    const { street, city, postcode, country } = address;
+    return [street, city, postcode, country].filter(Boolean).join(', ');
+  }
+  return '';
 }
 
 // Helper to format time from 24h to 12h format
