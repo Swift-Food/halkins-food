@@ -4,14 +4,16 @@ import { useState } from "react";
 import { Clock } from "lucide-react";
 import { SessionEditorProps } from "./types";
 import {
-  HOUR_12_OPTIONS,
-  MINUTE_OPTIONS,
   getMinDate,
   getMaxDate,
   formatTime,
-  parseEventTime,
-  formatTo24Hour,
 } from "./catering-order-helpers";
+
+const PRESET_TIMES = [
+  { value: "11:00", label: "11:00 AM" },
+  { value: "13:00", label: "1:00 PM" },
+  { value: "18:00", label: "6:00 PM" },
+];
 
 export default function SessionEditor({
   session,
@@ -22,24 +24,7 @@ export default function SessionEditor({
 }: SessionEditorProps) {
   const [sessionName, setSessionName] = useState(session.sessionName);
   const [sessionDate, setSessionDate] = useState(session.sessionDate);
-  const [selectedHour, setSelectedHour] = useState(() => {
-    if (session.eventTime) {
-      return parseEventTime(session.eventTime).hour;
-    }
-    return "";
-  });
-  const [selectedMinute, setSelectedMinute] = useState(() => {
-    if (session.eventTime) {
-      return parseEventTime(session.eventTime).minute;
-    }
-    return "00";
-  });
-  const [selectedPeriod, setSelectedPeriod] = useState<"AM" | "PM">(() => {
-    if (session.eventTime) {
-      return parseEventTime(session.eventTime).period;
-    }
-    return "AM";
-  });
+  const [selectedTime, setSelectedTime] = useState(session.eventTime || "");
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleCancel = () => {
@@ -47,32 +32,22 @@ export default function SessionEditor({
   };
 
   const handleSave = () => {
-    // Clear any previous errors
     setValidationError(null);
 
-    // Calculate event time if hour and minute are set
-    let eventTime = "";
-    if (selectedHour && selectedMinute) {
-      eventTime = formatTo24Hour(selectedHour, selectedMinute, selectedPeriod);
-    }
-
-    // Validate that date and time are set before saving
     if (!sessionDate) {
       setValidationError("Please select a date for this session.");
       return;
     }
-    if (!eventTime) {
+    if (!selectedTime) {
       setValidationError("Please select a time for this session.");
       return;
     }
 
     // Validate catering operation hours
-    // Get unique restaurant IDs from session items
     const restaurantIds = new Set(
       session.orderItems.map((oi) => oi.item.restaurantId)
     );
 
-    // Check each restaurant's catering hours
     for (const restaurantId of restaurantIds) {
       const restaurant = restaurants.find((r) => r.id === restaurantId);
       if (!restaurant) continue;
@@ -80,15 +55,13 @@ export default function SessionEditor({
       const cateringHours = restaurant.cateringOperatingHours;
       if (!cateringHours || cateringHours.length === 0) continue;
 
-      // Get day of week from selected date
       const selectedDateTime = new Date(sessionDate + "T00:00:00");
       const dayOfWeek = selectedDateTime
         .toLocaleDateString("en-US", { weekday: "long" })
         .toLowerCase();
 
-      // Find the schedule for this day
       const daySchedule = cateringHours.find(
-        (schedule : any) => schedule.day.toLowerCase() === dayOfWeek
+        (schedule: any) => schedule.day.toLowerCase() === dayOfWeek
       );
 
       if (!daySchedule || !daySchedule.enabled) {
@@ -98,9 +71,8 @@ export default function SessionEditor({
         return;
       }
 
-      // Check if time is within operating hours
       if (daySchedule.open && daySchedule.close) {
-        const [eventHour, eventMinute] = eventTime.split(":").map(Number);
+        const [eventHour, eventMinute] = selectedTime.split(":").map(Number);
         const [openHour, openMinute] = daySchedule.open.split(":").map(Number);
         const [closeHour, closeMinute] = daySchedule.close
           .split(":")
@@ -122,7 +94,7 @@ export default function SessionEditor({
     onUpdate(sessionIndex, {
       sessionName: sessionName || "Untitled Session",
       sessionDate,
-      eventTime,
+      eventTime: selectedTime,
     });
     onClose(false);
   };
@@ -179,49 +151,21 @@ export default function SessionEditor({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Time
             </label>
-            <div className="flex items-center gap-2">
-              <select
-                value={selectedHour}
-                onChange={(e) => {
-                  setSelectedHour(e.target.value);
-                  setValidationError(null);
-                }}
-                className="flex-1 px-4 py-3 border border-base-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              >
-                <option value="">HH</option>
-                {HOUR_12_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <span className="text-gray-400">:</span>
-              <select
-                value={selectedMinute}
-                onChange={(e) => {
-                  setSelectedMinute(e.target.value);
-                  setValidationError(null);
-                }}
-                className="flex-1 px-4 py-3 border border-base-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              >
-                {MINUTE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={selectedPeriod}
-                onChange={(e) => {
-                  setSelectedPeriod(e.target.value as "AM" | "PM");
-                  setValidationError(null);
-                }}
-                className="flex-1 px-4 py-3 border border-base-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              >
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-              </select>
-            </div>
+            <select
+              value={selectedTime}
+              onChange={(e) => {
+                setSelectedTime(e.target.value);
+                setValidationError(null);
+              }}
+              className="w-full px-4 py-3 border border-base-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            >
+              <option value="">Select a time</option>
+              {PRESET_TIMES.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
