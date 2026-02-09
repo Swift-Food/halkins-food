@@ -15,10 +15,10 @@ import OrderDetailModal from "./OrderDetailModal";
 import { LogOut, Building2 } from "lucide-react";
 
 interface CoworkingDashboardProps {
-  spaceId: string;
+  spaceSlug: string;
 }
 
-export default function CoworkingDashboard({ spaceId }: CoworkingDashboardProps) {
+export default function CoworkingDashboard({ spaceSlug }: CoworkingDashboardProps) {
   const [authenticated, setAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
@@ -31,6 +31,9 @@ export default function CoworkingDashboard({ spaceId }: CoworkingDashboardProps)
 
   const [error, setError] = useState("");
 
+  // The resolved space ID from the getMe response
+  const spaceId = me?.space.id ?? null;
+
   // Check if user is already logged in
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -40,35 +43,45 @@ export default function CoworkingDashboard({ spaceId }: CoworkingDashboardProps)
     setCheckingAuth(false);
   }, []);
 
-  // Fetch dashboard data once authenticated
-  const fetchDashboardData = useCallback(async () => {
+  // Step 1: Resolve slug → spaceId via getMeBySlug
+  const fetchMe = useCallback(async () => {
     try {
       setError("");
-      const [meData, statsData] = await Promise.all([
-        coworkingDashboardService.getMe(spaceId),
-        coworkingDashboardService.getStats(spaceId),
-      ]);
+      const meData = await coworkingDashboardService.getMeBySlug(spaceSlug);
       setMe(meData);
-      setStats(statsData);
     } catch (err: any) {
       if (err.message?.includes("access")) {
-        // Token invalid or no access — force re-login
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         setAuthenticated(false);
       }
       setError(err.message || "Failed to load dashboard");
     }
-  }, [spaceId]);
+  }, [spaceSlug]);
 
   useEffect(() => {
     if (authenticated) {
-      fetchDashboardData();
+      fetchMe();
     }
-  }, [authenticated, fetchDashboardData]);
+  }, [authenticated, fetchMe]);
 
-  // Fetch orders when status filter changes
+  // Step 2: Once we have spaceId, fetch stats
+  useEffect(() => {
+    if (!spaceId) return;
+    const fetchStats = async () => {
+      try {
+        const statsData = await coworkingDashboardService.getStats(spaceId);
+        setStats(statsData);
+      } catch (err: any) {
+        console.error("Failed to fetch stats:", err);
+      }
+    };
+    fetchStats();
+  }, [spaceId]);
+
+  // Step 3: Fetch orders when spaceId or status filter changes
   const fetchOrders = useCallback(async () => {
+    if (!spaceId) return;
     setOrdersLoading(true);
     try {
       const data = await coworkingDashboardService.getOrders(spaceId, {
@@ -84,10 +97,10 @@ export default function CoworkingDashboard({ spaceId }: CoworkingDashboardProps)
   }, [spaceId, activeStatus]);
 
   useEffect(() => {
-    if (authenticated && me) {
+    if (spaceId) {
       fetchOrders();
     }
-  }, [authenticated, me, fetchOrders]);
+  }, [spaceId, fetchOrders]);
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -143,20 +156,29 @@ export default function CoworkingDashboard({ spaceId }: CoworkingDashboardProps)
         </div>
       )}
 
+      {/* Loading state while resolving spaceId */}
+      {!spaceId && !error && (
+        <div className="flex items-center justify-center py-16">
+          <span className="loading loading-spinner loading-lg text-pink-500" />
+        </div>
+      )}
+
       {/* Stats Cards */}
       {stats && <StatsCards stats={stats} />}
 
       {/* Orders */}
-      <OrdersList
-        orders={orders}
-        activeStatus={activeStatus}
-        onStatusChange={setActiveStatus}
-        onOrderClick={setSelectedOrderId}
-        loading={ordersLoading}
-      />
+      {spaceId && (
+        <OrdersList
+          orders={orders}
+          activeStatus={activeStatus}
+          onStatusChange={setActiveStatus}
+          onOrderClick={setSelectedOrderId}
+          loading={ordersLoading}
+        />
+      )}
 
       {/* Order Detail Modal */}
-      {selectedOrderId && (
+      {selectedOrderId && spaceId && (
         <OrderDetailModal
           spaceId={spaceId}
           orderId={selectedOrderId}

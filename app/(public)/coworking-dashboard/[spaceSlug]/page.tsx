@@ -6,9 +6,9 @@ import { use } from "react";
 export default function CoworkingDashboardPage({
   params,
 }: {
-  params: Promise<{ spaceId: string }>;
+  params: Promise<{ spaceSlug: string }>;
 }) {
-  const { spaceId } = use(params);
+  const { spaceSlug } = use(params);
 
-  return <CoworkingDashboard spaceId={spaceId} />;
+  return <CoworkingDashboard spaceSlug={spaceSlug} />;
 }

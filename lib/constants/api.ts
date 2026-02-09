@@ -25,6 +25,8 @@ export const API_ENDPOINTS = {
   CATERING_BUNDLE: (id: string) => `/catering-bundles/${id}`,
 
   // Coworking Dashboard (Partner)
+  COWORKING_DASHBOARD_ME_BY_SLUG: (spaceSlug: string) =>
+    `/coworking-dashboard/slug/${spaceSlug}/me`,
   COWORKING_DASHBOARD_ME: (spaceId: string) =>
     `/coworking-dashboard/${spaceId}/me`,
   COWORKING_DASHBOARD_ORDERS: (spaceId: string) =>

@@ -26,7 +26,7 @@ export const fetchWithAuth = async (
   options: RequestInit = {}
 ): Promise<Response> => {
   const token = localStorage.getItem("access_token");
-
+  console.log("token", token)
   // Don't set Content-Type for FormData - let the browser set it with the boundary
   const isFormData = options.body instanceof FormData;
 

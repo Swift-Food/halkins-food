@@ -20,6 +20,28 @@ import {
 
 class CoworkingDashboardService {
   /**
+   * Get current user info by space slug (resolves slug → spaceId)
+   */
+  async getMeBySlug(spaceSlug: string): Promise<DashboardMeResponse> {
+    console.log("endopjnt", API_ENDPOINTS.COWORKING_DASHBOARD_ME_BY_SLUG(spaceSlug))
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_ME_BY_SLUG(spaceSlug)}`
+    );
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error('You do not have access to this coworking space');
+      }
+      if (response.status === 404) {
+        throw new Error('Coworking space not found');
+      }
+      throw new Error('Failed to fetch user info');
+    }
+
+    return response.json();
+  }
+
+  /**
    * Get current user info and their role for the specified space
    */
   async getMe(spaceId: string): Promise<DashboardMeResponse> {
