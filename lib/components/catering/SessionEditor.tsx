@@ -88,7 +88,7 @@ export default function SessionEditor({
 
       // Find the schedule for this day
       const daySchedule = cateringHours.find(
-        (schedule) => schedule.day.toLowerCase() === dayOfWeek
+        (schedule : any) => schedule.day.toLowerCase() === dayOfWeek
       );
 
       if (!daySchedule || !daySchedule.enabled) {

@@ -7,7 +7,7 @@ import { MealSessionState } from "@/types/catering.types";
 import { cateringService } from "@/services/api/catering.api";
 import MenuItemCard from "./MenuItemCard";
 import MenuItemModal from "./MenuItemModal";
-import { MenuItem } from "./Step2MenuItems";
+import { MenuItem } from "@/types/restaurant.types";
 import TutorialTooltip from "./TutorialTooltip";
 import SelectedItemsByCategory from "./SelectedItemsByCategory";
 import {
@@ -695,7 +695,7 @@ export default function CateringOrderBuilder() {
           .toLowerCase();
 
         const daySchedule = cateringHours.find(
-          (schedule) => schedule.day.toLowerCase() === dayOfWeek
+          (schedule : any) => schedule.day.toLowerCase() === dayOfWeek
         );
 
         if (!daySchedule || !daySchedule.enabled) {

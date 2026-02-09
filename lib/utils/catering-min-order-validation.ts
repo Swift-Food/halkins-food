@@ -1,4 +1,4 @@
-import { Restaurant } from "@/lib/components/catering/Step2MenuItems";
+import { Restaurant } from "@/types/restaurant.types";
 import { MealSessionState } from "@/types/catering.types";
 
 export interface SectionQuantity {

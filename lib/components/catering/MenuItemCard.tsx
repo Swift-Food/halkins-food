@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { MenuItem } from "./Step2MenuItems";
+import { MenuItem } from "@/types/restaurant.types";
 import MenuItemModal from "./MenuItemModal";
 
 interface MenuItemCardProps {

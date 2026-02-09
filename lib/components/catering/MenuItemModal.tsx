@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { MenuItem, Addon } from "./Step2MenuItems";
+import { MenuItem, Addon } from "@/types/restaurant.types";
 import { ALLERGENS } from "@/lib/constants/allergens";
 
 // Dietary icon mapping

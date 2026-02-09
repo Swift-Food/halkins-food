@@ -1,5 +1,5 @@
 import { MealSessionState } from "@/types/catering.types";
-import { MenuItem, Restaurant } from "./Step2MenuItems";
+import { MenuItem, Restaurant } from "@/types/restaurant.types";
 
 // Day grouping interface for timeline view
 export interface DayGroup {

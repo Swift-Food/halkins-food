@@ -8,7 +8,7 @@ import {
 import { categoryService } from "@/services/api/category.api";
 import { API_BASE_URL, API_ENDPOINTS } from "@/lib/constants/api";
 import { fetchWithAuth } from "@/lib/api-client/auth-client";
-import { MenuItem, Restaurant } from "../Step2MenuItems";
+import { Restaurant, MenuItem } from "@/types/restaurant.types";
 import { mapToMenuItem } from "../catering-order-helpers";
 
 interface UseCateringDataOptions {

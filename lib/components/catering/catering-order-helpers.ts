@@ -1,6 +1,6 @@
 import { MealSessionState, MenuItemDetails } from "@/types/catering.types";
 import { DayGroup } from "./types";
-import { MenuItem } from "./Step2MenuItems";
+import { MenuItem } from "@/types/restaurant.types";
 
 // Hour options for 12-hour time picker
 export const HOUR_12_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
