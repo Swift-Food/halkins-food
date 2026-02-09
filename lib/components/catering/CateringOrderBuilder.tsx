@@ -29,7 +29,7 @@ import { useCateringData } from "./hooks/useCateringData";
 import { formatTimeDisplay, getMinDate, getMaxDate } from "./catering-order-helpers";
 
 // Icons
-import { ShoppingBag, Clock, Calendar } from "lucide-react";
+import { ShoppingBag, Clock, Calendar, Search, X } from "lucide-react";
 
 const PRESET_TIMES = [
   { value: "11:00", label: "11:00 AM" },
@@ -52,6 +52,9 @@ export default function CateringOrderBuilder() {
 
   // Session editing state (for modal fallback)
   const [editingSessionIndex, setEditingSessionIndex] = useState<number | null>(null);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Menu items state
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
@@ -257,6 +260,17 @@ export default function CateringOrderBuilder() {
   }, [validationStatus]);
 
   const totalItems = session?.orderItems.length || 0;
+
+  // Filter menu items by search query
+  const filteredMenuItems = useMemo(() => {
+    if (!searchQuery.trim()) return menuItems;
+    const query = searchQuery.toLowerCase();
+    return menuItems.filter((item) =>
+      item.menuItemName.toLowerCase().includes(query) ||
+      item.description?.toLowerCase().includes(query) ||
+      item.groupTitle?.toLowerCase().includes(query)
+    );
+  }, [menuItems, searchQuery]);
 
   // Handle navigation from min order modal to a specific section
   const handleMinOrderNavigate = (_restaurantId: string, section: string) => {
@@ -736,6 +750,26 @@ export default function CateringOrderBuilder() {
             </div>
           )}
 
+          {/* Search Bar */}
+          <div className="relative mt-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search menu items..."
+              className="w-full pl-9 pr-9 py-2.5 border border-base-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm bg-white"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
           {/* Menu Items */}
           <div className="bg-base-100 rounded-xl p-4 mt-2">
             {menuItemsLoading ? (
@@ -747,27 +781,30 @@ export default function CateringOrderBuilder() {
               <div className="text-center py-4 text-red-500 text-sm">
                 {menuItemsError}
               </div>
-            ) : !selectedCategory ? (
+            ) : !selectedCategory && !searchQuery ? (
               <div className="text-center py-6">
                 <ShoppingBag className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                 <p className="text-gray-500 text-sm">
                   Select a category to browse items
                 </p>
               </div>
-            ) : menuItems.length === 0 ? (
+            ) : filteredMenuItems.length === 0 ? (
               <div className="text-center py-6">
                 <p className="text-gray-500 text-sm">
-                  No items available for{" "}
-                  {selectedSubcategory?.name || selectedCategory.name}
+                  {searchQuery
+                    ? `No items matching "${searchQuery}"`
+                    : `No items available for ${selectedSubcategory?.name || selectedCategory?.name}`}
                 </p>
               </div>
             ) : (
               <div>
                 <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                  {selectedSubcategory?.name || selectedCategory.name}
+                  {searchQuery
+                    ? `Results for "${searchQuery}"`
+                    : selectedSubcategory?.name || selectedCategory?.name}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {menuItems.map((item, itemIdx) => (
+                  {filteredMenuItems.map((item, itemIdx) => (
                     <div
                       key={item.id}
                       ref={itemIdx === 0 ? firstMenuItemRef : undefined}

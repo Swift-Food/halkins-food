@@ -1,7 +1,7 @@
 // app/components/catering/dashboard/OrderItems.tsx
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { CateringOrderResponse, MealSessionResponse } from "@/types/api";
 import { ChefHat, Package, ChevronDown, ChevronUp, Calendar, Clock } from "lucide-react";
 
