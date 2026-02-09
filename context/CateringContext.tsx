@@ -575,10 +575,10 @@ export function CateringProvider({ children }: { children: ReactNode }) {
   // OTHER SETTER FUNCTIONS
   // ============================================================================
 
-  const setCurrentStep = (step: number) => {
+  const setCurrentStep = useCallback((step: number) => {
     setCurrentStepState(step);
     localStorage.setItem(STORAGE_KEYS.CURRENT_STEP, JSON.stringify(step));
-  };
+  }, []);
 
   const setSelectedRestaurants = (restaurants: Restaurant[]) => {
     setSelectedRestaurantsState(restaurants);
@@ -590,10 +590,10 @@ export function CateringProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEYS.EVENT_DETAILS, JSON.stringify(details));
   };
 
-  const setContactInfo = (info: ContactInfo) => {
+  const setContactInfo = useCallback((info: ContactInfo) => {
     setContactInfoState(info);
     localStorage.setItem(STORAGE_KEYS.CONTACT_INFO, JSON.stringify(info));
-  };
+  }, []);
 
   const setPromoCodes = (codes: string[]) => {
     setPromoCodesState(codes);

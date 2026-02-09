@@ -7,14 +7,12 @@ import { Mail, Building2 } from "lucide-react";
 
 interface CoworkingAuthFormProps {
   spaceSlug: string;
-  onSuccess: () => void;
 }
 
 export default function CoworkingAuthForm({
   spaceSlug,
-  onSuccess,
 }: CoworkingAuthFormProps) {
-  const { setSession, setBookings, spaceInfo } = useCoworking();
+  const { setSession, spaceInfo } = useCoworking();
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -52,27 +50,15 @@ export default function CoworkingAuthForm({
         name: trimmedName,
       });
 
+      // Tokens are already stored by coworkingService.startSession
+      // Just update context with member info
       setSession({
         member: {
           email: result.email,
           name: result.name,
           memberId: "",
         },
-        expiresIn: result.expires_in,
-        isOfficeRnDVerified: result.isOfficeRnDVerified,
       });
-
-      // If verified, fetch bookings
-      if (result.isOfficeRnDVerified) {
-        try {
-          const bookingsResult = await coworkingService.getBookings(spaceSlug);
-          setBookings(bookingsResult.bookings);
-        } catch {
-          // Bookings fetch failure is non-critical
-        }
-      }
-
-      onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start session.");
     } finally {

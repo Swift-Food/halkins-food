@@ -6,6 +6,7 @@ import { useState, FormEvent, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useCatering } from "@/context/CateringContext";
 import { cateringService } from "@/services/api/catering.api";
+import { SessionExpiredError } from "@/services/api/coworking.api";
 import { CateringPricingResult, ContactInfo } from "@/types/catering.types";
 import AllMealSessionsItems from "./AllMealSessionsItems";
 import {
@@ -419,6 +420,13 @@ export default function Step3ContactInfo() {
       console.error("Error Message:", error?.message);
       console.error("Error Stack:", error?.stack);
       console.error("Full Error Object:", JSON.stringify(error, null, 2));
+
+      // Session expired — the event dispatch in coworkingService already
+      // triggers the auth screen redirect, so just bail out here.
+      if (error instanceof SessionExpiredError) {
+        console.error("=== END ERROR LOG ===");
+        return;
+      }
 
       // Handle London delivery validation error - show inline instead of alert
       if (error?.message?.includes("London")) {

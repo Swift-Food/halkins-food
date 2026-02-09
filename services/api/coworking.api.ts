@@ -147,6 +147,10 @@ class CoworkingService {
   ): Promise<Response> {
     const token = this.getSessionToken();
     if (!token) {
+      this.clearSession();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('coworking-session-expired'));
+      }
       throw new SessionExpiredError('No session token. Please authenticate first.');
     }
 
@@ -383,7 +387,6 @@ class CoworkingService {
     spaceSlug: string,
     data: CreateCoworkingOrderRequest
   ): Promise<CreateOrderResponse> {
-    console.log(spaceSlug, JSON.stringify(data))
     const response = await this.fetchWithSession(
       `${API_BASE_URL}${API_ENDPOINTS.COWORKING_ORDERS(spaceSlug)}`,
       {

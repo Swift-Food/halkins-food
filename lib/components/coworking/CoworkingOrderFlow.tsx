@@ -1,75 +1,45 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useCoworking } from "@/context/CoworkingContext";
 import { useCatering } from "@/context/CateringContext";
 import { coworkingService } from "@/services/api/coworking.api";
-import { BookingInfo } from "@/types/api";
 import CoworkingAuthForm from "./CoworkingAuthForm";
 import CateringOrderBuilder from "@/lib/components/catering/CateringOrderBuilder";
 import Step3ContactInfo from "@/lib/components/catering/Step3ContactDetails";
-import CoworkingBookingPicker from "./CoworkingBookingPicker";
-import { AlertTriangle } from "lucide-react";
 
 export default function CoworkingOrderFlow() {
   const params = useParams();
   const spaceSlug = params.spaceSlug as string;
 
-  const {
-    isAuthenticated,
-    isLoading,
-    isOfficeRnDVerified,
-    bookings,
-    member,
-    spaceInfo,
-    setSpaceInfo,
-    sessionExpiringWarning,
-    minutesUntilExpiry,
-  } = useCoworking();
-
+  const { isAuthenticated, isLoading, member, spaceInfo, setSpaceInfo } =
+    useCoworking();
   const { currentStep, setContactInfo } = useCatering();
 
-  const [showAuth, setShowAuth] = useState(true);
-  const [selectedBooking, setSelectedBooking] = useState<BookingInfo | null>(null);
   const [spaceError, setSpaceError] = useState<string | null>(null);
+  const hasPrefilledContact = useRef(false);
 
   // Fetch space info on mount
   useEffect(() => {
-    if (!spaceSlug) return;
-    if (!spaceInfo) {
-      coworkingService
-        .getSpaceInfo(spaceSlug)
-        .then((info) => setSpaceInfo(info))
-        .catch((err) =>
-          setSpaceError(err instanceof Error ? err.message : "Failed to load space info")
-        );
-    }
-  }, [spaceSlug, spaceInfo]);
+    if (!spaceSlug || spaceInfo) return;
+    coworkingService
+      .getSpaceInfo(spaceSlug)
+      .then((info) => setSpaceInfo(info))
+      .catch((err) =>
+        setSpaceError(
+          err instanceof Error ? err.message : "Failed to load space info"
+        )
+      );
+  }, [spaceSlug, spaceInfo, setSpaceInfo]);
 
-  // When authenticated, hide auth form
+  // Pre-fill contact info from member data once when authenticated
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      setShowAuth(false);
-    }
-  }, [isAuthenticated, isLoading]);
-
-  // Reset to auth on session expiry
-  useEffect(() => {
-    const handleExpired = () => {
-      setShowAuth(true);
-      setSelectedBooking(null);
-    };
-    window.addEventListener("coworking-session-expired", handleExpired);
-    return () => window.removeEventListener("coworking-session-expired", handleExpired);
-  }, []);
-
-  // Pre-fill contact info from member data when authenticated
-  useEffect(() => {
-    if (isAuthenticated && member) {
+    if (isAuthenticated && member && !hasPrefilledContact.current) {
+      hasPrefilledContact.current = true;
       setContactInfo({
         organization: member.name || "",
-        fullName:  "",
+        fullName: "",
         email: member.email,
         phone: "",
         addressLine1: "",
@@ -78,28 +48,7 @@ export default function CoworkingOrderFlow() {
         zipcode: "",
       });
     }
-  }, [ member, setContactInfo]);
-
-  // When a booking is selected, pre-fill the catering contact info with room details
-  const handleBookingSelect = (booking: BookingInfo | null) => {
-    setSelectedBooking(booking);
-    if (booking) {
-      setContactInfo({
-        organization: member?.name || "",
-        fullName: member?.email || "",
-        email: "",
-        phone: "",
-        addressLine1: booking.roomLocationDetails || "",
-        addressLine2: "",
-        city: "",
-        zipcode: "",
-      });
-    }
-  };
-
-  const handleAuthSuccess = () => {
-    setShowAuth(false);
-  };
+  }, [isAuthenticated, member, setContactInfo]);
 
   if (spaceError) {
     return (
@@ -120,8 +69,8 @@ export default function CoworkingOrderFlow() {
     );
   }
 
-  // Show auth form if not authenticated
-  if (showAuth && !isAuthenticated) {
+  // Auth screen
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen">
         <div className="py-2 max-w mx-auto bg-base-100">
@@ -131,16 +80,12 @@ export default function CoworkingOrderFlow() {
               <p className="text-gray-500 text-sm">{spaceInfo.address}</p>
             </div>
           )}
-          <CoworkingAuthForm
-            spaceSlug={spaceSlug}
-            onSuccess={handleAuthSuccess}
-          />
+          <CoworkingAuthForm spaceSlug={spaceSlug} />
         </div>
       </div>
     );
   }
 
-  // Catering flow steps with coworking enhancements
   const steps = [
     { label: "Menu Selection", step: 1 },
     { label: "Contact & Delivery", step: 2 },
@@ -149,18 +94,6 @@ export default function CoworkingOrderFlow() {
   return (
     <div className="min-h-screen">
       <div className="py-2 max-w mx-auto bg-base-100">
-        {/* Session expiry warning */}
-        {sessionExpiringWarning && (
-          <div className="mx-4 md:mx-10 mb-4 alert alert-warning">
-            <AlertTriangle className="w-5 h-5" />
-            <span>
-              Your session expires in {minutesUntilExpiry} minute
-              {minutesUntilExpiry !== 1 ? "s" : ""}. Please complete your order
-              soon.
-            </span>
-          </div>
-        )}
-
         {/* Space header */}
         {spaceInfo && (
           <div className="mx-4 md:mx-10 mb-4">
@@ -169,7 +102,7 @@ export default function CoworkingOrderFlow() {
           </div>
         )}
 
-        {/* Progress bar — same as event-order */}
+        {/* Progress bar */}
         {currentStep !== 1 && (
           <div className="my-10 mr-10 ml-10 max-w mx-auto">
             <div className="text-sm text-gray-500 mb-2">
@@ -184,17 +117,15 @@ export default function CoworkingOrderFlow() {
             <div className="mt-2 text-sm text-gray-600 font-medium flex items-center gap-2">
               {steps.map((s, idx) => (
                 <div key={s.step} className="flex items-center gap-2">
-                  <button
-                    disabled={true}
-                    type="button"
-                    className={`underline-offset-2 font-medium transition-colors ${
+                  <span
+                    className={
                       currentStep === s.step
-                        ? "text-dark-pink cursor-default"
+                        ? "text-dark-pink"
                         : "text-gray-600"
-                    }`}
+                    }
                   >
                     {s.label}
-                  </button>
+                  </span>
                   {idx < steps.length - 1 && (
                     <span className="text-gray-400">&rarr;</span>
                   )}
@@ -204,21 +135,10 @@ export default function CoworkingOrderFlow() {
           </div>
         )}
 
-        {/* Step content — same components as event-order */}
+        {/* Step content */}
         <div className="bg-base-100 rounded-lg max-w-none">
           {currentStep === 1 && <CateringOrderBuilder />}
-          {currentStep === 2 && (
-            <>
-              {/* Booking room picker — shown above Step3 if OfficeRnD verified */}
-              {isOfficeRnDVerified && bookings.length > 0 && (
-                <CoworkingBookingPicker
-                  selectedBooking={selectedBooking}
-                  onSelect={handleBookingSelect}
-                />
-              )}
-              <Step3ContactInfo />
-            </>
-          )}
+          {currentStep === 2 && <Step3ContactInfo />}
         </div>
       </div>
     </div>
