@@ -76,6 +76,9 @@ export interface MealSessionResponse {
   // Order items for this session
   orderItems: PricingOrderItem[];
 
+  // Bundle selections for this session
+  bundleSelections?: BundleSelectionDetails[];
+
   // Session pricing
   subtotal: number;
   deliveryFee: number;
@@ -159,6 +162,12 @@ export interface CateringOrderResponse {
   // For SINGLE-MEAL orders: contains the actual order items
   // For MULTI-MEAL orders: aggregated view of all meal sessions
   restaurants: PricingOrderItem[];
+
+  /**
+   * @deprecated Use mealSessions[].orderItems or restaurants instead.
+   * This field can get out of sync with mealSessions causing data inconsistencies.
+   * See: backend/docs/plans/2026-02-10-deprecate-order-orderItems.md
+   */
   orderItems?: any[]; // Legacy format
 
   // Restaurant coordination (aggregated across all sessions for multi-meal)
@@ -272,6 +281,31 @@ export interface CateringOrderSummary {
   // Multi-meal order info
   mealSessionCount?: number; // Number of meal sessions (1 for single-meal, >1 for multi-meal)
   isMultiMeal?: boolean; // Quick check if this is a multi-meal order
+}
+
+// ============================================================================
+// BUNDLE SELECTION TYPES
+// ============================================================================
+
+/**
+ * Bundle selection for order creation requests
+ */
+export interface BundleSelection {
+  bundleId: string;
+  quantity: number;
+}
+
+/**
+ * Bundle selection details for responses
+ */
+export interface BundleSelectionDetails {
+  bundleId: string;
+  bundleName: string;
+  quantity: number;
+  pricePerPerson: number;
+  baseGuestCount: number;
+  guestsServed: number;
+  bundleTotal: number;
 }
 
 // ============================================================================
