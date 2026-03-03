@@ -410,7 +410,7 @@ export default function Step3ContactInfo() {
 
       const accessToken = createOrderResponse?.accessToken;
       if (accessToken) {
-        router.push(`/event-order/view/${accessToken}`);
+        router.push(`/coworking/${spaceSlug}/view/${accessToken}`);
       } else {
         setSuccess(true);
       }
