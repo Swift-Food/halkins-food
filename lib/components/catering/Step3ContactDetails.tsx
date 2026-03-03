@@ -439,6 +439,13 @@ export default function Step3ContactInfo() {
         return;
       }
 
+      // Handle catering portions limit error
+      if (error?.message?.includes("catering capacity") || error?.message?.includes("catering portions limit")) {
+        alert(error.message);
+        console.error("=== END ERROR LOG ===");
+        return;
+      }
+
       // Check if it's a network error
       if (
         error?.message?.includes("fetch") ||

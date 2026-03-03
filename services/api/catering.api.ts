@@ -268,10 +268,13 @@ class CateringService {
       const error = await response.json().catch(() => ({}));
       console.error("Failed to submit catering order: ", response, error);
 
-      // Check for London delivery validation error (can be in message or error field)
+      // Check for specific validation errors
       const errorMessage = error.message || error.error;
       if (response.status === 400 && errorMessage?.includes("London")) {
         throw new Error(errorMessage);
+      }
+      if (response.status === 400 && errorMessage?.includes("catering portions limit")) {
+        throw new Error("A restaurant in your order has reached its catering capacity. Please adjust your order or try again later.");
       }
 
       throw new Error(errorMessage || "Failed to submit catering order");
