@@ -32,9 +32,9 @@ import { formatTimeDisplay, getMinDate, getMaxDate } from "./catering-order-help
 import { ShoppingBag, Clock, Calendar, Search, X } from "lucide-react";
 
 const PRESET_TIMES = [
-  { value: "11:00", label: "11:00 AM" },
-  { value: "13:00", label: "1:00 PM" },
-  { value: "18:00", label: "6:00 PM" },
+  { value: "09:00", label: "9:00 - 9:30 AM" },
+  { value: "13:00", label: "1:00 - 1:30 PM" },
+  { value: "18:00", label: "6:00 - 6:30 PM" },
 ];
 
 export default function CateringOrderBuilder() {
