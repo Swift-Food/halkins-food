@@ -10,12 +10,6 @@ export default function Navbar() {
           Halkins
         </Link>
         <div className="flex items-center gap-6">
-          <Link
-            href="/event-order"
-            className="text-sm font-medium text-gray-700 hover:text-pink-500 transition-colors"
-          >
-            Order Catering
-          </Link>
         </div>
       </div>
     </nav>

@@ -1113,7 +1113,7 @@ export default function Step3ContactInfo() {
                     >
                       I accept the{" "}
                       <a
-                        href="/terms"
+                        href="https://swiftfood.uk/terms"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-dark-pink hover:underline font-medium"
