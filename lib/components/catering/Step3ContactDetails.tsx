@@ -16,25 +16,22 @@ import {
 import { pdf } from "@react-pdf/renderer";
 import { CateringMenuPdf } from "@/lib/components/pdf/CateringMenuPdf";
 import PdfDownloadModal from "./modals/PdfDownloadModal";
-import DeliveryAddressForm from "./contact/DeliveryAddressForm";
 import ContactInfoForm from "./contact/ContactInfoForm";
 import PromoCodeSection from "./contact/PromoCodeSection";
 import PricingSummary from "./contact/PricingSummary";
 import { coworkingService } from "@/services/api";
 import { CreateCoworkingOrderRequest } from "@/types/api";
 
+const FIXED_DELIVERY_ADDRESS = "1-2 Paris Gardens, London";
+const FIXED_DELIVERY_LAT = 51.50664530535029;
+const FIXED_DELIVERY_LNG = -0.10636436057400264;
+
 interface ValidationErrors {
   organization?: string;
   fullName?: string;
   email?: string;
   phone?: string;
-  addressLine1?: string;
-  addressLine2?: string;
-  city?: string;
-  zipcode?: string;
   ccEmail?: string;
-  latitude?: number;
-  longitude?: number;
   billingAddress?: {
     line1?: string;
     city?: string;
@@ -64,12 +61,9 @@ export default function Step3ContactInfo() {
     fullName: contactInfo?.fullName || "",
     email: contactInfo?.email || "",
     phone: contactInfo?.phone || "",
-    addressLine1: contactInfo?.addressLine1 || "",
-    addressLine2: contactInfo?.addressLine2 || "",
-    city: contactInfo?.city || "",
-    zipcode: contactInfo?.zipcode || "",
-    latitude: contactInfo?.latitude,
-    longitude: contactInfo?.longitude,
+    addressLine1: "",
+    city: "",
+    zipcode: "",
     billingAddress: contactInfo?.billingAddress,
   });
   const [submitting, setSubmitting] = useState(false);
@@ -88,7 +82,6 @@ export default function Step3ContactInfo() {
 
 
   const [importantNotesOpen, setImportantNotesOpen] = useState(false);
-  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
 
   // PDF generation state
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -261,26 +254,6 @@ export default function Step3ContactInfo() {
       phone: validatePhone(formData.phone),
     };
 
-    // Validate address fields for guest users
-    if (eventDetails?.userType === "guest") {
-      if (!formData.addressLine1?.trim()) {
-        newErrors.addressLine1 = "Address Line 1 is required";
-      }
-      if (!formData.city?.trim()) {
-        newErrors.city = "City is required";
-      }
-      if (!formData.zipcode?.trim()) {
-        newErrors.zipcode = "Postcode is required";
-      } else if (!validateUKPostcode(formData.zipcode)) {
-        newErrors.zipcode = "Please enter a valid UK postcode (e.g., SW1A 1AA)";
-      }
-
-      // Validate that latitude and longitude are present (ensures Google autocomplete selection)
-      if (!formData.latitude || !formData.longitude) {
-        newErrors.addressLine1 = "Please select an address from the Google autocomplete dropdown";
-      }
-    }
-
     // Validate billing address if user has entered any data
     newErrors.billingAddress = validateBillingAddress();
 
@@ -371,10 +344,10 @@ export default function Step3ContactInfo() {
     return {
       spaceSlug: SPACE_SLUG,
       orderData: {
-        deliveryAddress: [formData.addressLine1, formData.addressLine2, formData.city, formData.zipcode].filter(Boolean).join(', '),
+        deliveryAddress: FIXED_DELIVERY_ADDRESS,
         deliveryLocation: {
-          latitude: formData.latitude || 0,
-          longitude: formData.longitude || 0,
+          latitude: FIXED_DELIVERY_LAT,
+          longitude: FIXED_DELIVERY_LNG,
         },
         customerPhone: formData.phone,
         orderItems: Array.from(orderItemsByRestaurant.entries()).map(([restaurantId, menuItems]) => ({
@@ -424,17 +397,6 @@ export default function Step3ContactInfo() {
       // Session expired — the event dispatch in coworkingService already
       // triggers the auth screen redirect, so just bail out here.
       if (error instanceof SessionExpiredError) {
-        console.error("=== END ERROR LOG ===");
-        return;
-      }
-
-      // Handle London delivery validation error - show inline instead of alert
-      if (error?.message?.includes("London")) {
-        setErrors((prev) => ({
-          ...prev,
-          addressLine1: error.message,
-        }));
-
         console.error("=== END ERROR LOG ===");
         return;
       }
@@ -494,30 +456,17 @@ export default function Step3ContactInfo() {
   const calculatePricing = async () => {
     setCalculatingPricing(true);
     try {
-      const deliveryLocation =
-        formData.latitude && formData.longitude
-          ? { latitude: formData.latitude, longitude: formData.longitude }
-          : undefined;
-
       const pricingResult = await cateringService.calculateCateringPricingWithMealSessions(
         mealSessions,
         promoCodes,
-        deliveryLocation
+        { latitude: FIXED_DELIVERY_LAT, longitude: FIXED_DELIVERY_LNG }
       );
 
       if (!pricingResult.isValid) {
-        // Show London delivery error inline
-        if (pricingResult.error?.includes("London")) {
-          setErrors((prev) => ({ ...prev, addressLine1: pricingResult.error }));
-        }
         setPricing(null);
         return;
       }
 
-      // Clear any previous London error on successful pricing
-      if (errors.addressLine1?.includes("London")) {
-        setErrors((prev) => ({ ...prev, addressLine1: undefined }));
-      }
       setPricing(pricingResult);
     } catch (error: any) {
       console.error("Error calculating pricing:", error);
@@ -536,7 +485,7 @@ export default function Step3ContactInfo() {
   useEffect(() => {
     calculatePricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [promoCodes, mealSessions, formData.latitude, formData.longitude]);
+  }, [promoCodes, mealSessions]);
 
   const handleApplyPromoCode = async (code: string) => {
     setValidatingPromo(true);
@@ -575,91 +524,6 @@ export default function Step3ContactInfo() {
     setPromoError("");
    
   };
-
-  const handlePlaceSelect = (place: google.maps.places.PlaceResult) => {
-    if (!place || !place.address_components) {
-      console.error("No place data received");
-      return;
-    }
-
-    // Store place_id for validation
-    if (place.place_id) {
-      setSelectedPlaceId(place.place_id);
-    }
-
-    let addressLine1 = "";
-    let city = "";
-    let zipcode = "";
-    let country = "";
-    const latitude = place.geometry?.location?.lat() || 0;
-    const longitude = place.geometry?.location?.lng() || 0;
-
-    place.address_components.forEach((component) => {
-      const types = component.types;
-
-      if (types.includes("street_number")) {
-        addressLine1 = component.long_name + " ";
-      }
-      if (types.includes("route")) {
-        addressLine1 += component.long_name;
-      }
-      if (types.includes("postal_town") || types.includes("locality")) {
-        city = component.long_name;
-      }
-      if (types.includes("postal_code")) {
-        zipcode = component.long_name;
-      }
-      if (types.includes("country")) {
-        country = component.short_name;
-      }
-    });
-
-    // Validate if address is in UK
-    if (country && country !== "GB") {
-      setErrors((prev) => ({
-        ...prev,
-        addressLine1: "Sorry, we only deliver to addresses within the United Kingdom.",
-      }));
-    } else {
-      // Clear client-side address errors only (not server-side London validation errors)
-      // The London error will be set/cleared by calculatePricing based on API response
-      setErrors((prev) => ({
-        ...prev,
-        addressLine1: prev.addressLine1?.includes("London") ? prev.addressLine1 : undefined,
-        city: undefined,
-        zipcode: undefined,
-      }));
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      addressLine1: addressLine1.trim(),
-      city,
-      zipcode,
-      latitude,
-      longitude,
-    }));
-  };
-
-  const handleClearAddress = () => {
-    setSelectedPlaceId(null);
-    setFormData((prev) => ({
-      ...prev,
-      addressLine1: "",
-      city: "",
-      zipcode: "",
-      latitude: undefined,
-      longitude: undefined,
-    }));
-    // Clear any address-related errors
-    setErrors((prev) => ({
-      ...prev,
-      addressLine1: undefined,
-      city: undefined,
-      zipcode: undefined,
-    }));
-  };
-
 
   // Handle view menu - opens modal to choose with/without prices
   const handleViewMenu = () => {
@@ -990,16 +854,11 @@ export default function Step3ContactInfo() {
               </h3>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Delivery Address Section - Only for guest users */}
-       
-                <DeliveryAddressForm
-                  formData={formData}
-                  errors={errors}
-                  onFieldChange={handleChange}
-                  onPlaceSelect={handlePlaceSelect}
-                  onClearAddress={handleClearAddress}
-                  hasValidAddress={selectedPlaceId !== null && formData.addressLine1 !== ""}
-                />
+                {/* Delivery Address */}
+                <div className="pb-4 mb-4 border-b border-base-300">
+                  <p className="text-sm font-bold text-base-content mb-1">Delivering to</p>
+                  <p className="text-sm text-base-content/70">1-2 Paris Gardens, London</p>
+                </div>
      
 
                 {/* Contact Details Section */}
