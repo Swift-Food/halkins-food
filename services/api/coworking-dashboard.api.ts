@@ -132,6 +132,51 @@ class CoworkingDashboardService {
   }
 
   /**
+   * Approve a pending order
+   */
+  async approveOrder(
+    spaceId: string,
+    orderId: string
+  ): Promise<DashboardOrderDetailResponse> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_APPROVE_ORDER(spaceId, orderId)}`,
+      { method: 'POST' }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to approve order');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Reject a pending order
+   */
+  async rejectOrder(
+    spaceId: string,
+    orderId: string,
+    reason?: string
+  ): Promise<DashboardOrderDetailResponse> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_REJECT_ORDER(spaceId, orderId)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to reject order');
+    }
+
+    return response.json();
+  }
+
+  /**
    * Get aggregated statistics for the coworking space
    */
   async getStats(

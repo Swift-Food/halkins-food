@@ -37,6 +37,7 @@ const statusTabs: {
 ];
 
 const statusBadgeColor: Record<string, string> = {
+  pending_review: "bg-yellow-100 text-yellow-800 border-yellow-300",
   pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
   confirmed: "bg-blue-100 text-blue-800 border-blue-300",
   preparing: "bg-indigo-100 text-indigo-800 border-indigo-300",
