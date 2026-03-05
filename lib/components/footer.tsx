@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="bg-gray-900 text-white px-6 py-8">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <p className="text-sm text-gray-400">
-          &copy; {new Date().getFullYear()} Halkins.
+          &copy; {new Date().getFullYear()} Halkin.
         </p>
         <a
           href="/coworking-dashboard/halkins"

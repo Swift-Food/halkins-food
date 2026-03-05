@@ -44,6 +44,14 @@ export default function PricingSummary({
           </div>
         )}
 
+        {/* Venue hire fee */}
+        {(pricing.venueHireFee ?? 0) > 0 && (
+          <div className="flex justify-between text-sm text-base-content/70">
+            <span>Venue Hire Fee</span>
+            <span>£{pricing.venueHireFee!.toFixed(2)}</span>
+          </div>
+        )}
+
         {/* Delivery fee */}
         <div className="space-y-1">
           <div className="flex justify-between items-start text-sm text-base-content/70 gap-2">

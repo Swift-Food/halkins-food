@@ -24,7 +24,9 @@ import {
   GetOrdersResponse,
   GetOrderDetailResponse,
   RefreshTokenResponse,
+  CateringMenuItemRequest,
 } from '@/types/api';
+import { MealSessionState, CateringPricingResult } from '@/types/catering.types';
 
 const ACCESS_TOKEN_KEY = 'coworking_access_token';
 const REFRESH_TOKEN_KEY = 'coworking_refresh_token';
@@ -146,6 +148,7 @@ class CoworkingService {
     options: RequestInit & { _retry?: boolean } = {}
   ): Promise<Response> {
     const token = this.getSessionToken();
+    console.log("token is", token)
     if (!token) {
       this.clearSession();
       if (typeof window !== 'undefined') {
@@ -386,6 +389,7 @@ class CoworkingService {
     spaceSlug: string,
     data: CreateCoworkingOrderRequest
   ): Promise<CreateOrderResponse> {
+    console.log("data sent", JSON.stringify(data))
     const response = await this.fetchWithSession(
       `${API_BASE_URL}${API_ENDPOINTS.COWORKING_ORDERS(spaceSlug)}`,
       {
@@ -439,6 +443,82 @@ class CoworkingService {
     }
 
     return response.json();
+  }
+
+  /**
+   * Calculate cart pricing for a coworking order.
+   * Uses the coworking-specific endpoint that includes venueHireFee.
+   */
+  async calculateCartPricing(
+    spaceSlug: string,
+    mealSessions: MealSessionState[],
+    deliveryLocation?: { latitude: number; longitude: number },
+    promoCodes?: string[]
+  ): Promise<CateringPricingResult> {
+    // Flatten all sessions into a single restaurant-grouped orderItems list
+    // matching CoworkingCartPricingDto
+    const itemsByRestaurant = new Map<string, CateringMenuItemRequest[]>();
+    mealSessions
+      .filter((s) => s.orderItems.length > 0)
+      .forEach((s) => {
+        s.orderItems.forEach(({ item, quantity }) => {
+          const restaurantId = item.restaurantId || 'unknown';
+          if (!itemsByRestaurant.has(restaurantId)) {
+            itemsByRestaurant.set(restaurantId, []);
+          }
+          itemsByRestaurant.get(restaurantId)!.push({
+            menuItemId: item.id,
+            quantity,
+            selectedAddons: (item.selectedAddons || []) as any,
+          } as CateringMenuItemRequest);
+        });
+      });
+
+    const orderItems = Array.from(itemsByRestaurant.entries()).map(
+      ([restaurantId, menuItems]) => ({
+        restaurantId,
+        menuItems,
+      })
+    );
+
+    const body = {
+      orderItems,
+      promoCodes,
+      ...(deliveryLocation && { deliveryLocation }),
+    };
+
+    try {
+      console.log("body is", JSON.stringify(body))
+      const response = await this.fetchWithSession(
+        
+        `${API_BASE_URL}${API_ENDPOINTS.COWORKING_CART_PRICING(spaceSlug)}`,
+        {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        return {
+          isValid: false,
+          subtotal: 0,
+          deliveryFee: 0,
+          total: 0,
+          error: error.message || 'Failed to calculate pricing',
+        } as CateringPricingResult;
+      }
+
+      return response.json();
+    } catch (error: any) {
+      return {
+        isValid: false,
+        subtotal: 0,
+        deliveryFee: 0,
+        total: 0,
+        error: error.message || 'Failed to calculate pricing',
+      } as CateringPricingResult;
+    }
   }
 }
 

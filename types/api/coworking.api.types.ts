@@ -91,7 +91,61 @@ export interface CreateCoworkingOrderRequest {
   specialInstructions?: string; // max 1000 chars
   scheduledFor?: string; // ISO date string
   scheduledTime: string; // HH:MM format
+  eventStartDateTime?: string; // ISO datetime e.g. "2025-06-15T10:00:00"
+  eventEndDateTime?: string; // ISO datetime e.g. "2025-06-15T14:00:00"
+  deliveryDate?: string; // "YYYY-MM-DD"
+  deliveryTime?: string; // "HH:MM"
 }
+
+// ============================================================================
+// VENUE TYPES
+// ============================================================================
+
+/**
+ * A bookable venue within a coworking space
+ */
+export interface CoworkingVenue {
+  id: string;
+  name: string;
+  maxCapacity: number;
+  address: string;
+  addressLine1: string;
+  city: string;
+  zipcode: string;
+  latitude: number;
+  longitude: number;
+  image?: string;
+}
+
+/**
+ * Hardcoded venue list — replace with API data when available
+ */
+export const COWORKING_VENUES: CoworkingVenue[] = [
+  {
+    id: "paris-garden",
+    name: "Paris Garden",
+    maxCapacity: 80,
+    address: "1-2 Paris Gardens, London, SE1 8ND",
+    addressLine1: "1-2 Paris Gardens",
+    city: "London",
+    zipcode: "SE1 8ND",
+    latitude: 51.50664530535029,
+    longitude: -0.10636436057400264,
+    image: "/coworking-images/cow-3.webp",
+  },
+  {
+    id: "monument",
+    name: "Monument",
+    maxCapacity: 60,
+    address: "10 Lower Thames Street, London",
+    addressLine1: "10 Lower Thames Street",
+    city: "London",
+    zipcode: "EC3R 6EN",
+    latitude: 51.50927965675505,
+    longitude: -0.08475660290304882,
+    image: "/coworking-images/cow-2.jpg",
+  },
+];
 
 // ============================================================================
 // RESPONSE TYPES

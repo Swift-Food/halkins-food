@@ -12,8 +12,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Halkins - Catering Made Easy",
-  description: "Order catering for your events with Halkins",
+  title: "Halkin - Events Made Easy",
+  description: "Order catering for your events with Halkin",
   icons: {
     icon: "/logo.png",
     apple: "/logo.png",

@@ -21,10 +21,12 @@ import PromoCodeSection from "./contact/PromoCodeSection";
 import PricingSummary from "./contact/PricingSummary";
 import { coworkingService } from "@/services/api";
 import { CreateCoworkingOrderRequest } from "@/types/api";
+import { useCoworking } from "@/context/CoworkingContext";
+import CoworkingAuthForm from "@/lib/components/coworking/CoworkingAuthForm";
 
-const FIXED_DELIVERY_ADDRESS = "1-2 Paris Gardens, London";
-const FIXED_DELIVERY_LAT = 51.50664530535029;
-const FIXED_DELIVERY_LNG = -0.10636436057400264;
+const FALLBACK_DELIVERY_ADDRESS = "1-2 Paris Gardens, London";
+const FALLBACK_DELIVERY_LAT = 51.50664530535029;
+const FALLBACK_DELIVERY_LNG = -0.10636436057400264;
 
 interface ValidationErrors {
   organization?: string;
@@ -52,6 +54,20 @@ export default function Step3ContactInfo() {
     markOrderAsSubmitted,
 
   } = useCatering();
+
+  const {
+    isAuthenticated,
+    isLoading: authLoading,
+    selectedVenue,
+    eventStartDate,
+    eventStartTime,
+    eventEndTime,
+    spaceSlug: coworkingSpaceSlug,
+  } = useCoworking();
+
+  const deliveryAddress = selectedVenue?.address ?? FALLBACK_DELIVERY_ADDRESS;
+  const deliveryLat = selectedVenue?.latitude ?? FALLBACK_DELIVERY_LAT;
+  const deliveryLng = selectedVenue?.longitude ?? FALLBACK_DELIVERY_LNG;
 
   // Get all items from all sessions for pricing calculations
   const selectedItems = getAllItems();
@@ -339,15 +355,17 @@ export default function Step3ContactInfo() {
       });
     });
 
-    const SPACE_SLUG = 'testi';
+    const slug = coworkingSpaceSlug || 'testi';
+    const sessionDate = mealSessions[0]?.sessionDate || '';
+    const sessionTime = mealSessions[0]?.eventTime || eventDetails?.eventTime || '';
 
     return {
-      spaceSlug: SPACE_SLUG,
+      spaceSlug: slug,
       orderData: {
-        deliveryAddress: FIXED_DELIVERY_ADDRESS,
+        deliveryAddress,
         deliveryLocation: {
-          latitude: FIXED_DELIVERY_LAT,
-          longitude: FIXED_DELIVERY_LNG,
+          latitude: deliveryLat,
+          longitude: deliveryLng,
         },
         customerPhone: formData.phone,
         orderItems: Array.from(orderItemsByRestaurant.entries()).map(([restaurantId, menuItems]) => ({
@@ -355,8 +373,16 @@ export default function Step3ContactInfo() {
           menuItems,
         })),
         specialInstructions: specialInstructions || undefined,
-        scheduledFor: mealSessions[0]?.sessionDate,
-        scheduledTime: mealSessions[0]?.eventTime || eventDetails?.eventTime || '',
+        scheduledFor: sessionDate,
+        scheduledTime: sessionTime,
+        ...(sessionDate && sessionTime && {
+          eventStartDateTime: `${sessionDate}T${sessionTime}:00`,
+          deliveryDate: sessionDate,
+          deliveryTime: sessionTime,
+        }),
+        ...(sessionDate && eventEndTime && {
+          eventEndDateTime: `${sessionDate}T${eventEndTime}:00`,
+        }),
       },
     };
   };
@@ -456,10 +482,13 @@ export default function Step3ContactInfo() {
   const calculatePricing = async () => {
     setCalculatingPricing(true);
     try {
-      const pricingResult = await cateringService.calculateCateringPricingWithMealSessions(
+      const slug = coworkingSpaceSlug || 'testi';
+      console.log("calculating")
+      const pricingResult = await coworkingService.calculateCartPricing(
+        slug,
         mealSessions,
+        { latitude: deliveryLat, longitude: deliveryLng },
         promoCodes,
-        { latitude: FIXED_DELIVERY_LAT, longitude: FIXED_DELIVERY_LNG }
       );
 
       if (!pricingResult.isValid) {
@@ -595,6 +624,22 @@ export default function Step3ContactInfo() {
       setGeneratingPdf(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen">
+        <CoworkingAuthForm spaceSlug={coworkingSpaceSlug || "testi"} />
+      </div>
+    );
+  }
 
   if (success) {
     return (
@@ -857,7 +902,7 @@ export default function Step3ContactInfo() {
                 {/* Delivery Address */}
                 <div className="pb-4 mb-4 border-b border-base-300">
                   <p className="text-sm font-bold text-base-content mb-1">Delivering to</p>
-                  <p className="text-sm text-base-content/70">1-2 Paris Gardens, London</p>
+                  <p className="text-sm text-base-content/70">{deliveryAddress}</p>
                 </div>
      
 
