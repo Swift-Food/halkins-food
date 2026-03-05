@@ -183,6 +183,7 @@ export default function CoworkingDashboard({ spaceSlug }: CoworkingDashboardProp
           spaceId={spaceId}
           orderId={selectedOrderId}
           onClose={() => setSelectedOrderId(null)}
+          onOrderUpdated={fetchOrders}
         />
       )}
     </div>

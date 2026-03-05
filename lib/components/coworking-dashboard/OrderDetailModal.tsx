@@ -12,15 +12,19 @@ import {
   Clock,
   Package,
   Receipt,
+  Check,
+  XCircle,
 } from "lucide-react";
 
 interface OrderDetailModalProps {
   spaceId: string;
   orderId: string;
   onClose: () => void;
+  onOrderUpdated?: () => void;
 }
 
 const statusBadgeColor: Record<string, string> = {
+  pending_review: "bg-yellow-100 text-yellow-800 border-yellow-300",
   pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
   confirmed: "bg-blue-100 text-blue-800 border-blue-300",
   preparing: "bg-indigo-100 text-indigo-800 border-indigo-300",
@@ -29,6 +33,12 @@ const statusBadgeColor: Record<string, string> = {
   completed: "bg-gray-100 text-gray-800 border-gray-300",
   cancelled: "bg-red-100 text-red-800 border-red-300",
 };
+
+function formatStatus(status: string) {
+  return status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-GB", {
@@ -45,10 +55,16 @@ export default function OrderDetailModal({
   spaceId,
   orderId,
   onClose,
+  onOrderUpdated,
 }: OrderDetailModalProps) {
   const [order, setOrder] = useState<DashboardOrderDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [actionLoading, setActionLoading] = useState<"approve" | "reject" | null>(null);
+  const [actionError, setActionError] = useState("");
+  const [showRejectInput, setShowRejectInput] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -72,6 +88,42 @@ export default function OrderDetailModal({
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
+
+  const handleApprove = async () => {
+    setActionLoading("approve");
+    setActionError("");
+    try {
+      const updated = await coworkingDashboardService.approveOrder(spaceId, orderId);
+      setOrder(updated);
+      onOrderUpdated?.();
+    } catch (err: any) {
+      setActionError(err.message || "Failed to approve order");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReject = async () => {
+    setActionLoading("reject");
+    setActionError("");
+    try {
+      const updated = await coworkingDashboardService.rejectOrder(
+        spaceId,
+        orderId,
+        rejectReason || undefined
+      );
+      setOrder(updated);
+      setShowRejectInput(false);
+      setRejectReason("");
+      onOrderUpdated?.();
+    } catch (err: any) {
+      setActionError(err.message || "Failed to reject order");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const isPending = order?.status === "pending_review";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -113,7 +165,7 @@ export default function OrderDetailModal({
                     "bg-gray-100 text-gray-700 border-gray-300"
                   }`}
                 >
-                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                  {formatStatus(order.status)}
                 </span>
                 <span className="text-sm text-gray-500">
                   {formatDate(order.createdAt)}
@@ -224,6 +276,77 @@ export default function OrderDetailModal({
                   </span>
                 </div>
               </div>
+
+              {/* Approve / Reject Actions */}
+              {isPending && (
+                <div className="space-y-3 pt-2 border-t border-gray-200">
+                  {actionError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                      {actionError}
+                    </div>
+                  )}
+
+                  {showRejectInput ? (
+                    <div className="space-y-3">
+                      <textarea
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        placeholder="Reason for rejection (optional)"
+                        className="w-full border border-gray-300 rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400"
+                        rows={2}
+                        maxLength={500}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleReject}
+                          disabled={actionLoading !== null}
+                          className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-2.5 px-4 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {actionLoading === "reject" ? (
+                            <span className="loading loading-spinner loading-sm" />
+                          ) : (
+                            <XCircle className="h-4 w-4" />
+                          )}
+                          Confirm Reject
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowRejectInput(false);
+                            setRejectReason("");
+                          }}
+                          disabled={actionLoading !== null}
+                          className="px-4 py-2.5 rounded-lg font-medium text-sm text-gray-600 hover:bg-gray-100 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleApprove}
+                        disabled={actionLoading !== null}
+                        className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {actionLoading === "approve" ? (
+                          <span className="loading loading-spinner loading-sm" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                        Approve Order
+                      </button>
+                      <button
+                        onClick={() => setShowRejectInput(true)}
+                        disabled={actionLoading !== null}
+                        className="flex-1 flex items-center justify-center gap-2 bg-white border border-red-300 text-red-600 hover:bg-red-50 py-2.5 px-4 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Reject Order
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           ) : null}
         </div>
