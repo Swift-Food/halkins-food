@@ -45,23 +45,27 @@ export default function CoworkingAuthForm({
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [eventDate, setEventDate] = useState("");
+  const [startDate, setStartDate] = useState("");
   const [startTime, setStartTime] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("");
   const [selectedVenue, setSelectedVenue] = useState<CoworkingVenue | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const endTimeOptions = startTime
-    ? TIME_SLOTS.filter((s) => s.value > startTime)
-    : TIME_SLOTS;
+  const endTimeOptions =
+    startTime && endDate === startDate
+      ? TIME_SLOTS.filter((s) => s.value > startTime)
+      : TIME_SLOTS;
 
   const isFormValid =
     name.trim().length >= 2 &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
-    eventDate !== "" &&
+    startDate !== "" &&
     startTime !== "" &&
+    endDate !== "" &&
     endTime !== "" &&
+    (endDate > startDate || endTime > startTime) &&
     selectedVenue !== null;
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
@@ -82,8 +86,8 @@ export default function CoworkingAuthForm({
       return;
     }
 
-    if (!eventDate) {
-      setError("Please select an event date.");
+    if (!startDate || !endDate) {
+      setError("Please select a start and end date.");
       return;
     }
 
@@ -92,8 +96,8 @@ export default function CoworkingAuthForm({
       return;
     }
 
-    if (endTime <= startTime) {
-      setError("End time must be after start time.");
+    if (endDate < startDate || (endDate === startDate && endTime <= startTime)) {
+      setError("End must be after start.");
       return;
     }
 
@@ -110,7 +114,7 @@ export default function CoworkingAuthForm({
         name: trimmedName,
       });
 
-      setVenueSelection(selectedVenue, eventDate, startTime, endTime);
+      setVenueSelection(selectedVenue, startDate, startTime, endDate, endTime);
 
       setSession({
         member: {
@@ -196,72 +200,86 @@ export default function CoworkingAuthForm({
               Event Details
             </p>
             <div className="space-y-4">
-              {/* Date */}
+              {/* Start Date + Time */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Event Date
+                  Start
                 </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  <input
-                    type="date"
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                    min={getMinDate()}
-                    max={getMaxDate()}
-                    disabled={isSubmitting}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-white appearance-none"
-                    style={{ WebkitAppearance: "none" }}
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Start + End Time */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Start Time
-                  </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        if (endDate && endDate < e.target.value) setEndDate(e.target.value);
+                        if (endTime && endDate === e.target.value && endTime <= startTime) setEndTime("");
+                      }}
+                      min={getMinDate()}
+                      max={getMaxDate()}
+                      disabled={isSubmitting}
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-white appearance-none"
+                      style={{ WebkitAppearance: "none" }}
+                      required
+                    />
+                  </div>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     <select
                       value={startTime}
                       onChange={(e) => {
                         setStartTime(e.target.value);
-                        if (endTime && endTime <= e.target.value) setEndTime("");
+                        if (endDate === startDate && endTime && endTime <= e.target.value) setEndTime("");
                       }}
                       disabled={isSubmitting}
                       className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors"
                       required
                     >
-                      <option value="">Select</option>
+                      <option value="">Time</option>
                       {TIME_SLOTS.map((s) => (
-                        <option key={s.value} value={s.value}>
-                          {s.label}
-                        </option>
+                        <option key={s.value} value={s.value}>{s.label}</option>
                       ))}
                     </select>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    End Time
-                  </label>
+              </div>
+
+              {/* End Date + Time */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  End
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        if (e.target.value === startDate && endTime && endTime <= startTime) setEndTime("");
+                      }}
+                      min={startDate || getMinDate()}
+                      max={getMaxDate()}
+                      disabled={isSubmitting || !startDate}
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-white appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ WebkitAppearance: "none" }}
+                      required
+                    />
+                  </div>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     <select
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
-                      disabled={isSubmitting || !startTime}
+                      disabled={isSubmitting || !startTime || !endDate}
                       className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       required
                     >
-                      <option value="">Select</option>
+                      <option value="">Time</option>
                       {endTimeOptions.map((s) => (
-                        <option key={s.value} value={s.value}>
-                          {s.label}
-                        </option>
+                        <option key={s.value} value={s.value}>{s.label}</option>
                       ))}
                     </select>
                   </div>

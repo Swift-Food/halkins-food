@@ -87,14 +87,22 @@ export interface CreateCoworkingOrderRequest {
   bookingReference?: string;
   roomLocation?: string; // max 200 chars
   customerPhone?: string;
-  orderItems: CoworkingRestaurantOrder[]; // 1-10 restaurants
+  orderItems?: CoworkingRestaurantOrder[]; // flat items (single-session fallback)
+  mealSessions?: CoworkingMealSessionRequest[]; // per-session items with date/time
   specialInstructions?: string; // max 1000 chars
   scheduledFor?: string; // ISO date string
-  scheduledTime: string; // HH:MM format
+  scheduledTime?: string; // HH:MM format
   eventStartDateTime?: string; // ISO datetime e.g. "2025-06-15T10:00:00"
   eventEndDateTime?: string; // ISO datetime e.g. "2025-06-15T14:00:00"
   deliveryDate?: string; // "YYYY-MM-DD"
   deliveryTime?: string; // "HH:MM"
+}
+
+export interface CoworkingMealSessionRequest {
+  sessionName?: string;
+  sessionDate: string; // "YYYY-MM-DD"
+  eventTime: string; // "HH:MM"
+  orderItems: CoworkingRestaurantOrder[];
 }
 
 // ============================================================================

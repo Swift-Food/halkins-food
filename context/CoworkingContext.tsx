@@ -22,6 +22,7 @@ interface VenueSelection {
   venue: CoworkingVenue;
   startDate: string;
   startTime: string;
+  endDate: string;
   endTime: string;
 }
 
@@ -36,11 +37,12 @@ interface CoworkingContextType {
   selectedVenue: CoworkingVenue | null;
   eventStartDate: string;
   eventStartTime: string;
+  eventEndDate: string;
   eventEndTime: string;
 
   setSpaceInfo: (info: CoworkingSpaceInfo) => void;
   setSession: (data: { member: MemberInfo }) => void;
-  setVenueSelection: (venue: CoworkingVenue, startDate: string, startTime: string, endTime: string) => void;
+  setVenueSelection: (venue: CoworkingVenue, startDate: string, startTime: string, endDate: string, endTime: string) => void;
   logout: () => void;
 }
 
@@ -56,6 +58,7 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
   const [selectedVenue, setSelectedVenue] = useState<CoworkingVenue | null>(null);
   const [eventStartDate, setEventStartDate] = useState("");
   const [eventStartTime, setEventStartTime] = useState("");
+  const [eventEndDate, setEventEndDate] = useState("");
   const [eventEndTime, setEventEndTime] = useState("");
 
   const hasValidToken = useCallback((): boolean => {
@@ -74,6 +77,7 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
     setSelectedVenue(null);
     setEventStartDate("");
     setEventStartTime("");
+    setEventEndDate("");
     setEventEndTime("");
   }, []);
 
@@ -102,6 +106,7 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
         setSelectedVenue(selection.venue);
         setEventStartDate(selection.startDate);
         setEventStartTime(selection.startTime);
+        setEventEndDate(selection.endDate ?? selection.startDate);
         setEventEndTime(selection.endTime);
       }
     } catch (error) {
@@ -145,13 +150,14 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
   );
 
   const setVenueSelection = useCallback(
-    (venue: CoworkingVenue, startDate: string, startTime: string, endTime: string) => {
+    (venue: CoworkingVenue, startDate: string, startTime: string, endDate: string, endTime: string) => {
       setSelectedVenue(venue);
       setEventStartDate(startDate);
       setEventStartTime(startTime);
+      setEventEndDate(endDate);
       setEventEndTime(endTime);
       if (typeof window !== "undefined") {
-        const selection: VenueSelection = { venue, startDate, startTime, endTime };
+        const selection: VenueSelection = { venue, startDate, startTime, endDate, endTime };
         sessionStorage.setItem(STORAGE_KEYS.VENUE_SELECTION, JSON.stringify(selection));
       }
     },
@@ -177,6 +183,7 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
       selectedVenue,
       eventStartDate,
       eventStartTime,
+      eventEndDate,
       eventEndTime,
       setSpaceInfo,
       setSession,
@@ -192,6 +199,7 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
       selectedVenue,
       eventStartDate,
       eventStartTime,
+      eventEndDate,
       eventEndTime,
       setSpaceInfo,
       setSession,

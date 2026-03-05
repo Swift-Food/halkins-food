@@ -336,28 +336,41 @@ export default function Step3ContactInfo() {
   };
 
   const buildCoworkingOrderData = (): { spaceSlug: string; orderData: CreateCoworkingOrderRequest } => {
-    // Group order items by restaurant
-    const orderItemsByRestaurant = new Map<string, { menuItemId: string; quantity: number; selectedAddons?: { name: string; quantity: number }[] }[]>();
-    mealSessions.forEach(session => {
-      session.orderItems.forEach(({ item, quantity }) => {
-        const restaurantId = item.restaurantId;
-        if (!orderItemsByRestaurant.has(restaurantId)) {
-          orderItemsByRestaurant.set(restaurantId, []);
-        }
-        orderItemsByRestaurant.get(restaurantId)!.push({
-          menuItemId: item.id,
-          quantity,
-          selectedAddons: item.selectedAddons?.map(addon => ({
-            name: addon.name,
-            quantity: addon.quantity,
-          })),
-        });
-      });
-    });
-
     const slug = coworkingSpaceSlug || 'testi';
-    const sessionDate = mealSessions[0]?.sessionDate || '';
-    const sessionTime = mealSessions[0]?.eventTime || eventDetails?.eventTime || '';
+    const firstSession = mealSessions[0];
+    const sessionDate = firstSession?.sessionDate || '';
+    const sessionTime = firstSession?.eventTime || eventDetails?.eventTime || '';
+
+    // Build per-session meal sessions with items grouped by restaurant
+    const builtMealSessions = mealSessions
+      .filter(session => session.orderItems.length > 0)
+      .map(session => {
+        const itemsByRestaurant = new Map<string, { menuItemId: string; quantity: number; selectedAddons?: { name: string; quantity: number }[] }[]>();
+        session.orderItems.forEach(({ item, quantity }) => {
+          const restaurantId = item.restaurantId;
+          if (!itemsByRestaurant.has(restaurantId)) {
+            itemsByRestaurant.set(restaurantId, []);
+          }
+          itemsByRestaurant.get(restaurantId)!.push({
+            menuItemId: item.id,
+            quantity,
+            selectedAddons: item.selectedAddons?.map(addon => ({
+              name: addon.name,
+              quantity: addon.quantity,
+            })),
+          });
+        });
+
+        return {
+          sessionName: session.sessionName,
+          sessionDate: session.sessionDate,
+          eventTime: session.eventTime,
+          orderItems: Array.from(itemsByRestaurant.entries()).map(([restaurantId, menuItems]) => ({
+            restaurantId,
+            menuItems,
+          })),
+        };
+      });
 
     return {
       spaceSlug: slug,
@@ -368,10 +381,7 @@ export default function Step3ContactInfo() {
           longitude: deliveryLng,
         },
         customerPhone: formData.phone,
-        orderItems: Array.from(orderItemsByRestaurant.entries()).map(([restaurantId, menuItems]) => ({
-          restaurantId,
-          menuItems,
-        })),
+        mealSessions: builtMealSessions,
         specialInstructions: specialInstructions || undefined,
         scheduledFor: sessionDate,
         scheduledTime: sessionTime,

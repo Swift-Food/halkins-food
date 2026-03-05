@@ -61,10 +61,11 @@ function getMaxDate(): string {
 
 interface EditModalProps {
   onClose: () => void;
-  onSave: (venue: CoworkingVenue, date: string, start: string, end: string) => void;
+  onSave: (venue: CoworkingVenue, startDate: string, start: string, endDate: string, end: string) => void;
   initialVenue: CoworkingVenue | null;
   initialDate: string;
   initialStart: string;
+  initialEndDate: string;
   initialEnd: string;
 }
 
@@ -74,16 +75,27 @@ function EventEditModal({
   initialVenue,
   initialDate,
   initialStart,
+  initialEndDate,
   initialEnd,
 }: EditModalProps) {
   const [venue, setVenue] = useState<CoworkingVenue | null>(initialVenue);
-  const [date, setDate] = useState(initialDate);
+  const [startDate, setStartDate] = useState(initialDate);
   const [start, setStart] = useState(initialStart);
+  const [endDate, setEndDate] = useState(initialEndDate || initialDate);
   const [end, setEnd] = useState(initialEnd);
 
-  const endOptions = start ? TIME_SLOTS.filter((s) => s.value > start) : TIME_SLOTS;
+  const endOptions =
+    start && endDate === startDate
+      ? TIME_SLOTS.filter((s) => s.value > start)
+      : TIME_SLOTS;
 
-  const canSave = venue !== null && date !== "" && start !== "" && end !== "" && end > start;
+  const canSave =
+    venue !== null &&
+    startDate !== "" &&
+    start !== "" &&
+    endDate !== "" &&
+    end !== "" &&
+    (endDate > startDate || end > start);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
@@ -102,58 +114,72 @@ function EventEditModal({
         <div className="p-6 space-y-6">
           {/* Date + Times */}
           <div className="space-y-4">
+            {/* Start */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Event Date
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  min={getMinDate()}
-                  max={getMaxDate()}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white appearance-none"
-                  style={{ WebkitAppearance: "none" }}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Start Time
-                </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Start</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      if (endDate && endDate < e.target.value) setEndDate(e.target.value);
+                      if (endDate === e.target.value && end && end <= start) setEnd("");
+                    }}
+                    min={getMinDate()}
+                    max={getMaxDate()}
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white appearance-none"
+                    style={{ WebkitAppearance: "none" }}
+                  />
+                </div>
                 <div className="relative">
                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   <select
                     value={start}
                     onChange={(e) => {
                       setStart(e.target.value);
-                      if (end && end <= e.target.value) setEnd("");
+                      if (endDate === startDate && end && end <= e.target.value) setEnd("");
                     }}
                     className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
                   >
-                    <option value="">Select</option>
+                    <option value="">Time</option>
                     {TIME_SLOTS.map((s) => (
                       <option key={s.value} value={s.value}>{s.label}</option>
                     ))}
                   </select>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  End Time
-                </label>
+            </div>
+            {/* End */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">End</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      if (e.target.value === startDate && end && end <= start) setEnd("");
+                    }}
+                    min={startDate || getMinDate()}
+                    max={getMaxDate()}
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white appearance-none"
+                    style={{ WebkitAppearance: "none" }}
+                  />
+                </div>
                 <div className="relative">
                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   <select
                     value={end}
                     onChange={(e) => setEnd(e.target.value)}
-                    disabled={!start}
+                    disabled={!start || !endDate}
                     className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white disabled:opacity-50"
                   >
-                    <option value="">Select</option>
+                    <option value="">Time</option>
                     {endOptions.map((s) => (
                       <option key={s.value} value={s.value}>{s.label}</option>
                     ))}
@@ -220,7 +246,7 @@ function EventEditModal({
           </button>
           <button
             type="button"
-            onClick={() => canSave && onSave(venue!, date, start, end)}
+            onClick={() => canSave && onSave(venue!, startDate, start, endDate, end)}
             disabled={!canSave}
             className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-40 hover:opacity-90 transition-opacity"
           >
@@ -247,6 +273,7 @@ export default function CoworkingOrderFlow() {
     selectedVenue,
     eventStartDate,
     eventStartTime,
+    eventEndDate,
     eventEndTime,
     setVenueSelection,
   } = useCoworking();
@@ -305,12 +332,13 @@ export default function CoworkingOrderFlow() {
 
   const handleSaveEventEdit = (
     venue: CoworkingVenue,
-    date: string,
+    startDate: string,
     start: string,
+    endDate: string,
     end: string
   ) => {
-    setVenueSelection(venue, date, start, end);
-    updateMealSession(0, { sessionDate: date, eventTime: start });
+    setVenueSelection(venue, startDate, start, endDate, end);
+    updateMealSession(0, { sessionDate: startDate, eventTime: start });
     setShowEditModal(false);
   };
 
@@ -399,6 +427,7 @@ export default function CoworkingOrderFlow() {
                   <span className="flex items-center gap-1.5 text-sm text-gray-500 shrink-0">
                     <Calendar className="w-4 h-4 shrink-0" />
                     {formatDate(eventStartDate)}
+                    {eventEndDate && eventEndDate !== eventStartDate && ` – ${formatDate(eventEndDate)}`}
                   </span>
                 )}
                 {eventStartTime && (
@@ -435,6 +464,7 @@ export default function CoworkingOrderFlow() {
           initialVenue={selectedVenue}
           initialDate={eventStartDate}
           initialStart={eventStartTime}
+          initialEndDate={eventEndDate}
           initialEnd={eventEndTime}
         />
       )}
