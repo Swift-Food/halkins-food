@@ -138,7 +138,7 @@ export default function CoworkingAuthForm({
           <h2 className="text-3xl font-bold text-gray-900">Book your event</h2>
           {spaceInfo && (
             <p className="text-gray-500 mt-2 text-sm">
-              Powered by Swift · {spaceInfo.name}
+              Powered by Swift
             </p>
           )}
         </div>

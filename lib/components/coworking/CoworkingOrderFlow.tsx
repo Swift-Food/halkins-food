@@ -366,12 +366,6 @@ export default function CoworkingOrderFlow() {
     return (
       <div className="min-h-screen">
         <div className="py-2 max-w mx-auto bg-base-100">
-          {spaceInfo && (
-            <div className="mx-4 md:mx-10 mb-4">
-              <h1 className="text-2xl font-bold">{spaceInfo.name}</h1>
-              <p className="text-gray-500 text-sm">{spaceInfo.address}</p>
-            </div>
-          )}
           <CoworkingAuthForm spaceSlug={spaceSlug} />
         </div>
       </div>
