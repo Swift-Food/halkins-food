@@ -91,10 +91,13 @@ export interface PaginationInfo {
 export interface DashboardOrderSummary {
   id: string;
   status: string;
+  adminReviewStatus: string;
   memberEmail: string;
   memberName: string | null;
   roomLocationDetails: string | null;
   bookingReference: string;
+  subtotal: number;
+  venueHireFee: number;
   total: number;
   itemCount: number;
   estimatedDelivery: string | null;
@@ -144,6 +147,7 @@ export interface DashboardOrderMember {
 export interface DashboardOrderTotal {
   subtotal: number;
   deliveryFee: number;
+  venueHireFee: number;
   total: number;
 }
 
@@ -154,10 +158,13 @@ export interface DashboardOrderTotal {
 export interface DashboardOrderDetailResponse {
   id: string;
   status: string;
+  adminReviewStatus: string;
+  adminReviewedAt: string | null;
   member: DashboardOrderMember;
   booking: DashboardOrderBooking;
   items: DashboardOrderItem[];
   total: DashboardOrderTotal;
+  eventDate: string | null;
   createdAt: string;
   estimatedDelivery: string | null;
 }
