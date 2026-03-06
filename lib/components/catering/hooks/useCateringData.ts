@@ -109,8 +109,10 @@ export function useCateringData({ expandedSessionIndex }: UseCateringDataOptions
             selectedCategory.id
           );
         }
-        // Map to MenuItem format for MenuItemCard
-        const mappedItems = data.map(mapToMenuItem);
+        // Map to MenuItem format for MenuItemCard and filter out inactive/draft items
+        const mappedItems = data
+          .map(mapToMenuItem)
+          .filter((item) => !item.status || item.status === "ACTIVE" || item.status === "SOLD_OUT");
 
         // Sort items: items with images first, then items without images
         const itemsWithImage = mappedItems.filter(
