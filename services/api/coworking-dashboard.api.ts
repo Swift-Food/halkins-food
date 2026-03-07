@@ -208,6 +208,64 @@ class CoworkingDashboardService {
 
     return response.json();
   }
+  // =========================================================================
+  // STRIPE ACCOUNT MANAGEMENT
+  // =========================================================================
+
+  /**
+   * Get Stripe account status for the coworking space
+   */
+  async getStripeStatus(
+    spaceId: string
+  ): Promise<{ connected: boolean; onboardingComplete: boolean; accountId: string | null }> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_STRIPE_STATUS(spaceId)}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch Stripe status');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Create a Stripe connected account and get onboarding URL
+   */
+  async setupStripeAccount(
+    spaceId: string
+  ): Promise<{ onboardingUrl: string }> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_STRIPE_SETUP(spaceId)}`,
+      { method: 'POST' }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to set up Stripe account');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Refresh an expired Stripe onboarding link
+   */
+  async refreshStripeOnboardingLink(
+    spaceId: string
+  ): Promise<{ onboardingUrl: string }> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_STRIPE_REFRESH(spaceId)}`,
+      { method: 'POST' }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to refresh onboarding link');
+    }
+
+    return response.json();
+  }
 }
 
 // Export singleton instance

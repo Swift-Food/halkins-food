@@ -12,7 +12,8 @@ import DashboardLogin from "./DashboardLogin";
 import StatsCards from "./StatsCards";
 import OrdersList from "./OrdersList";
 import OrderDetailModal from "./OrderDetailModal";
-import { LogOut, Building2 } from "lucide-react";
+import StripeSettings from "./StripeSettings";
+import { LogOut, Building2, Settings } from "lucide-react";
 
 interface CoworkingDashboardProps {
   spaceSlug: string;
@@ -29,6 +30,7 @@ export default function CoworkingDashboard({ spaceSlug }: CoworkingDashboardProp
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
+  const [showSettings, setShowSettings] = useState(false);
   const [error, setError] = useState("");
 
   // The resolved space ID from the getMe response
@@ -140,13 +142,22 @@ export default function CoworkingDashboard({ spaceSlug }: CoworkingDashboardProp
             </p>
           )}
         </div>
-        <button
-          onClick={handleLogout}
-          className="btn btn-ghost btn-sm gap-2 text-gray-600"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className={`btn btn-ghost btn-sm gap-2 ${showSettings ? "text-pink-600" : "text-gray-600"}`}
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </button>
+          <button
+            onClick={handleLogout}
+            className="btn btn-ghost btn-sm gap-2 text-gray-600"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </button>
+        </div>
       </div>
 
       {/* Error */}
@@ -162,6 +173,9 @@ export default function CoworkingDashboard({ spaceSlug }: CoworkingDashboardProp
           <span className="loading loading-spinner loading-lg text-pink-500" />
         </div>
       )}
+
+      {/* Settings */}
+      {showSettings && spaceId && <StripeSettings spaceId={spaceId} />}
 
       {/* Stats Cards */}
       {stats && <StatsCards stats={stats} />}
