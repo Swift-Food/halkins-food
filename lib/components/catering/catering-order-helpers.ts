@@ -2,6 +2,14 @@ import { MealSessionState, MenuItemDetails } from "@/types/catering.types";
 import { DayGroup } from "./types";
 import { MenuItem } from "@/types/restaurant.types";
 
+interface MenuItemRestaurantSummary {
+  restaurant_name?: string;
+}
+
+interface MenuItemAddonWithDietary {
+  dietaryRestrictions?: string[];
+}
+
 // Hour options for 12-hour time picker
 export const HOUR_12_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   label: `${i + 1}`,
@@ -105,6 +113,13 @@ export function getMaxDate(): string {
  * Map MenuItemDetails from API to MenuItem format for components
  */
 export function mapToMenuItem(item: MenuItemDetails): MenuItem {
+  const itemWithExtras = item as MenuItemDetails & {
+    restaurant?: MenuItemRestaurantSummary;
+    cateringQuantityUnit?: number;
+    feedsPerUnit?: number;
+    dietaryFilters?: string[];
+  };
+
   return {
     id: item.id,
     menuItemName: item.name,
@@ -116,21 +131,22 @@ export function mapToMenuItem(item: MenuItemDetails): MenuItem {
     image: item.image,
     averageRating: item.averageRating,
     restaurantId: item.restaurantId,
-    restaurantName: (item as any).restaurant?.restaurant_name,
+    restaurantName: itemWithExtras.restaurant?.restaurant_name,
     groupTitle: item.groupTitle,
     status: item.status,
     itemDisplayOrder: item.itemDisplayOrder || 0,
-    cateringQuantityUnit: (item as any).cateringQuantityUnit,
-    feedsPerUnit: (item as any).feedsPerUnit,
-    dietaryFilters: (item as any).dietaryFilters,
-    // Include subcategory info from API response
-    subcategoryId: (item as any).subcategories?.[0]?.id,
-    subcategoryName: (item as any).subcategories?.[0]?.name,
+    cateringQuantityUnit: itemWithExtras.cateringQuantityUnit,
+    feedsPerUnit: itemWithExtras.feedsPerUnit,
+    dietaryFilters: itemWithExtras.dietaryFilters,
+    categoryId: item.categories?.[0]?.id || item.categoryIds?.[0],
+    categoryName: item.categories?.[0]?.name,
+    subcategoryId: item.subCategories?.[0]?.id || item.subcategoryIds?.[0],
+    subcategoryName: item.subCategories?.[0]?.name,
     addons: (item.addons || []).map((addon) => ({
       name: addon.name,
       price: addon.price?.toString() || "0",
       allergens: addon.allergens?.join(", ") || "",
-      dietaryRestrictions: (addon as any).dietaryRestrictions,
+      dietaryRestrictions: (addon as MenuItemAddonWithDietary).dietaryRestrictions,
       groupTitle: addon.groupTitle || "",
       isRequired: addon.isRequired || false,
       selectionType: addon.selectionType || "single",

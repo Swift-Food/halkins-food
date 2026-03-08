@@ -3,6 +3,16 @@ import { API_BASE_URL } from "@/lib/constants";
 import { CategoryWithSubcategories, MenuItemDetails } from "@/types/catering.types";
 
 class CategoryService {
+  async getCategories(): Promise<CategoryWithSubcategories[]> {
+    const response = await fetchWithAuth(`${API_BASE_URL}/categories`);
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch categories");
+    }
+
+    return response.json();
+  }
+
   async getCategoriesWithSubcategories(): Promise<CategoryWithSubcategories[]> {
     const response = await fetchWithAuth(
       `${API_BASE_URL}/categories/with-subcategories`

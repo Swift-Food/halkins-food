@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   CategoryWithSubcategories,
   Subcategory,
@@ -10,6 +10,7 @@ import { API_BASE_URL, API_ENDPOINTS } from "@/lib/constants/api";
 import { fetchWithAuth } from "@/lib/api-client/auth-client";
 import { Restaurant, MenuItem } from "@/types/restaurant.types";
 import { mapToMenuItem } from "../catering-order-helpers";
+import { DietaryFilter } from "@/types/menuItem";
 
 interface UseCateringDataOptions {
   expandedSessionIndex: number | null;
@@ -30,13 +31,25 @@ export function useCateringData({ expandedSessionIndex }: UseCateringDataOptions
   const [menuItemsLoading, setMenuItemsLoading] = useState(false);
   const [menuItemsError, setMenuItemsError] = useState<string | null>(null);
 
+  // Dietary filter state
+  const [selectedDietaryFilters, setSelectedDietaryFilters] = useState<
+    DietaryFilter[]
+  >([]);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [allMenuItems, setAllMenuItems] = useState<MenuItem[] | null>(null);
+  const [allMenuItemsLoading, setAllMenuItemsLoading] = useState(false);
+
   // Restaurants state for validation
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [restaurantsLoading, setRestaurantsLoading] = useState(true);
 
   // Fetch restaurants on mount (for validation)
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
+        setRestaurantsLoading(true);
         const response = await fetchWithAuth(
           `${API_BASE_URL}${API_ENDPOINTS.RESTAURANT_CATERING}`
         );
@@ -44,6 +57,8 @@ export function useCateringData({ expandedSessionIndex }: UseCateringDataOptions
         setRestaurants(data);
       } catch (error) {
         console.error("Error fetching restaurants:", error);
+      } finally {
+        setRestaurantsLoading(false);
       }
     };
     fetchRestaurants();
@@ -136,6 +151,67 @@ export function useCateringData({ expandedSessionIndex }: UseCateringDataOptions
     fetchMenuItems();
   }, [selectedCategory, selectedSubcategory]);
 
+  // Fetch all menu items for search (cached after first fetch)
+  const allMenuItemsFetchedRef = useRef(false);
+  const fetchAllMenuItems = useCallback(async () => {
+    if (allMenuItemsFetchedRef.current) return;
+    allMenuItemsFetchedRef.current = true;
+    setAllMenuItemsLoading(true);
+    try {
+      const response = await fetchWithAuth(`${API_BASE_URL}/menu-item/catering`);
+      const data = await response.json();
+      const mapped = (data || []).map(mapToMenuItem);
+      setAllMenuItems(mapped);
+    } catch (error) {
+      console.error("Failed to fetch all menu items for search:", error);
+      allMenuItemsFetchedRef.current = false;
+    } finally {
+      setAllMenuItemsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (searchQuery.trim() && allMenuItems === null && !allMenuItemsLoading) {
+      fetchAllMenuItems();
+    }
+  }, [searchQuery, allMenuItems, allMenuItemsLoading, fetchAllMenuItems]);
+
+  const filterByDietary = useCallback(
+    (items: MenuItem[]) => {
+      if (selectedDietaryFilters.length === 0) return items;
+      return items.filter((item) => {
+        const itemFilters = item.dietaryFilters || [];
+        return selectedDietaryFilters.every((filter) =>
+          itemFilters.includes(filter)
+        );
+      });
+    },
+    [selectedDietaryFilters]
+  );
+
+  const filteredMenuItems = useMemo(
+    () => filterByDietary(menuItems),
+    [menuItems, filterByDietary]
+  );
+
+  const searchResults = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query || !allMenuItems) return null;
+
+    const matched = allMenuItems.filter((item) => {
+      const name = item.menuItemName?.toLowerCase() || "";
+      const description = item.description?.toLowerCase() || "";
+      const groupTitle = item.groupTitle?.toLowerCase() || "";
+      return (
+        name.includes(query) ||
+        description.includes(query) ||
+        groupTitle.includes(query)
+      );
+    });
+
+    return filterByDietary(matched);
+  }, [searchQuery, allMenuItems, filterByDietary]);
+
   // Handle category click
   const handleCategoryClick = useCallback(
     (category: CategoryWithSubcategories) => {
@@ -160,6 +236,14 @@ export function useCateringData({ expandedSessionIndex }: UseCateringDataOptions
     [selectedSubcategory]
   );
 
+  const toggleDietaryFilter = useCallback((filter: DietaryFilter) => {
+    setSelectedDietaryFilters((prev) =>
+      prev.includes(filter)
+        ? prev.filter((f) => f !== filter)
+        : [...prev, filter]
+    );
+  }, []);
+
   // Helper to select Mains category
   const selectMainsCategory = useCallback(() => {
     const mainsCategory = categories.find(
@@ -183,11 +267,26 @@ export function useCateringData({ expandedSessionIndex }: UseCateringDataOptions
     selectMainsCategory,
 
     // Menu items
-    menuItems,
+    menuItems: filteredMenuItems,
     menuItemsLoading,
     menuItemsError,
 
+    // Dietary filters
+    selectedDietaryFilters,
+    toggleDietaryFilter,
+
+    // Search
+    searchQuery,
+    setSearchQuery,
+    searchResults,
+    searchLoading: allMenuItemsLoading,
+
     // Restaurants
     restaurants,
+    restaurantsLoading,
+
+    // All menu items
+    allMenuItems,
+    fetchAllMenuItems,
   };
 }

@@ -131,4 +131,8 @@ export interface UseCateringDataReturn {
 
   // Restaurants
   restaurants: Restaurant[];
+
+  // All menu items
+  allMenuItems: MenuItem[] | null;
+  fetchAllMenuItems: () => void;
 }
