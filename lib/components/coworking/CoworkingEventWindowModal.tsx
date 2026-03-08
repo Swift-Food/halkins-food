@@ -350,7 +350,7 @@ export default function CoworkingEventWindowModal({
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 px-3 py-3 backdrop-blur-sm sm:px-4 sm:py-6">
-      <div className="max-h-[96vh] w-full max-w-4xl overflow-auto rounded-[1.5rem] border border-white/70 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:max-h-[92vh] sm:rounded-[2rem]">
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-[1.5rem] border border-white/70 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:max-h-[92vh] sm:rounded-[2rem]">
         <div className="border-b border-slate-200/80 px-4 py-4 sm:px-6 sm:py-5 sm:px-8">
           <div className="flex items-start justify-between gap-3 sm:items-center sm:gap-4">
             <div>
@@ -432,16 +432,44 @@ export default function CoworkingEventWindowModal({
                 const isDisabled = day < min || day > max;
                 const isStart = value === draftStartDate;
                 const isEnd = value === draftEndDate;
+                const isSingleDayRange =
+                  Boolean(draftStartDate) &&
+                  Boolean(draftEndDate) &&
+                  draftStartDate === draftEndDate &&
+                  value === draftStartDate;
+                const isRowStart = day.getDay() === 0;
+                const isRowEnd = day.getDay() === 6;
                 const isInRange =
                   Boolean(draftStartDate) &&
                   Boolean(draftEndDate) &&
                   value > draftStartDate &&
                   value < draftEndDate;
+                const hasRangeBackground =
+                  isInRange ||
+                  (isSingleDayRange && false) ||
+                  (isStart && Boolean(draftEndDate) && draftEndDate > draftStartDate) ||
+                  (isEnd && Boolean(draftStartDate) && draftEndDate > draftStartDate);
 
                 return (
                   <div key={value} className="relative flex h-10 items-center justify-center sm:h-12">
-                    {isInRange && (
-                      <div className="absolute inset-x-0 top-1/2 h-8 -translate-y-1/2 bg-primary/12 sm:h-9" />
+                    {hasRangeBackground && (
+                      <div
+                        className={`absolute top-1/2 h-8 -translate-y-1/2 bg-primary/12 sm:h-9 ${
+                          isSingleDayRange || isInRange
+                            ? "inset-x-0"
+                            : isStart
+                              ? "left-[35%] right-0"
+                              : "left-0 right-[35%]"
+                        } ${
+                          isSingleDayRange
+                            ? "rounded-full"
+                            : isInRange
+                              ? `${isRowStart ? "rounded-l-full" : ""} ${isRowEnd ? "rounded-r-full" : ""}`
+                              : isStart
+                                ? `${isRowEnd ? "rounded-full" : "rounded-l-full"}`
+                                : `${isRowStart ? "rounded-full" : "rounded-r-full"}`
+                        }`}
+                      />
                     )}
                     <button
                       type="button"
