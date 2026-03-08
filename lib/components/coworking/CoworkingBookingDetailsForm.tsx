@@ -130,11 +130,12 @@ export default function CoworkingBookingDetailsForm({
       <div className="space-y-6">
         <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/75 backdrop-blur">
           <div className="grid gap-0 lg:grid-cols-[1fr_1.15fr]">
-            <div className="relative p-6 sm:p-8">
+            <div className="relative px-6 pb-6 pt-4 sm:px-8 sm:pb-8 sm:pt-5">
               <div className="absolute bottom-0 left-6 right-6 h-px bg-slate-200/80 sm:left-8 sm:right-8 lg:hidden" />
               <div className="absolute bottom-8 right-0 top-8 hidden w-px bg-slate-200/80 lg:block" />
               <div className="mb-6 flex items-center gap-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/75">
+                <span className="h-px flex-1 bg-primary/20" />
+                <p className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/75">
                   Your Details
                 </p>
                 <span className="h-px flex-1 bg-primary/20" />
@@ -189,9 +190,10 @@ export default function CoworkingBookingDetailsForm({
               </div>
             </div>
 
-            <div className="p-6 sm:p-8">
+            <div className="px-6 pb-6 pt-4 sm:px-8 sm:pb-8 sm:pt-5">
               <div className="mb-6 flex items-center gap-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/75">
+                <span className="h-px flex-1 bg-primary/20" />
+                <p className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/75">
                   Event Details
                 </p>
                 <span className="h-px flex-1 bg-primary/20" />
@@ -245,7 +247,8 @@ export default function CoworkingBookingDetailsForm({
         <div className="rounded-[2rem] border border-white/70 bg-white/75 p-6 backdrop-blur sm:p-8">
           <div className="mb-5">
             <div className="flex items-center gap-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/75">
+              <span className="h-px flex-1 bg-primary/20" />
+              <p className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/75">
                 Choose a Venue
               </p>
               <span className="h-px flex-1 bg-primary/20" />
