@@ -5,12 +5,14 @@ interface PricingSummaryProps {
   pricing: CateringPricingResult | null;
   calculatingPricing: boolean;
   estimatedTotal?: number;
+  hasDeliveryAddress?: boolean;
 }
 
 export default function PricingSummary({
   pricing,
   calculatingPricing,
   estimatedTotal,
+  hasDeliveryAddress = false,
 }: PricingSummaryProps) {
   const [showDeliveryBreakdown, setShowDeliveryBreakdown] = useState(false);
   if (calculatingPricing) {
@@ -28,6 +30,10 @@ export default function PricingSummary({
       (pricing as any).mealSessions?.[0]?.deliveryFeeBreakdown;
     const distanceInMiles = pricing.distanceInMiles ||
       (pricing as any).mealSessions?.[0]?.distanceInMiles;
+    const hasDistanceQuote =
+      typeof distanceInMiles === "number" && !Number.isNaN(distanceInMiles);
+    const hasDeliveryQuote =
+      hasDeliveryAddress || hasDistanceQuote || deliveryBreakdown !== undefined;
     return (
       <div className="space-y-2 pt-4 border-t border-base-300">
         {/* Subtotal */}
@@ -60,7 +66,7 @@ export default function PricingSummary({
               
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              {!distanceInMiles ? (
+              {!hasDeliveryQuote ? (
                 <span className="text-base-content/50 text-xs italic">Enter address for quote</span>
               ) : (
                 <>
@@ -121,7 +127,7 @@ export default function PricingSummary({
         <div className="flex justify-between text-lg font-bold text-base-content pt-3 border-t border-base-300">
           <span>Total</span>
           <div className="text-right">
-            {!distanceInMiles ? (
+            {!hasDeliveryQuote ? (
               <div>
                 <p>£{pricing.subtotal.toFixed(2)}</p>
                 <p className="text-xs font-normal text-base-content/50">+ delivery (address required)</p>

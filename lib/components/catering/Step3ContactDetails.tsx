@@ -1097,6 +1097,7 @@ export default function Step3ContactInfo() {
                   pricing={pricing}
                   calculatingPricing={calculatingPricing}
                   estimatedTotal={estimatedTotal}
+                  hasDeliveryAddress={Boolean(deliveryAddress)}
                 />
 
                 {/* Important Notes */}
