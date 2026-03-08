@@ -439,7 +439,7 @@ export default function CoworkingEventWindowModal({
                       onClick={() => handleManualTimeChange({ period })}
                       className={`rounded-[0.9rem] px-3 py-2 text-sm font-semibold transition-all ${
                         isActive
-                          ? "bg-primary text-white shadow-[0_10px_18px_rgba(236,72,153,0.22)]"
+                          ? "bg-primary text-white"
                           : "text-slate-500 hover:text-slate-700"
                       }`}
                     >
@@ -496,7 +496,7 @@ export default function CoworkingEventWindowModal({
           }}
           className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-3 py-2.5 text-left transition-all sm:gap-4 sm:py-3 ${
             editTarget === "start" && !isEditingEndTime
-              ? "border-primary/30 bg-primary/5 shadow-[0_10px_24px_rgba(236,72,153,0.10)]"
+              ? "border-primary/30 bg-primary/5"
               : "border-slate-200/80 hover:border-primary/30 hover:bg-slate-50"
           }`}
           disabled={!hasInitialDateRange}
@@ -527,7 +527,7 @@ export default function CoworkingEventWindowModal({
           }}
           className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-3 py-2.5 text-left transition-all sm:gap-4 sm:py-3 ${
             isEditingEndTime
-              ? "border-primary/30 bg-primary/5 shadow-[0_10px_24px_rgba(236,72,153,0.10)]"
+              ? "border-primary/30 bg-primary/5"
               : "border-slate-200/80 hover:border-primary/30 hover:bg-slate-50"
           }`}
           disabled={!hasInitialDateRange}
@@ -687,7 +687,7 @@ export default function CoworkingEventWindowModal({
                       onClick={() => handleDateClick(value)}
                       className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all sm:h-9 sm:w-9 ${
                         isStart || isEnd
-                          ? "bg-primary text-white shadow-[0_10px_20px_rgba(236,72,153,0.24)]"
+                          ? "bg-primary text-white"
                           : isDisabled
                             ? "cursor-not-allowed text-slate-300"
                             : "text-slate-700 hover:bg-slate-100"
@@ -738,7 +738,7 @@ export default function CoworkingEventWindowModal({
                   })
                 }
                 disabled={!canApply}
-                className="flex-1 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_30px_rgba(236,72,153,0.24)] transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex-1 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Apply Event Window
               </button>
@@ -778,7 +778,7 @@ export default function CoworkingEventWindowModal({
                     })
                   }
                   disabled={!canApply}
-                  className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_30px_rgba(236,72,153,0.24)] transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Apply Event Window
                 </button>
