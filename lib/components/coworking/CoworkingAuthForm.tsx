@@ -298,10 +298,10 @@ export default function CoworkingAuthForm({
                     type="button"
                     onClick={() => setSelectedVenue(venue)}
                     disabled={isSubmitting}
-                    className={`relative flex h-full flex-col rounded-[1.6rem] overflow-hidden text-left transition-all shadow-sm group ${
+                    className={`relative flex h-full flex-col rounded-[1.6rem] overflow-hidden text-left transition-all group ${
                       isSelected
-                        ? "border-primary/30 bg-white ring-2 ring-primary/80 shadow-[0_18px_40px_rgba(236,72,153,0.14)]"
-                        : "border border-slate-200/80 bg-white hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_18px_36px_rgba(15,23,42,0.10)]"
+                        ? "border-primary/30 bg-white ring-2 ring-primary/80"
+                        : "border border-slate-200/80 bg-white hover:-translate-y-0.5 hover:border-primary/40"
                     }`}
                   >
                     {/* Image */}
