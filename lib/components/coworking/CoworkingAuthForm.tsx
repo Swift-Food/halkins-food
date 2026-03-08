@@ -4,8 +4,9 @@ import { useState } from "react";
 import Image from "next/image";
 import { useCoworking } from "@/context/CoworkingContext";
 import { coworkingService } from "@/services/api/coworking.api";
-import { Mail, Building2, Calendar, Clock, MapPin, Users, CheckCircle2 } from "lucide-react";
+import { Mail, Building2, Calendar, Pencil, MapPin, Users, CheckCircle2 } from "lucide-react";
 import { COWORKING_VENUES, CoworkingVenue } from "@/types/api";
+import CoworkingEventWindowModal from "./CoworkingEventWindowModal";
 
 interface CoworkingAuthFormProps {
   spaceSlug: string;
@@ -14,10 +15,10 @@ interface CoworkingAuthFormProps {
 function generateTimeSlots() {
   const slots: { value: string; label: string }[] = [];
   for (let h = 7; h <= 22; h++) {
-    for (const m of [0, 30]) {
-      if (h === 22 && m === 30) break;
+    for (const m of [0, 15, 30, 45]) {
+      if (h === 22 && m > 0) break;
       const hh = String(h).padStart(2, "0");
-      const mm = m === 0 ? "00" : "30";
+      const mm = String(m).padStart(2, "0");
       const period = h < 12 ? "AM" : "PM";
       const h12 = h % 12 || 12;
       slots.push({ value: `${hh}:${mm}`, label: `${h12}:${mm} ${period}` });
@@ -54,11 +55,7 @@ export default function CoworkingAuthForm({
   const [selectedVenue, setSelectedVenue] = useState<CoworkingVenue | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const endTimeOptions =
-    startTime && endDate === startDate
-      ? TIME_SLOTS.filter((s) => s.value > startTime)
-      : TIME_SLOTS;
+  const [isEventWindowModalOpen, setIsEventWindowModalOpen] = useState(false);
 
   const isFormValid =
     name.trim().length >= 2 &&
@@ -130,6 +127,18 @@ export default function CoworkingAuthForm({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const formatEventDateTime = (date: string, time: string) => {
+    if (!date) return "Not set";
+    const formattedDate = new Date(`${date}T00:00:00`).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    if (!time) return formattedDate;
+    return `${formattedDate}, ${TIME_SLOTS.find((slot) => slot.value === time)?.label || time}`;
   };
 
   return (
@@ -220,94 +229,45 @@ export default function CoworkingAuthForm({
                   </h3>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
-                    <label className="mb-3 block text-sm font-medium text-slate-700">
-                      Start
-                    </label>
-                    <div className="space-y-3">
-                      <div className="relative">
-                        <Calendar className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input
-                          type="date"
-                          value={startDate}
-                          onChange={(e) => {
-                            const nextStartDate = e.target.value;
-                            setStartDate(nextStartDate);
-                            if (!endDate || endDate < nextStartDate) {
-                              setEndDate(nextStartDate);
-                            }
-                            if (endTime && (endDate === nextStartDate || !endDate) && endTime <= startTime) {
-                              setEndTime("");
-                            }
-                          }}
-                          min={getMinDate()}
-                          max={getMaxDate()}
-                          disabled={isSubmitting}
-                          className={`${INPUT_BASE_CLASS} appearance-none pl-11`}
-                          style={{ WebkitAppearance: "none" }}
-                          required
-                        />
-                      </div>
-                      <div className="relative">
-                        <Clock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <select
-                          value={startTime}
-                          onChange={(e) => {
-                            setStartTime(e.target.value);
-                            if (endDate === startDate && endTime && endTime <= e.target.value) setEndTime("");
-                          }}
-                          disabled={isSubmitting}
-                          className={`${INPUT_BASE_CLASS} pl-11`}
-                          required
-                        >
-                          <option value="">Select time</option>
-                          {TIME_SLOTS.map((s) => (
-                            <option key={s.value} value={s.value}>{s.label}</option>
-                          ))}
-                        </select>
+                <div className="rounded-[1.75rem] border border-slate-200/80 bg-slate-50/70 p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                        Event Window
+                      </p>
+                      <div className="mt-4 space-y-4">
+                        <div className="flex items-start gap-3">
+                          <Calendar className="mt-0.5 h-4 w-4 text-primary" />
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                              Start
+                            </p>
+                            <p className="mt-1 text-sm font-medium text-slate-900">
+                              {formatEventDateTime(startDate, startTime)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <Calendar className="mt-0.5 h-4 w-4 text-primary" />
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                              End
+                            </p>
+                            <p className="mt-1 text-sm font-medium text-slate-900">
+                              {formatEventDateTime(endDate, endTime)}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
-                    <label className="mb-3 block text-sm font-medium text-slate-700">
-                      End
-                    </label>
-                    <div className="space-y-3">
-                      <div className="relative">
-                        <Calendar className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input
-                          type="date"
-                          value={endDate}
-                          onChange={(e) => {
-                            setEndDate(e.target.value);
-                            if (e.target.value === startDate && endTime && endTime <= startTime) setEndTime("");
-                          }}
-                          min={startDate || getMinDate()}
-                          max={getMaxDate()}
-                          disabled={isSubmitting || !startDate}
-                          className={`${INPUT_BASE_CLASS} appearance-none pl-11`}
-                          style={{ WebkitAppearance: "none" }}
-                          required
-                        />
-                      </div>
-                      <div className="relative">
-                        <Clock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <select
-                          value={endTime}
-                          onChange={(e) => setEndTime(e.target.value)}
-                          disabled={isSubmitting || !startTime || !endDate}
-                          className={`${INPUT_BASE_CLASS} pl-11`}
-                          required
-                        >
-                          <option value="">Select time</option>
-                          {endTimeOptions.map((s) => (
-                            <option key={s.value} value={s.value}>{s.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsEventWindowModalOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                    >
+                      <Pencil className="h-4 w-4 text-primary" />
+                      Edit
+                    </button>
                   </div>
                 </div>
               </div>
@@ -408,6 +368,26 @@ export default function CoworkingAuthForm({
             )}
           </button>
         </form>
+
+        {isEventWindowModalOpen && (
+          <CoworkingEventWindowModal
+            startDate={startDate}
+            startTime={startTime}
+            endDate={endDate}
+            endTime={endTime}
+            minDate={getMinDate()}
+            maxDate={getMaxDate()}
+            timeSlots={TIME_SLOTS}
+            onClose={() => setIsEventWindowModalOpen(false)}
+            onApply={({ startDate: nextStartDate, startTime: nextStartTime, endDate: nextEndDate, endTime: nextEndTime }) => {
+              setStartDate(nextStartDate);
+              setStartTime(nextStartTime);
+              setEndDate(nextEndDate);
+              setEndTime(nextEndTime);
+              setIsEventWindowModalOpen(false);
+            }}
+          />
+        )}
       </div>
     </div>
   );

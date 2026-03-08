@@ -1,0 +1,535 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from "lucide-react";
+
+type ModalStep = "dates" | "start-time" | "end-time";
+
+interface TimeSlot {
+  value: string;
+  label: string;
+}
+
+interface CoworkingEventWindowModalProps {
+  startDate: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+  minDate: string;
+  maxDate: string;
+  timeSlots: TimeSlot[];
+  onClose: () => void;
+  onApply: (values: {
+    startDate: string;
+    startTime: string;
+    endDate: string;
+    endTime: string;
+  }) => void;
+}
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
+const START_OF_WEEK = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+
+function toDate(value: string) {
+  return new Date(`${value}T00:00:00`);
+}
+
+function formatCompactDateTime(date: string, time: string) {
+  if (!date) return "Not set";
+  const formattedDate = toDate(date).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  return time ? `${formattedDate}, ${formatTimeLabel(time)}` : formattedDate;
+}
+
+function formatTimeLabel(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  const period = hours >= 12 ? "PM" : "AM";
+  const h12 = hours % 12 || 12;
+  return `${h12}:${minutes.toString().padStart(2, "0")} ${period}`;
+}
+
+function parseTimeParts(value: string) {
+  if (!value) {
+    return { hour: "", minute: "00", period: "AM" as const };
+  }
+
+  const [rawHours, rawMinutes] = value.split(":").map(Number);
+  const period = rawHours >= 12 ? "PM" : "AM";
+  const hour12 = rawHours % 12 || 12;
+
+  return {
+    hour: String(hour12),
+    minute: rawMinutes.toString().padStart(2, "0"),
+    period,
+  };
+}
+
+function build24HourTime(
+  hour: string,
+  minute: string,
+  period: "AM" | "PM"
+) {
+  if (!hour) return "";
+
+  const parsedHour = Number(hour);
+  if (Number.isNaN(parsedHour) || parsedHour < 1 || parsedHour > 12) {
+    return "";
+  }
+
+  let hours24 = parsedHour % 12;
+  if (period === "PM") {
+    hours24 += 12;
+  }
+
+  return `${String(hours24).padStart(2, "0")}:${minute}`;
+}
+
+function toMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function isSameDay(startDate: string, endDate: string) {
+  return Boolean(startDate && endDate && startDate === endDate);
+}
+
+function buildCalendarDays(month: number, year: number) {
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const leadingBlankDays = firstDay.getDay();
+
+  const days = Array.from({ length: leadingBlankDays }, () => null);
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    days.push(new Date(year, month, day));
+  }
+
+  while (days.length % 7 !== 0) {
+    days.push(null);
+  }
+
+  return days;
+}
+
+export default function CoworkingEventWindowModal({
+  startDate,
+  startTime,
+  endDate,
+  endTime,
+  minDate,
+  maxDate,
+  timeSlots,
+  onClose,
+  onApply,
+}: CoworkingEventWindowModalProps) {
+  const initialDisplayDate = startDate || minDate;
+  const initialDate = toDate(initialDisplayDate);
+
+  const [draftStartDate, setDraftStartDate] = useState(startDate);
+  const [draftStartTime, setDraftStartTime] = useState(startTime);
+  const [draftEndDate, setDraftEndDate] = useState(endDate);
+  const [draftEndTime, setDraftEndTime] = useState(endTime);
+  const [draftStartTimeParts, setDraftStartTimeParts] = useState(() =>
+    parseTimeParts(startTime)
+  );
+  const [draftEndTimeParts, setDraftEndTimeParts] = useState(() =>
+    parseTimeParts(endTime)
+  );
+  const [step, setStep] = useState<ModalStep>("dates");
+  const [displayMonth, setDisplayMonth] = useState(initialDate.getMonth());
+  const [displayYear, setDisplayYear] = useState(initialDate.getFullYear());
+
+  const min = toDate(minDate);
+  const max = toDate(maxDate);
+
+  const yearOptions = useMemo(() => {
+    const years: number[] = [];
+    for (let year = min.getFullYear(); year <= max.getFullYear(); year += 1) {
+      years.push(year);
+    }
+    return years;
+  }, [max, min]);
+
+  const calendarDays = useMemo(
+    () => buildCalendarDays(displayMonth, displayYear),
+    [displayMonth, displayYear]
+  );
+
+  const allowedEndTimes = useMemo(() => {
+    if (!draftStartTime || !isSameDay(draftStartDate, draftEndDate)) {
+      return timeSlots;
+    }
+
+    return timeSlots.filter((slot) => toMinutes(slot.value) > toMinutes(draftStartTime));
+  }, [draftEndDate, draftStartDate, draftStartTime, timeSlots]);
+
+  const activeTimeOptions = step === "end-time" ? allowedEndTimes : timeSlots;
+
+  const canApply =
+    Boolean(draftStartDate) &&
+    Boolean(draftEndDate) &&
+    Boolean(draftStartTime) &&
+    Boolean(draftEndTime) &&
+    (draftEndDate > draftStartDate ||
+      (draftEndDate === draftStartDate &&
+        toMinutes(draftEndTime) > toMinutes(draftStartTime)));
+
+  const moveMonth = (direction: -1 | 1) => {
+    const next = new Date(displayYear, displayMonth + direction, 1);
+    if (next < new Date(min.getFullYear(), min.getMonth(), 1)) return;
+    if (next > new Date(max.getFullYear(), max.getMonth(), 1)) return;
+    setDisplayMonth(next.getMonth());
+    setDisplayYear(next.getFullYear());
+  };
+
+  const handleDateClick = (value: string) => {
+    if (!draftStartDate || (draftStartDate && draftEndDate)) {
+      setDraftStartDate(value);
+      setDraftEndDate("");
+      setDraftStartTime("");
+      setDraftEndTime("");
+      setDraftStartTimeParts(parseTimeParts(""));
+      setDraftEndTimeParts(parseTimeParts(""));
+      setStep("dates");
+      return;
+    }
+
+    if (value < draftStartDate) {
+      setDraftStartDate(value);
+      setDraftEndDate("");
+      setDraftStartTime("");
+      setDraftEndTime("");
+      setDraftStartTimeParts(parseTimeParts(""));
+      setDraftEndTimeParts(parseTimeParts(""));
+      return;
+    }
+
+    setDraftEndDate(value);
+    setDraftStartTime("");
+    setDraftEndTime("");
+    setDraftStartTimeParts(parseTimeParts(""));
+    setDraftEndTimeParts(parseTimeParts(""));
+    setStep("start-time");
+  };
+
+  const manualTimeParts =
+    step === "end-time" ? draftEndTimeParts : draftStartTimeParts;
+
+  const handleManualTimeChange = ({
+    hour = manualTimeParts.hour,
+    minute = manualTimeParts.minute,
+    period = manualTimeParts.period,
+  }: {
+    hour?: string;
+    minute?: string;
+    period?: "AM" | "PM";
+  }) => {
+    const nextParts = { hour, minute, period };
+    if (step === "end-time") {
+      setDraftEndTimeParts(nextParts);
+    } else {
+      setDraftStartTimeParts(nextParts);
+    }
+
+    const nextTime = build24HourTime(hour, minute, period);
+
+    if (!nextTime) {
+      if (step === "end-time") {
+        setDraftEndTime("");
+      } else {
+        setDraftStartTime("");
+      }
+      return;
+    }
+
+    if (!activeTimeOptions.some((slot) => slot.value === nextTime)) {
+      return;
+    }
+
+    if (step === "end-time") {
+      setDraftEndTime(nextTime);
+      return;
+    }
+
+    if (
+      draftEndDate &&
+      isSameDay(draftStartDate, draftEndDate) &&
+      draftEndTime &&
+      toMinutes(draftEndTime) <= toMinutes(nextTime)
+    ) {
+      setDraftEndTime("");
+    }
+    setDraftStartTime(nextTime);
+    setStep("end-time");
+  };
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 px-3 py-3 backdrop-blur-sm sm:px-4 sm:py-6">
+      <div className="max-h-[96vh] w-full max-w-4xl overflow-auto rounded-[1.5rem] border border-white/70 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:max-h-[92vh] sm:rounded-[2rem]">
+        <div className="border-b border-slate-200/80 px-4 py-4 sm:px-6 sm:py-5 sm:px-8">
+          <div className="flex items-start justify-between gap-3 sm:items-center sm:gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                Event Window
+              </p>
+              <h3 className="mt-2 text-xl font-semibold text-slate-900 sm:text-2xl">
+                Select dates and times
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 sm:px-4"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="border-b border-slate-200/80 p-4 sm:p-6 lg:border-b-0 lg:border-r lg:p-8">
+            <div className="flex items-center justify-between gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => moveMonth(-1)}
+                className="rounded-full border border-slate-200 p-2 text-slate-500 transition-colors hover:bg-slate-50"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                <select
+                  value={displayMonth}
+                  onChange={(e) => setDisplayMonth(Number(e.target.value))}
+                  className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 sm:px-4 sm:py-2.5"
+                >
+                  {MONTH_NAMES.map((month, index) => (
+                    <option key={month} value={index}>
+                      {month}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={displayYear}
+                  onChange={(e) => setDisplayYear(Number(e.target.value))}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 sm:px-4 sm:py-2.5"
+                >
+                  {yearOptions.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => moveMonth(1)}
+                className="rounded-full border border-slate-200 p-2 text-slate-500 transition-colors hover:bg-slate-50"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-5 grid grid-cols-7 gap-y-2 text-center sm:mt-6 sm:gap-y-3">
+              {START_OF_WEEK.map((day) => (
+                <div key={day} className="text-[11px] font-semibold tracking-wide text-slate-400 sm:text-xs">
+                  {day}
+                </div>
+              ))}
+
+              {calendarDays.map((day, index) => {
+                if (!day) {
+                  return <div key={`blank-${index}`} className="h-10 sm:h-12" />;
+                }
+
+                const value = day.toISOString().split("T")[0];
+                const isDisabled = day < min || day > max;
+                const isStart = value === draftStartDate;
+                const isEnd = value === draftEndDate;
+                const isInRange =
+                  Boolean(draftStartDate) &&
+                  Boolean(draftEndDate) &&
+                  value > draftStartDate &&
+                  value < draftEndDate;
+
+                return (
+                  <div key={value} className="relative flex h-10 items-center justify-center sm:h-12">
+                    {isInRange && (
+                      <div className="absolute inset-x-0 top-1/2 h-8 -translate-y-1/2 bg-primary/12 sm:h-9" />
+                    )}
+                    <button
+                      type="button"
+                      disabled={isDisabled}
+                      onClick={() => handleDateClick(value)}
+                      className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all sm:h-9 sm:w-9 ${
+                        isStart || isEnd
+                          ? "bg-primary text-white shadow-[0_10px_20px_rgba(236,72,153,0.24)]"
+                          : isDisabled
+                            ? "cursor-not-allowed text-slate-300"
+                            : "text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      {day.getDate()}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+          </div>
+
+          <div className="p-4 sm:p-6 lg:p-8">
+            <div className="rounded-[1.5rem] border border-slate-200/80 bg-slate-50/60 p-4 sm:rounded-[1.75rem] sm:p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                {step === "dates"
+                  ? "Step 1"
+                  : step === "start-time"
+                    ? "Step 2"
+                    : "Step 3"}
+              </p>
+              <h4 className="mt-2 text-lg font-semibold text-slate-900 sm:text-xl">
+                {step === "dates"
+                  ? "Choose your date range"
+                  : step === "start-time"
+                    ? "Choose a start time"
+                    : "Choose an end time"}
+              </h4>
+              <p className="mt-2 text-sm text-slate-500 sm:mt-3">
+                {step === "dates"
+                  ? "Tap once for the start date, then tap again for the end date."
+                  : "Use the dial for a quick pick, or use the text selector for the exact time."}
+              </p>
+
+              {step === "dates" ? (
+                <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-white/80 p-5 text-sm text-slate-500">
+                  Your selected event window will appear here as soon as you pick both dates.
+                </div>
+              ) : (
+                <div className="mt-5 space-y-4 sm:mt-6 sm:space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">
+                      Exact time
+                    </label>
+                    <div className="grid grid-cols-[1fr_1fr_auto] gap-2 sm:gap-3">
+                      <select
+                        value={manualTimeParts.hour}
+                        onChange={(e) => handleManualTimeChange({ hour: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
+                      >
+                        <option value="">Hour</option>
+                        {Array.from({ length: 12 }, (_, index) => String(index + 1)).map((hour) => (
+                          <option key={hour} value={hour}>
+                            {hour}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={manualTimeParts.minute}
+                        onChange={(e) => handleManualTimeChange({ minute: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
+                      >
+                        {["00", "15", "30", "45"].map((minute) => (
+                          <option key={minute} value={minute}>
+                            {minute}
+                          </option>
+                        ))}
+                      </select>
+
+                      <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-1">
+                        {(["AM", "PM"] as const).map((period) => {
+                          const isActive = manualTimeParts.period === period;
+                          return (
+                            <button
+                              key={period}
+                              type="button"
+                              onClick={() => handleManualTimeChange({ period })}
+                              className={`rounded-[0.9rem] px-3 py-2 text-sm font-semibold transition-all ${
+                                isActive
+                                  ? "bg-primary text-white shadow-[0_10px_18px_rgba(236,72,153,0.22)]"
+                                  : "text-slate-500 hover:text-slate-700"
+                              }`}
+                            >
+                              {period}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                      Start
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-slate-900">
+                      {formatCompactDateTime(draftStartDate, draftStartTime)}
+                    </p>
+                  </div>
+                  <CalendarDays className="h-5 w-5 text-primary" />
+                </div>
+                <div className="mt-4 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                      End
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-slate-900">
+                      {formatCompactDateTime(draftEndDate, draftEndTime)}
+                    </p>
+                  </div>
+                  <Clock3 className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => setStep(step === "end-time" ? "start-time" : "dates")}
+                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  onApply({
+                    startDate: draftStartDate,
+                    startTime: draftStartTime,
+                    endDate: draftEndDate,
+                    endTime: draftEndTime,
+                  })
+                }
+                disabled={!canApply}
+                className="flex-1 rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_30px_rgba(236,72,153,0.24)] transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Apply Event Window
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
