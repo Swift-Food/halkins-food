@@ -933,7 +933,7 @@ export default function CateringOrderBuilder() {
                 <div className="hidden md:flex flex-shrink-0 w-12 h-12 rounded-xl bg-amber-500 flex-col items-center justify-center z-10 shadow-lg">
                   <Clock className="w-6 h-6 text-white" />
                 </div>
-                <div className="flex-1 md:bg-amber-50 md:rounded-2xl md:p-4 border border-amber-200 rounded-xl">
+                <div className="flex-1 md:bg-amber-50 md:rounded-2xl md:p-4 md:border md:border-amber-200">
                   <div className="mb-3 flex items-start gap-3 p-3 md:p-0">
                     <div className="md:hidden flex-shrink-0 w-11 h-11 rounded-xl bg-amber-500 text-white flex items-center justify-center">
                       <Clock className="w-5 h-5" />
