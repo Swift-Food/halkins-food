@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from "lucide-react";
 
 type ModalStep = "dates" | "start-time" | "end-time";
@@ -156,6 +156,7 @@ export default function CoworkingEventWindowModal({
   const [editTarget, setEditTarget] = useState<EditTarget>("start");
   const [displayMonth, setDisplayMonth] = useState(initialDate.getMonth());
   const [displayYear, setDisplayYear] = useState(initialDate.getFullYear());
+  const timeEntryRef = useRef<HTMLDivElement>(null);
 
   const min = toDate(minDate);
   const max = toDate(maxDate);
@@ -201,6 +202,19 @@ export default function CoworkingEventWindowModal({
       : isSameDay(draftStartDate, draftEndDate) && draftStartTime
         ? `End time must be later than ${formatTimeLabel(draftStartTime)} on the same day.`
         : "End time must be between 7:00 AM and 10:00 PM.";
+
+  useEffect(() => {
+    if (step === "dates" || typeof window === "undefined" || window.innerWidth >= 1024) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      timeEntryRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 120);
+  }, [step]);
 
   const canApply =
     Boolean(draftStartDate) &&
@@ -472,7 +486,10 @@ export default function CoworkingEventWindowModal({
                   Use the Start and End cards below to switch between editing each part of the event window.
                 </div>
               ) : (
-                <div className="mt-5 space-y-4 sm:mt-6 sm:space-y-5">
+                <div
+                  ref={timeEntryRef}
+                  className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
+                >
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700">
                       Exact time
