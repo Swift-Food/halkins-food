@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Percent } from "lucide-react";
 
 interface PromoCodeSectionProps {
   promoCodes: string[];
@@ -30,14 +31,19 @@ export default function PromoCodeSection({
   };
 
   return (
-    <div className="pt-4 border-t border-base-300">
+    <div className="py-4 border-y border-base-300">
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between mb-3 group"
+        className={`w-full flex items-center justify-between group ${
+          isExpanded ? "mb-4" : "mb-0"
+        }`}
       >
         <div className="flex items-center gap-2">
-          <h4 className="text-sm font-bold text-base-content">Discount Code</h4>
+          <div className="w-8 h-8 rounded-lg bg-gray-200 border border-gray-300 flex items-center justify-center text-base-content/70 transition-colors">
+            <Percent size={18} />
+          </div>
+          <h4 className="font-bold text-sm text-base-content">Discount Code</h4>
           {promoCodes.length > 0 && (
             <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full">
               {promoCodes.length} applied
@@ -62,7 +68,7 @@ export default function PromoCodeSection({
       </button>
 
       {isExpanded && (
-        <div className="p-4 rounded-xl border border-base-300">
+        <div>
           <div className="flex gap-2 mb-3">
             <input
               type="text"
@@ -75,7 +81,7 @@ export default function PromoCodeSection({
                 }
               }}
               placeholder="Add discount code or voucher"
-              className="flex-1 px-3 py-2 text-sm bg-base-100 border border-base-300 rounded-lg focus:ring-2 focus:ring-dark-pink focus:border-transparent transition-all"
+              className="flex-1 px-3 py-2 text-sm bg-gray-100 border border-base-300 rounded-lg focus:ring-2 focus:ring-dark-pink focus:border-transparent transition-all"
             />
             <button
               type="button"
