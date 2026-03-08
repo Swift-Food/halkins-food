@@ -307,14 +307,14 @@ export default function CoworkingAuthForm({
                     type="button"
                     onClick={() => setSelectedVenue(venue)}
                     disabled={isSubmitting}
-                    className={`relative rounded-2xl overflow-hidden text-left transition-all shadow-sm group ${
+                    className={`relative flex h-full flex-col rounded-2xl overflow-hidden text-left transition-all shadow-sm group ${
                       isSelected
-                        ? "ring-2 ring-primary ring-offset-2"
+                        ? "ring-2 ring-primary"
                         : "ring-1 ring-gray-200 hover:ring-primary/50 hover:shadow-md"
                     }`}
                   >
                     {/* Image */}
-                    <div className="relative h-60 w-full bg-gray-200">
+                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-200">
                       {venue.image ? (
                         <Image
                           src={venue.image}
@@ -327,8 +327,6 @@ export default function CoworkingAuthForm({
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300" />
                       )}
-                      {/* Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
                       {/* Selected badge */}
                       {isSelected && (
@@ -339,14 +337,14 @@ export default function CoworkingAuthForm({
                     </div>
 
                     {/* Info */}
-                    <div className="bg-white p-4">
+                    <div className="flex min-h-[92px] flex-1 flex-col bg-white p-4">
                       <p className="font-semibold text-gray-900 text-sm">{venue.name}</p>
-                      <div className="flex items-center gap-3 mt-1.5">
+                      <div className="mt-1.5 flex items-start gap-3">
                         <span className="flex items-center gap-1 text-xs text-gray-500">
                           <Users className="w-3.5 h-3.5" />
                           Up to {venue.maxCapacity} guests
                         </span>
-                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                        <span className="flex items-start gap-1 text-xs text-gray-500">
                           <MapPin className="w-3.5 h-3.5" />
                           {venue.addressLine1}
                         </span>
