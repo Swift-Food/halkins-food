@@ -134,12 +134,9 @@ export default function CoworkingBookingDetailsForm({
               <div className="absolute bottom-0 left-6 right-6 h-px bg-slate-200/80 sm:left-8 sm:right-8 lg:hidden" />
               <div className="absolute bottom-8 right-0 top-8 hidden w-px bg-slate-200/80 lg:block" />
               <div className="mb-6">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                <p className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
                   Your Details
                 </p>
-                <h3 className="mt-2 text-xl font-semibold text-slate-900">
-                  Where should we send your order access?
-                </h3>
               </div>
 
               <div className="space-y-4">
@@ -193,18 +190,15 @@ export default function CoworkingBookingDetailsForm({
 
             <div className="p-6 sm:p-8">
               <div className="mb-6">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                <p className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
                   Event Details
                 </p>
-                <h3 className="mt-2 text-xl font-semibold text-slate-900">
-                  Set your event window
-                </h3>
               </div>
 
               <div className="rounded-[1.75rem] border border-slate-200/80 bg-slate-50/70 p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                    <p className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600">
                       Event Window
                     </p>
                     <div className="mt-4 space-y-4">
@@ -248,7 +242,7 @@ export default function CoworkingBookingDetailsForm({
 
         <div className="rounded-[2rem] border border-white/70 bg-white/75 p-6 backdrop-blur sm:p-8">
           <div className="mb-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+            <p className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
               Choose a Venue
             </p>
             <h3 className="mt-2 text-xl font-semibold text-slate-900">

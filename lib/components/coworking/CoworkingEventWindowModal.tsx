@@ -176,6 +176,19 @@ export default function CoworkingEventWindowModal({
   const [displayYear, setDisplayYear] = useState(initialDate.getFullYear());
   const timeEntryRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
+
   const min = toDate(minDate);
   const max = toDate(maxDate);
 
