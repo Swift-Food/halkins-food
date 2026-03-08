@@ -162,7 +162,7 @@ export default function CoworkingAuthForm({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/75 shadow-[0_20px_60px_rgba(15,23,42,0.07)] backdrop-blur">
+          <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/75 backdrop-blur">
             <div className="grid gap-0 lg:grid-cols-[1fr_1.15fr]">
               {/* Section: Your Details */}
               <div className="border-b border-slate-200/80 p-6 sm:p-8 lg:border-b-0 lg:border-r">
@@ -275,7 +275,7 @@ export default function CoworkingAuthForm({
           </div>
 
           {/* Section: Choose Venue */}
-          <div className="rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.07)] backdrop-blur sm:p-8">
+          <div className="rounded-[2rem] border border-white/70 bg-white/75 p-6 backdrop-blur sm:p-8">
             <div className="mb-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
               Choose a Venue
@@ -355,7 +355,7 @@ export default function CoworkingAuthForm({
           {/* Submit */}
           <button
             type="submit"
-            className="w-full rounded-2xl bg-primary px-6 py-4 text-sm font-semibold text-white shadow-[0_18px_30px_rgba(236,72,153,0.24)] transition-all hover:-translate-y-0.5 hover:opacity-95 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
+            className="w-full rounded-2xl bg-primary px-6 py-4 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:opacity-95 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
             disabled={isSubmitting || !isFormValid}
           >
             {isSubmitting ? (
