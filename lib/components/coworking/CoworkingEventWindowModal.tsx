@@ -437,8 +437,9 @@ export default function CoworkingEventWindowModal({
                   Boolean(draftEndDate) &&
                   draftStartDate === draftEndDate &&
                   value === draftStartDate;
-                const isRowStart = day.getDay() === 0;
-                const isRowEnd = day.getDay() === 6;
+                const isRowStart = index % 7 === 0 || calendarDays[index - 1] === null;
+                const isRowEnd =
+                  index % 7 === 6 || calendarDays[index + 1] === null;
                 const isInRange =
                   Boolean(draftStartDate) &&
                   Boolean(draftEndDate) &&
