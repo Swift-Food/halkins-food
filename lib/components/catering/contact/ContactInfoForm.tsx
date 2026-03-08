@@ -16,7 +16,10 @@ interface ValidationErrors {
 interface ContactInfoFormProps {
   formData: ContactInfo;
   errors: ValidationErrors;
-  onFieldChange: (field: keyof ContactInfo, value: string) => void;
+  onFieldChange: (
+    field: keyof ContactInfo,
+    value: string | NonNullable<ContactInfo["billingAddress"]>
+  ) => void;
   onBlur: (field: keyof ContactInfo) => void;
   onBillingBlur: (field: keyof NonNullable<ContactInfo["billingAddress"]>) => void;
   ccEmails: string[];
@@ -39,6 +42,11 @@ export default function ContactInfoForm({
   const [showBillingAddress, setShowBillingAddress] = useState(
     !!formData.billingAddress?.line1
   );
+  const hasBillingData = !!(
+    formData.billingAddress?.line1 ||
+    formData.billingAddress?.city ||
+    formData.billingAddress?.postalCode
+  );
 
   const handleBillingFieldChange = (
     field: keyof NonNullable<ContactInfo["billingAddress"]>,
@@ -54,7 +62,7 @@ export default function ContactInfoForm({
     onFieldChange("billingAddress", {
       ...currentBilling,
       [field]: value,
-    } as any);
+    });
   };
 
   const handleAddCcEmail = () => {
@@ -284,7 +292,7 @@ export default function ContactInfoForm({
               For invoice purposes if different from delivery address
             </p>
 
-            {showBillingAddress && (
+            {(showBillingAddress || hasBillingData) && (
               <div className="mt-3 space-y-3 pt-3 border-t border-base-300">
                 {/* Billing Line 1 */}
                 <div>

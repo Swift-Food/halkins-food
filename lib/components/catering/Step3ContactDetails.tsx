@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, FormEvent, useEffect, useMemo } from "react";
+import { useState, FormEvent, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCatering } from "@/context/CateringContext";
 import { cateringService } from "@/services/api/catering.api";
@@ -102,6 +102,7 @@ export default function Step3ContactInfo() {
   // PDF generation state
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const hasRestoredDraft = useRef(false);
 
   // Calculate estimated total without triggering state updates
   const estimatedTotal = useMemo(() => {
@@ -122,6 +123,46 @@ export default function Step3ContactInfo() {
       return total + unitPrice * quantity + addonTotal;
     }, 0);
   }, [selectedItems]);
+
+  useEffect(() => {
+    if (!contactInfo) {
+      hasRestoredDraft.current = true;
+      return;
+    }
+
+    setFormData({
+      organization: contactInfo.organization || "",
+      fullName: contactInfo.fullName || "",
+      email: contactInfo.email || "",
+      phone: contactInfo.phone || "",
+      addressLine1: contactInfo.addressLine1 || "",
+      addressLine2: contactInfo.addressLine2 || "",
+      city: contactInfo.city || "",
+      zipcode: contactInfo.zipcode || "",
+      billingAddress: contactInfo.billingAddress,
+      ccEmails: contactInfo.ccEmails || [],
+      specialInstructions: contactInfo.specialInstructions || "",
+    });
+    setCcEmails(contactInfo.ccEmails || []);
+    setSpecialInstructions(contactInfo.specialInstructions || "");
+    hasRestoredDraft.current = true;
+  }, [contactInfo]);
+
+  useEffect(() => {
+    if (!hasRestoredDraft.current) return;
+
+    const draftContactInfo: ContactInfo = {
+      ...formData,
+      ccEmails,
+      specialInstructions,
+    };
+
+    if (JSON.stringify(contactInfo) === JSON.stringify(draftContactInfo)) {
+      return;
+    }
+
+    setContactInfo(draftContactInfo);
+  }, [ccEmails, contactInfo, formData, setContactInfo, specialInstructions]);
 
   const validateEmail = (email: string): string | undefined => {
     if (!email.trim()) {
@@ -408,7 +449,11 @@ export default function Step3ContactInfo() {
         return;
       }
 
-      setContactInfo(formData);
+      setContactInfo({
+        ...formData,
+        ccEmails,
+        specialInstructions,
+      });
 
       
       const { spaceSlug, orderData } = buildCoworkingOrderData();
@@ -887,7 +932,14 @@ export default function Step3ContactInfo() {
               </p>
             </div>
             <button
-              onClick={() => setCurrentStep(1)}
+              onClick={() => {
+                setContactInfo({
+                  ...formData,
+                  ccEmails,
+                  specialInstructions,
+                });
+                setCurrentStep(1);
+              }}
               className="text-primary hover:opacity-80 font-medium flex items-center gap-1"
             >
               ← Back

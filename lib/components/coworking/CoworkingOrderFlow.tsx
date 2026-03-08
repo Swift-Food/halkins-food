@@ -61,7 +61,17 @@ function getMaxDate(): string {
 
 interface EditModalProps {
   onClose: () => void;
-  onSave: (venue: CoworkingVenue, startDate: string, start: string, endDate: string, end: string) => void;
+  onSave: (
+    companyName: string,
+    email: string,
+    venue: CoworkingVenue,
+    startDate: string,
+    start: string,
+    endDate: string,
+    end: string
+  ) => void;
+  initialCompanyName: string;
+  initialEmail: string;
   initialVenue: CoworkingVenue | null;
   initialDate: string;
   initialStart: string;
@@ -72,24 +82,31 @@ interface EditModalProps {
 function EventEditModal({
   onClose,
   onSave,
+  initialCompanyName,
+  initialEmail,
   initialVenue,
   initialDate,
   initialStart,
   initialEndDate,
   initialEnd,
 }: EditModalProps) {
+  const [companyName, setCompanyName] = useState(initialCompanyName);
+  const [email, setEmail] = useState(initialEmail);
   const [venue, setVenue] = useState<CoworkingVenue | null>(initialVenue);
   const [startDate, setStartDate] = useState(initialDate);
   const [start, setStart] = useState(initialStart);
   const [endDate, setEndDate] = useState(initialEndDate || initialDate);
   const [end, setEnd] = useState(initialEnd);
 
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const endOptions =
     start && endDate === startDate
       ? TIME_SLOTS.filter((s) => s.value > start)
       : TIME_SLOTS;
 
   const canSave =
+    companyName.trim().length >= 2 &&
+    isEmailValid &&
     venue !== null &&
     startDate !== "" &&
     start !== "" &&
@@ -112,6 +129,31 @@ function EventEditModal({
         </div>
 
         <div className="p-6 space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Company Name
+              </label>
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+              />
+            </div>
+          </div>
+
           {/* Date + Times */}
           <div className="space-y-4">
             {/* Start */}
@@ -246,7 +288,18 @@ function EventEditModal({
           </button>
           <button
             type="button"
-            onClick={() => canSave && onSave(venue!, startDate, start, endDate, end)}
+            onClick={() =>
+              canSave &&
+              onSave(
+                companyName.trim(),
+                email.trim(),
+                venue!,
+                startDate,
+                start,
+                endDate,
+                end
+              )
+            }
             disabled={!canSave}
             className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-40 hover:opacity-90 transition-opacity"
           >
@@ -276,8 +329,9 @@ export default function CoworkingOrderFlow() {
     eventEndDate,
     eventEndTime,
     setVenueSelection,
+    setSession,
   } = useCoworking();
-  const { currentStep, setContactInfo, updateMealSession } = useCatering();
+  const { currentStep, contactInfo, setContactInfo, updateMealSession } = useCatering();
 
   const [spaceError, setSpaceError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -331,12 +385,34 @@ export default function CoworkingOrderFlow() {
   }, [isAuthenticated, eventStartDate, eventStartTime, updateMealSession]);
 
   const handleSaveEventEdit = (
+    companyName: string,
+    email: string,
     venue: CoworkingVenue,
     startDate: string,
     start: string,
     endDate: string,
     end: string
   ) => {
+    setSession({
+      member: {
+        email,
+        name: companyName,
+        memberId: member?.memberId || "",
+      },
+    });
+    setContactInfo({
+      organization: companyName,
+      fullName: contactInfo?.fullName || "",
+      email,
+      phone: contactInfo?.phone || "",
+      addressLine1: contactInfo?.addressLine1 || "",
+      addressLine2: contactInfo?.addressLine2 || "",
+      city: contactInfo?.city || "",
+      zipcode: contactInfo?.zipcode || "",
+      billingAddress: contactInfo?.billingAddress,
+      ccEmails: contactInfo?.ccEmails || [],
+      specialInstructions: contactInfo?.specialInstructions || "",
+    });
     setVenueSelection(venue, startDate, start, endDate, end);
     updateMealSession(0, { sessionDate: startDate, eventTime: start });
     setShowEditModal(false);
@@ -437,7 +513,7 @@ export default function CoworkingOrderFlow() {
                 className="flex items-center gap-1.5 text-sm text-primary font-medium hover:opacity-75 transition-opacity shrink-0"
               >
                 <Pencil className="w-3.5 h-3.5" />
-                Edit
+                Edit Booking Details
               </button>
             </div>
           </div>
@@ -455,6 +531,8 @@ export default function CoworkingOrderFlow() {
         <EventEditModal
           onClose={() => setShowEditModal(false)}
           onSave={handleSaveEventEdit}
+          initialCompanyName={member?.name || ""}
+          initialEmail={member?.email || ""}
           initialVenue={selectedVenue}
           initialDate={eventStartDate}
           initialStart={eventStartTime}
