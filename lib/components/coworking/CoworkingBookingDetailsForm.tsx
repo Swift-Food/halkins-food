@@ -131,7 +131,6 @@ export default function CoworkingBookingDetailsForm({
         <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/75 backdrop-blur">
           <div className="grid gap-0 lg:grid-cols-[1fr_1.15fr]">
             <div className="relative px-6 pb-6 pt-4 sm:px-8 sm:pb-8 sm:pt-5">
-              <div className="absolute bottom-0 left-6 right-6 h-px bg-slate-200/80 sm:left-8 sm:right-8 lg:hidden" />
               <div className="absolute bottom-8 right-0 top-8 hidden w-px bg-slate-200/80 lg:block" />
               <div className="mb-6 flex items-center gap-3">
                 <span className="h-px flex-1 bg-primary/20" />
