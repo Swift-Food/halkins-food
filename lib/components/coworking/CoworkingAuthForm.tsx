@@ -165,7 +165,9 @@ export default function CoworkingAuthForm({
           <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/75 backdrop-blur">
             <div className="grid gap-0 lg:grid-cols-[1fr_1.15fr]">
               {/* Section: Your Details */}
-              <div className="border-b border-slate-200/80 p-6 sm:p-8 lg:border-b-0 lg:border-r">
+              <div className="relative p-6 sm:p-8">
+                <div className="absolute bottom-0 left-6 right-6 h-px bg-slate-200/80 sm:left-8 sm:right-8 lg:hidden" />
+                <div className="absolute bottom-8 right-0 top-8 hidden w-px bg-slate-200/80 lg:block" />
                 <div className="mb-6">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
                     Your Details
