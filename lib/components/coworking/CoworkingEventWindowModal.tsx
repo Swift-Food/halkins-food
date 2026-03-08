@@ -731,15 +731,6 @@ export default function CoworkingEventWindowModal({
             </div>
 
             <div className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row">
-              {step !== "dates" && (
-                <button
-                  type="button"
-                  onClick={() => setStep(canApply ? "confirm" : "dates")}
-                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-                >
-                  Back
-                </button>
-              )}
               <button
                 type="button"
                 onClick={() =>
@@ -771,15 +762,6 @@ export default function CoworkingEventWindowModal({
               </p>
               {renderTimeEditor()}
               <div className="mt-5 flex flex-col gap-3">
-                {step !== "dates" && (
-                  <button
-                    type="button"
-                    onClick={() => setStep(canApply ? "confirm" : "dates")}
-                    className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-                  >
-                    Back
-                  </button>
-                )}
                 <button
                   type="button"
                   onClick={() =>
