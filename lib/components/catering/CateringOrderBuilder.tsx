@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCatering } from "@/context/CateringContext";
+import { useCoworking } from "@/context/CoworkingContext";
 import { MealSessionState } from "@/types/catering.types";
 import { cateringService } from "@/services/api/catering.api";
 import MenuItemCard from "./MenuItemCard";
@@ -38,8 +39,25 @@ import { groupSessionsByDay, formatTimeDisplay } from "./catering-order-helpers"
 // Icons
 import { Plus, Clock, ShoppingBag, Search, X } from "lucide-react";
 
+const CATERING_TIME_SLOTS = ["11:00", "13:00", "18:00"] as const;
+
+const toMinutes = (time: string) => {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+};
+
+const getNextCateringTime = (time: string) => {
+  const requestedMinutes = toMinutes(time);
+  const nextSlot = CATERING_TIME_SLOTS.find(
+    (slot) => toMinutes(slot) >= requestedMinutes
+  );
+
+  return nextSlot ?? CATERING_TIME_SLOTS[CATERING_TIME_SLOTS.length - 1];
+};
+
 export default function CateringOrderBuilder() {
   const searchParams = useSearchParams();
+  const { eventStartTime } = useCoworking();
   const {
     mealSessions,
     activeSessionIndex,
@@ -72,6 +90,7 @@ export default function CateringOrderBuilder() {
   // Refs for scroll-to behavior
   const sessionAccordionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const dayRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const lastAutoSelectedSessionTime = useRef<string | null>(null);
 
   // Sticky nav detection
   const [isNavSticky, setIsNavSticky] = useState(false);
@@ -215,6 +234,30 @@ export default function CateringOrderBuilder() {
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!eventStartTime || mealSessions.length === 0) return;
+
+    const firstSession = mealSessions[0];
+    if (!firstSession) return;
+
+    const nextCateringTime = getNextCateringTime(eventStartTime);
+    const currentTime = firstSession.eventTime || "";
+    const shouldSync =
+      currentTime === "" ||
+      currentTime === eventStartTime ||
+      currentTime === lastAutoSelectedSessionTime.current;
+
+    if (!shouldSync || currentTime === nextCateringTime) {
+      if (currentTime === nextCateringTime) {
+        lastAutoSelectedSessionTime.current = nextCateringTime;
+      }
+      return;
+    }
+
+    updateMealSession(0, { eventTime: nextCateringTime });
+    lastAutoSelectedSessionTime.current = nextCateringTime;
+  }, [eventStartTime, mealSessions, updateMealSession]);
 
   // Prefill cart from bundle query parameter
   useEffect(() => {

@@ -212,9 +212,14 @@ export default function CoworkingAuthForm({
                       type="date"
                       value={startDate}
                       onChange={(e) => {
-                        setStartDate(e.target.value);
-                        if (endDate && endDate < e.target.value) setEndDate(e.target.value);
-                        if (endTime && endDate === e.target.value && endTime <= startTime) setEndTime("");
+                        const nextStartDate = e.target.value;
+                        setStartDate(nextStartDate);
+                        if (!endDate || endDate < nextStartDate) {
+                          setEndDate(nextStartDate);
+                        }
+                        if (endTime && (endDate === nextStartDate || !endDate) && endTime <= startTime) {
+                          setEndTime("");
+                        }
                       }}
                       min={getMinDate()}
                       max={getMaxDate()}
