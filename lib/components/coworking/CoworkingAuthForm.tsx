@@ -29,7 +29,7 @@ function generateTimeSlots() {
 
 const TIME_SLOTS = generateTimeSlots();
 const INPUT_BASE_CLASS =
-  "w-full rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3.5 text-sm text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400";
+  "w-full rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3.5 text-base text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 sm:text-sm";
 
 function getMinDate(): string {
   return new Date().toISOString().split("T")[0];

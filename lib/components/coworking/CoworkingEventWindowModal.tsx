@@ -49,6 +49,13 @@ function toDate(value: string) {
   return new Date(`${value}T00:00:00`);
 }
 
+function toLocalDateValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function formatCompactDateTime(date: string, time: string) {
   if (!date) return "Not set";
   const formattedDate = toDate(date).toLocaleDateString("en-GB", {
@@ -421,7 +428,7 @@ export default function CoworkingEventWindowModal({
                   return <div key={`blank-${index}`} className="h-10 sm:h-12" />;
                 }
 
-                const value = day.toISOString().split("T")[0];
+                const value = toLocalDateValue(day);
                 const isDisabled = day < min || day > max;
                 const isStart = value === draftStartDate;
                 const isEnd = value === draftEndDate;

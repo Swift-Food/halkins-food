@@ -330,8 +330,9 @@ export default function CoworkingOrderFlow() {
     eventEndTime,
     setVenueSelection,
     setSession,
+    logout,
   } = useCoworking();
-  const { currentStep, contactInfo, setContactInfo, updateMealSession } = useCatering();
+  const { currentStep, contactInfo, setContactInfo, updateMealSession, resetOrder } = useCatering();
 
   const [spaceError, setSpaceError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -344,12 +345,14 @@ export default function CoworkingOrderFlow() {
     coworkingService
       .getSpaceInfo(spaceSlug)
       .then((info) => setSpaceInfo(info))
-      .catch((err) =>
-        setSpaceError(
-          err instanceof Error ? err.message : "Failed to load space info"
-        )
-      );
-  }, [spaceSlug, spaceInfo, setSpaceInfo]);
+      .catch((err) => {
+        logout();
+        resetOrder();
+        if (err instanceof Error && err.message === "Coworking space not found") {
+          setSpaceError(err.message);
+        }
+      });
+  }, [spaceSlug, spaceInfo, setSpaceInfo, logout, resetOrder]);
 
   // Pre-fill contact info from member data once when authenticated
   useEffect(() => {
