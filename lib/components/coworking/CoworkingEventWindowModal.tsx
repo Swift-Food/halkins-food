@@ -365,6 +365,195 @@ export default function CoworkingEventWindowModal({
     }
   };
 
+  const stepLabel =
+    step === "dates"
+      ? "Step 1"
+      : step === "start-time"
+        ? "Step 2"
+        : step === "end-time"
+          ? "Step 3"
+          : "Step 4";
+
+  const stepTitle =
+    step === "dates"
+      ? `Choose your ${editTarget} date`
+      : step === "start-time"
+        ? "Choose a start time"
+        : step === "end-time"
+          ? "Choose an end time"
+          : "Confirm details";
+
+  const stepDescription =
+    step === "dates"
+      ? editTarget === "start"
+        ? "Pick the event start date."
+        : "Pick the event end date. It must be on or after the start date."
+      : step === "confirm"
+        ? "Review your event window, or tap Start or End below to adjust it."
+        : "Use the controls below to set the exact time.";
+
+  const renderTimeEditor = () => (
+    <>
+      {step !== "dates" && (
+        <div
+          ref={timeEntryRef}
+          className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
+        >
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              Exact time
+            </label>
+            <div className="grid grid-cols-[1fr_1fr_auto] gap-2 sm:gap-3">
+              <select
+                value={manualTimeParts.hour}
+                onChange={(e) => handleManualTimeChange({ hour: e.target.value })}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
+              >
+                <option value="">Hour</option>
+                {Array.from({ length: 12 }, (_, index) => String(index + 1)).map((hour) => (
+                  <option key={hour} value={hour}>
+                    {hour}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={manualTimeParts.minute}
+                onChange={(e) => handleManualTimeChange({ minute: e.target.value })}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
+              >
+                {["00", "15", "30", "45"].map((minute) => (
+                  <option key={minute} value={minute}>
+                    {minute}
+                  </option>
+                ))}
+              </select>
+
+              <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-1">
+                {(["AM", "PM"] as const).map((period) => {
+                  const isActive = manualTimeParts.period === period;
+                  return (
+                    <button
+                      key={period}
+                      type="button"
+                      onClick={() => handleManualTimeChange({ period })}
+                      className={`rounded-[0.9rem] px-3 py-2 text-sm font-semibold transition-all ${
+                        isActive
+                          ? "bg-primary text-white shadow-[0_10px_18px_rgba(236,72,153,0.22)]"
+                          : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      {period}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {isManualTimeComplete && !isManualTimeAllowed && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <p className="font-semibold">Invalid time</p>
+                <p className="mt-1">{invalidTimeMessage}</p>
+              </div>
+            )}
+          </div>
+
+          {step === "start-time" && !draftEndTime && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditTarget("end");
+                setStep("end-time");
+              }}
+              disabled={!draftStartTime || !isManualTimeAllowed}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Continue to End Time
+            </button>
+          )}
+        </div>
+      )}
+    </>
+  );
+
+  const renderEditControls = () => (
+    <div className="mt-1 lg:mt-6">
+      {hasInitialDateRange && (
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+            Tap To Edit
+          </p>
+          <p className="text-xs font-medium text-primary">
+            Change date or time
+          </p>
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+        <button
+          type="button"
+          onClick={() => {
+            setEditTarget("start");
+            setStep(canApply ? "confirm" : "start-time");
+          }}
+          className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-3 py-2.5 text-left transition-all sm:gap-4 sm:py-3 ${
+            editTarget === "start" && !isEditingEndTime
+              ? "border-primary/30 bg-primary/5 shadow-[0_10px_24px_rgba(236,72,153,0.10)]"
+              : "border-slate-200/80 hover:border-primary/30 hover:bg-slate-50"
+          }`}
+          disabled={!hasInitialDateRange}
+        >
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:text-[11px] sm:tracking-[0.22em]">
+              Start
+            </p>
+            <p className="mt-0.5 truncate text-xs font-medium text-slate-900 sm:mt-1 sm:text-sm">
+              {formatCompactDateTime(draftStartDate, draftStartTime)}
+            </p>
+          </div>
+          <div
+            className={`hidden h-10 w-10 shrink-0 items-center justify-center rounded-full sm:flex ${
+              editTarget === "start" && !isEditingEndTime
+                ? "bg-primary text-white"
+                : "bg-primary/10 text-primary"
+            }`}
+          >
+            <CalendarDays className="h-5 w-5" />
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setEditTarget("end");
+            setStep(canApply ? "confirm" : "end-time");
+          }}
+          className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-3 py-2.5 text-left transition-all sm:gap-4 sm:py-3 ${
+            isEditingEndTime
+              ? "border-primary/30 bg-primary/5 shadow-[0_10px_24px_rgba(236,72,153,0.10)]"
+              : "border-slate-200/80 hover:border-primary/30 hover:bg-slate-50"
+          }`}
+          disabled={!hasInitialDateRange}
+        >
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:text-[11px] sm:tracking-[0.22em]">
+              End
+            </p>
+            <p className="mt-0.5 truncate text-xs font-medium text-slate-900 sm:mt-1 sm:text-sm">
+              {formatCompactDateTime(draftEndDate, draftEndTime)}
+            </p>
+          </div>
+          <div
+            className={`hidden h-10 w-10 shrink-0 items-center justify-center rounded-full sm:flex ${
+              isEditingEndTime
+                ? "bg-primary text-white"
+                : "bg-primary/10 text-primary"
+            }`}
+          >
+            <Clock3 className="h-5 w-5" />
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 px-3 py-3 backdrop-blur-sm sm:px-4 sm:py-6">
       <div className="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-[1.5rem] border border-white/70 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:max-h-[92vh] sm:rounded-[2rem]">
@@ -374,7 +563,7 @@ export default function CoworkingEventWindowModal({
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
                 Event Window
               </p>
-              <h3 className="mt-2 text-xl font-semibold text-slate-900 sm:text-2xl">
+              <h3 className="mt-1.5 text-lg font-semibold text-slate-900 sm:mt-2 sm:text-2xl">
                 Select dates and times
               </h3>
             </div>
@@ -389,6 +578,10 @@ export default function CoworkingEventWindowModal({
         </div>
 
         <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="px-4 pt-1 lg:hidden">
+            {renderEditControls()}
+          </div>
+
           <div className="border-b border-slate-200/80 p-4 sm:p-6 lg:border-b-0 lg:border-r lg:p-8">
             <div className="flex items-center justify-between gap-2 sm:gap-3">
               <button
@@ -510,203 +703,31 @@ export default function CoworkingEventWindowModal({
 
           </div>
 
-          <div className="p-4 sm:p-6 lg:p-8">
+          <div className="hidden p-4 sm:p-6 lg:block lg:p-8">
             <div className="rounded-[1.5rem] border border-slate-200/80 bg-slate-50/60 p-4 sm:rounded-[1.75rem] sm:p-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                {step === "dates"
-                  ? "Step 1"
-                  : step === "start-time"
-                    ? "Step 2"
-                    : step === "end-time"
-                      ? "Step 3"
-                      : "Step 4"}
+                {stepLabel}
               </p>
               <h4 className="mt-2 text-lg font-semibold text-slate-900 sm:text-xl">
-                {step === "dates"
-                  ? `Choose your ${editTarget} date`
-                  : step === "start-time"
-                    ? "Choose a start time"
-                    : step === "end-time"
-                      ? "Choose an end time"
-                      : "Confirm details"}
+                {stepTitle}
               </h4>
               <p className="mt-2 text-sm text-slate-500 sm:mt-3">
-                {step === "dates"
-                  ? editTarget === "start"
-                    ? "Pick the event start date."
-                    : "Pick the event end date. It must be on or after the start date."
-                  : step === "confirm"
-                    ? "Review your event window, or tap Start or End below to adjust it."
-                    : "Use the controls below to set the exact time."}
+                {stepDescription}
               </p>
-
-              {step === "dates" ? (
-                <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-white/80 p-5 text-sm text-slate-500">
-                  Use the Start and End cards below to switch between editing each part of the event window.
-                </div>
-              ) : (
-                <div
-                  ref={timeEntryRef}
-                  className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
-                >
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700">
-                      Exact time
-                    </label>
-                    <div className="grid grid-cols-[1fr_1fr_auto] gap-2 sm:gap-3">
-                      <select
-                        value={manualTimeParts.hour}
-                        onChange={(e) => handleManualTimeChange({ hour: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
-                      >
-                        <option value="">Hour</option>
-                        {Array.from({ length: 12 }, (_, index) => String(index + 1)).map((hour) => (
-                          <option key={hour} value={hour}>
-                            {hour}
-                          </option>
-                        ))}
-                      </select>
-
-                      <select
-                        value={manualTimeParts.minute}
-                        onChange={(e) => handleManualTimeChange({ minute: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
-                      >
-                        {["00", "15", "30", "45"].map((minute) => (
-                          <option key={minute} value={minute}>
-                            {minute}
-                          </option>
-                        ))}
-                      </select>
-
-                      <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-1">
-                        {(["AM", "PM"] as const).map((period) => {
-                          const isActive = manualTimeParts.period === period;
-                          return (
-                            <button
-                              key={period}
-                              type="button"
-                              onClick={() => handleManualTimeChange({ period })}
-                              className={`rounded-[0.9rem] px-3 py-2 text-sm font-semibold transition-all ${
-                                isActive
-                                  ? "bg-primary text-white shadow-[0_10px_18px_rgba(236,72,153,0.22)]"
-                                  : "text-slate-500 hover:text-slate-700"
-                              }`}
-                            >
-                              {period}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    {isManualTimeComplete && !isManualTimeAllowed && (
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                        <p className="font-semibold">Invalid time</p>
-                        <p className="mt-1">{invalidTimeMessage}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {step === "start-time" && !draftEndTime && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditTarget("end");
-                        setStep("end-time");
-                      }}
-                      disabled={!draftStartTime || !isManualTimeAllowed}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      Continue to End Time
-                    </button>
-                  )}
-                </div>
-              )}
-
-              <div className="mt-6">
-                {hasInitialDateRange && (
-                  <div className="mb-3 flex items-center justify-between">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                      Tap To Edit
-                    </p>
-                    <p className="text-xs font-medium text-primary">
-                      Change date or time
-                    </p>
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditTarget("start");
-                    setStep(canApply ? "confirm" : "start-time");
-                  }}
-                  className={`flex w-full items-center justify-between gap-4 rounded-2xl border px-3 py-3 text-left transition-all ${
-                    editTarget === "start" && !isEditingEndTime
-                      ? "border-primary/30 bg-primary/5 shadow-[0_10px_24px_rgba(236,72,153,0.10)]"
-                      : "border-slate-200/80 hover:border-primary/30 hover:bg-slate-50"
-                  }`}
-                  disabled={!hasInitialDateRange}
-                >
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                      Start
-                    </p>
-                    <p className="mt-1 text-sm font-medium text-slate-900">
-                      {formatCompactDateTime(draftStartDate, draftStartTime)}
-                    </p>
-                  </div>
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                      editTarget === "start" && !isEditingEndTime
-                        ? "bg-primary text-white"
-                        : "bg-primary/10 text-primary"
-                    }`}
-                  >
-                    <CalendarDays className="h-5 w-5" />
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditTarget("end");
-                    setStep(canApply ? "confirm" : "end-time");
-                  }}
-                  className={`mt-4 flex w-full items-center justify-between gap-4 rounded-2xl border px-3 py-3 text-left transition-all ${
-                    isEditingEndTime
-                      ? "border-primary/30 bg-primary/5 shadow-[0_10px_24px_rgba(236,72,153,0.10)]"
-                      : "border-slate-200/80 hover:border-primary/30 hover:bg-slate-50"
-                  }`}
-                  disabled={!hasInitialDateRange}
-                >
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                      End
-                    </p>
-                    <p className="mt-1 text-sm font-medium text-slate-900">
-                      {formatCompactDateTime(draftEndDate, draftEndTime)}
-                    </p>
-                  </div>
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                      isEditingEndTime
-                        ? "bg-primary text-white"
-                        : "bg-primary/10 text-primary"
-                    }`}
-                  >
-                    <Clock3 className="h-5 w-5" />
-                  </div>
-                </button>
-              </div>
+              {renderTimeEditor()}
+              {renderEditControls()}
             </div>
 
             <div className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row">
-              <button
-                type="button"
-                onClick={() => setStep(canApply ? "confirm" : "dates")}
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-              >
-                Back
-              </button>
+              {step !== "dates" && (
+                <button
+                  type="button"
+                  onClick={() => setStep(canApply ? "confirm" : "dates")}
+                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                >
+                  Back
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() =>
@@ -722,6 +743,47 @@ export default function CoworkingEventWindowModal({
               >
                 Apply Event Window
               </button>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200/80 px-4 py-3 lg:hidden">
+            <div className="rounded-[1.5rem] border border-slate-200/80 bg-slate-50/60 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                {stepLabel}
+              </p>
+              <h4 className="mt-2 text-lg font-semibold text-slate-900">
+                {stepTitle}
+              </h4>
+              <p className="mt-2 text-sm text-slate-500">
+                {stepDescription}
+              </p>
+              {renderTimeEditor()}
+              <div className="mt-5 flex flex-col gap-3">
+                {step !== "dates" && (
+                  <button
+                    type="button"
+                    onClick={() => setStep(canApply ? "confirm" : "dates")}
+                    className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                  >
+                    Back
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    onApply({
+                      startDate: draftStartDate,
+                      startTime: draftStartTime,
+                      endDate: draftEndDate,
+                      endTime: draftEndTime,
+                    })
+                  }
+                  disabled={!canApply}
+                  className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_30px_rgba(236,72,153,0.24)] transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Apply Event Window
+                </button>
+              </div>
             </div>
           </div>
         </div>
