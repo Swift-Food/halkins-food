@@ -2,12 +2,28 @@
 export interface Restaurant {
   id: string;
   restaurant_name: string;
+  status?: "active" | "inactive" | "coming_soon";
   restaurantType: string;
   images: string[];
   eventImages?: string[];
   averageRating: string;
+  dietaryFilters?: string[];
+  categories?: {
+    id: string;
+    name: string;
+    images?: string | null;
+    selectedImage?: string | null;
+    icon?: string | null;
+    displayOrder?: number;
+  }[];
   minCateringOrderQuantity?: number;
   minimumDeliveryNoticeHours?: number;
+  advanceNoticeSettings?: {
+    type: "hours" | "days_before_time";
+    hours?: number;
+    days?: number;
+    cutoffTime?: string;
+  } | null;
   contactEmail?: string;
   contactNumber?: string;
   cateringMinOrderSettings: {
@@ -28,6 +44,18 @@ export interface Restaurant {
         enabled: boolean;
       }[]
     | null;
+  dateOverrides?:
+    | {
+        date: string;
+        isClosed: boolean;
+        reason?: string;
+        timeSlots?: { open: string; close: string }[];
+      }[]
+    | null;
+  menuGroupSettings?: Record<
+    string,
+    { displayOrder?: number; information?: string }
+  >;
 }
 
 export interface Addon {

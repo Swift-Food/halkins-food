@@ -13,7 +13,8 @@ import StatsCards from "./StatsCards";
 import OrdersList from "./OrdersList";
 import OrderDetailModal from "./OrderDetailModal";
 import VenuesModal from "./VenuesModal";
-import { LogOut, Building2, MapPin } from "lucide-react";
+import PaymentsTab from "./PaymentsTab";
+import { LogOut, Building2, MapPin, ShoppingBag, CreditCard } from "lucide-react";
 
 interface CoworkingDashboardProps {
   spaceSlug: string;
@@ -31,6 +32,7 @@ export default function CoworkingDashboard({ spaceSlug }: CoworkingDashboardProp
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [showVenues, setShowVenues] = useState(false);
 
+  const [activeTab, setActiveTab] = useState<"orders" | "payments">("orders");
   const [error, setError] = useState("");
 
   // The resolved space ID from the getMe response
@@ -174,28 +176,66 @@ export default function CoworkingDashboard({ spaceSlug }: CoworkingDashboardProp
         </div>
       )}
 
-      {/* Stats Cards */}
-      {stats && <StatsCards stats={stats} />}
-
-      {/* Orders */}
+      {/* Tab Bar */}
       {spaceId && (
-        <OrdersList
-          orders={orders}
-          activeStatus={activeStatus}
-          onStatusChange={setActiveStatus}
-          onOrderClick={setSelectedOrderId}
-          loading={ordersLoading}
-        />
+        <div className="flex gap-1 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab("orders")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "orders"
+                ? "border-pink-500 text-pink-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <ShoppingBag className="h-4 w-4" />
+            Orders
+          </button>
+          <button
+            onClick={() => setActiveTab("payments")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "payments"
+                ? "border-pink-500 text-pink-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <CreditCard className="h-4 w-4" />
+            Payments
+          </button>
+        </div>
       )}
 
-      {/* Order Detail Modal */}
-      {selectedOrderId && spaceId && (
-        <OrderDetailModal
-          spaceId={spaceId}
-          orderId={selectedOrderId}
-          onClose={() => setSelectedOrderId(null)}
-          onOrderUpdated={fetchOrders}
-        />
+      {/* Orders Tab */}
+      {activeTab === "orders" && (
+        <>
+          {stats && <StatsCards stats={stats} />}
+          {spaceId && (
+            <OrdersList
+              orders={orders}
+              activeStatus={activeStatus}
+              onStatusChange={setActiveStatus}
+              onOrderClick={setSelectedOrderId}
+              loading={ordersLoading}
+            />
+          )}
+          {selectedOrderId && spaceId && (
+            <OrderDetailModal
+              spaceId={spaceId}
+              orderId={selectedOrderId}
+              onClose={() => setSelectedOrderId(null)}
+              onOrderUpdated={fetchOrders}
+            />
+          )}
+        </>
+      )}
+
+      {/* Payments Tab */}
+      {activeTab === "payments" && spaceId && (
+        <PaymentsTab spaceId={spaceId} />
+      )}
+
+      {/* Venues Modal */}
+      {showVenues && spaceId && (
+        <VenuesModal spaceId={spaceId} onClose={() => setShowVenues(false)} />
       )}
 
       {/* Venues Modal */}

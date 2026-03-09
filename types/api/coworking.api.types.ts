@@ -122,36 +122,6 @@ export interface CoworkingVenue {
   description?: string;
 }
 
-/**
- * Hardcoded venue list — replace with API data when available
- */
-export const COWORKING_VENUES: CoworkingVenue[] = [
-  {
-    id: "paris-garden",
-    name: "Paris Garden",
-    maxCapacity: 80,
-    address: "1-2 Paris Gardens, London, SE1 8ND",
-    addressLine1: "1-2 Paris Gardens",
-    city: "London",
-    zipcode: "SE1 8ND",
-    latitude: 51.50664530535029,
-    longitude: -0.10636436057400264,
-    image: "/coworking-images/cow-3.webp",
-  },
-  {
-    id: "monument",
-    name: "Monument",
-    maxCapacity: 60,
-    address: "10 Lower Thames Street, London",
-    addressLine1: "10 Lower Thames Street",
-    city: "London",
-    zipcode: "EC3R 6EN",
-    latitude: 51.50927965675505,
-    longitude: -0.08475660290304882,
-    image: "/coworking-images/cow-2.jpg",
-  },
-];
-
 // ============================================================================
 // RESPONSE TYPES
 // ============================================================================

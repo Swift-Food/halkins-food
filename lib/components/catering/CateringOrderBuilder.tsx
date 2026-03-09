@@ -3,11 +3,12 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCatering } from "@/context/CateringContext";
+import { useCoworking } from "@/context/CoworkingContext";
 import { MealSessionState } from "@/types/catering.types";
 import { cateringService } from "@/services/api/catering.api";
-import MenuItemCard from "./MenuItemCard";
 import MenuItemModal from "./MenuItemModal";
-import { MenuItem } from "@/types/restaurant.types";
+import { MenuItem, Restaurant } from "@/types/restaurant.types";
+import TutorialTooltip from "./TutorialTooltip";
 import SelectedItemsByCategory from "./SelectedItemsByCategory";
 import {
   LocalMealSession,
@@ -22,6 +23,7 @@ import SessionEditor from "./SessionEditor";
 import SessionAccordion from "./SessionAccordion";
 import DateSessionNav from "./DateSessionNav";
 import CheckoutBar from "./CheckoutBar";
+import RestaurantMenuBrowser from "./RestaurantMenuBrowser";
 import AddDayModal from "./modals/AddDayModal";
 import EmptySessionWarningModal from "./modals/EmptySessionWarningModal";
 import RemoveSessionConfirmModal from "./modals/RemoveSessionConfirmModal";
@@ -33,13 +35,43 @@ import { useCateringTutorial } from "./hooks/useCateringTutorial";
 import { useCateringData } from "./hooks/useCateringData";
 
 // Helpers
-import { groupSessionsByDay, formatTimeDisplay } from "./catering-order-helpers";
+import {
+  groupSessionsByDay,
+  formatTimeDisplay,
+  mapToMenuItem,
+} from "./catering-order-helpers";
+import { CateringBundleItem } from "@/types/api/catering.api.types";
 
 // Icons
-import { Plus, Clock, ShoppingBag, Search, X } from "lucide-react";
+import { Plus, Clock } from "lucide-react";
+
+const CATERING_TIME_SLOTS = ["11:00", "13:00", "18:00"] as const;
+const TUTORIAL_HINT_DISABLED_KEY = "catering_tutorial_hint_disabled";
+
+const toMinutes = (time: string) => {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+};
+
+const getNextCateringTime = (time: string) => {
+  const requestedMinutes = toMinutes(time);
+  const nextSlot = CATERING_TIME_SLOTS.find(
+    (slot) => toMinutes(slot) >= requestedMinutes
+  );
+
+  return nextSlot ?? CATERING_TIME_SLOTS[CATERING_TIME_SLOTS.length - 1];
+};
+
+type CateringHourSlot = NonNullable<Restaurant["cateringOperatingHours"]>[number];
+type PopulatedCateringHourSlot = CateringHourSlot & {
+  open: string;
+  close: string;
+};
+type PdfPreviewItem = LocalMealSession["orderItems"][number]["item"];
 
 export default function CateringOrderBuilder() {
   const searchParams = useSearchParams();
+  const { eventStartTime } = useCoworking();
   const {
     mealSessions,
     activeSessionIndex,
@@ -72,12 +104,10 @@ export default function CateringOrderBuilder() {
   // Refs for scroll-to behavior
   const sessionAccordionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const dayRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const lastAutoSelectedSessionTime = useRef<string | null>(null);
 
   // Sticky nav detection
   const [isNavSticky, setIsNavSticky] = useState(false);
-
-  // Search state
-  const [searchQuery, setSearchQuery] = useState("");
 
   // Menu items state
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
@@ -91,6 +121,9 @@ export default function CateringOrderBuilder() {
 
   // Collapsed categories state
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [tutorialResetKey, setTutorialResetKey] = useState(0);
+  const [isTutorialHintVisible, setIsTutorialHintVisible] = useState(false);
+  const [isTutorialHintDisabled, setIsTutorialHintDisabled] = useState(false);
 
   // PDF generation state
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -119,6 +152,7 @@ export default function CateringOrderBuilder() {
   const firstSessionPillRef = useRef<HTMLButtonElement>(null);
   const addSessionNavButtonRef = useRef<HTMLButtonElement>(null);
   const categoriesRowRef = useRef<HTMLDivElement>(null);
+  const restaurantListRef = useRef<HTMLDivElement>(null);
   const firstMenuItemRef = useRef<HTMLDivElement>(null);
 
   // Use custom hooks
@@ -126,22 +160,28 @@ export default function CateringOrderBuilder() {
     categories,
     selectedCategory,
     selectedSubcategory,
-    categoriesLoading,
-    categoriesError,
     handleCategoryClick,
-    handleSubcategoryClick,
     selectMainsCategory,
-    menuItems,
-    menuItemsLoading,
-    menuItemsError,
     restaurants,
+    restaurantsLoading,
+    selectedDietaryFilters,
+    toggleDietaryFilter,
+    allMenuItems,
+    fetchAllMenuItems,
   } = useCateringData({ expandedSessionIndex });
 
   const {
+    tutorialStep,
     tutorialPhase,
+    currentTutorialStep,
+    handleTutorialNext,
+    handleSkipTutorial,
     triggerNavigationTutorial,
+    resetTutorial,
+    getTutorialSteps,
   } = useCateringTutorial({
     mealSessions,
+    navMode,
     refs: {
       addDayNavButtonRef,
       backButtonRef,
@@ -149,9 +189,48 @@ export default function CateringOrderBuilder() {
       firstSessionPillRef,
       addSessionNavButtonRef,
       categoriesRowRef,
+      restaurantListRef,
       firstMenuItemRef,
     },
   });
+
+  useEffect(() => {
+    if (currentTutorialStep?.id !== "add-day-nav" || navMode === "dates") return;
+
+    setNavMode("dates");
+    setSelectedDayDate(null);
+  }, [currentTutorialStep, navMode]);
+
+  useEffect(() => {
+    const storedPreference =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem(TUTORIAL_HINT_DISABLED_KEY)
+        : null;
+    const isDisabled = storedPreference === "true";
+
+    setIsTutorialHintDisabled(isDisabled);
+    setIsTutorialHintVisible(!isDisabled);
+  }, []);
+
+  const handleTutorialHintDisabledChange = (checked: boolean) => {
+    setIsTutorialHintDisabled(checked);
+    setIsTutorialHintVisible(!checked);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(TUTORIAL_HINT_DISABLED_KEY, checked ? "true" : "false");
+    }
+  };
+
+  const handleRestartTutorial = () => {
+    resetTutorial();
+    setNavMode("dates");
+    setSelectedDayDate(null);
+    setExpandedItemId(null);
+    setTutorialResetKey((key) => key + 1);
+    if (!isTutorialHintDisabled) {
+      setIsTutorialHintVisible(false);
+    }
+  };
 
   // Get quantity for an item in the current session
   const getItemQuantity = (itemId: string): number => {
@@ -186,10 +265,10 @@ export default function CateringOrderBuilder() {
         itemDisplayOrder: item.itemDisplayOrder,
         addons: item.addons,
         selectedAddons: item.selectedAddons,
-        categoryId: selectedCategory?.id,
-        categoryName: selectedCategory?.name,
-        subcategoryId: selectedSubcategory?.id || item.subcategoryId,
-        subcategoryName: selectedSubcategory?.name || item.subcategoryName,
+        categoryId: item.categoryId || selectedCategory?.id,
+        categoryName: item.categoryName || selectedCategory?.name,
+        subcategoryId: item.subcategoryId || selectedSubcategory?.id,
+        subcategoryName: item.subcategoryName || selectedSubcategory?.name,
       },
       quantity,
     });
@@ -199,6 +278,12 @@ export default function CateringOrderBuilder() {
   // Handle updating item quantity
   const handleUpdateQuantity = (itemId: string, quantity: number) => {
     updateItemQuantity(activeSessionIndex, itemId, quantity);
+  };
+
+  const hasDefinedHours = (
+    slot: CateringHourSlot
+  ): slot is PopulatedCateringHourSlot => {
+    return Boolean(slot.open && slot.close);
   };
 
   // Handle opening modal for add/edit
@@ -216,6 +301,30 @@ export default function CateringOrderBuilder() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (!eventStartTime || mealSessions.length === 0) return;
+
+    const firstSession = mealSessions[0];
+    if (!firstSession) return;
+
+    const nextCateringTime = getNextCateringTime(eventStartTime);
+    const currentTime = firstSession.eventTime || "";
+    const shouldSync =
+      currentTime === "" ||
+      currentTime === eventStartTime ||
+      currentTime === lastAutoSelectedSessionTime.current;
+
+    if (!shouldSync || currentTime === nextCateringTime) {
+      if (currentTime === nextCateringTime) {
+        lastAutoSelectedSessionTime.current = nextCateringTime;
+      }
+      return;
+    }
+
+    updateMealSession(0, { eventTime: nextCateringTime });
+    lastAutoSelectedSessionTime.current = nextCateringTime;
+  }, [eventStartTime, mealSessions, updateMealSession]);
+
   // Prefill cart from bundle query parameter
   useEffect(() => {
     const bundleId = searchParams.get("bundleId");
@@ -228,33 +337,9 @@ export default function CateringOrderBuilder() {
       try {
         const bundle = await cateringService.getBundleById(bundleId);
         const response = await cateringService.getMenuItems();
-        const allMenuItems = (response || []).map((item: any) => ({
-          id: item.id,
-          menuItemName: item.name,
-          description: item.description,
-          price: item.price?.toString() || "0",
-          discountPrice: item.discountPrice?.toString(),
-          isDiscount: item.isDiscount || false,
-          image: item.image,
-          averageRating: item.averageRating?.toString(),
-          restaurantId: item.restaurantId || "",
-          cateringQuantityUnit: item.cateringQuantityUnit || 7,
-          feedsPerUnit: item.feedsPerUnit || 10,
-          groupTitle: item.groupTitle,
-          status: item.status,
-          itemDisplayOrder: item.itemDisplayOrder,
-          addons: Array.isArray(item.addons) ? item.addons : [],
-          allergens: Array.isArray(item.allergens) ? item.allergens : [],
-          restaurant: {
-            id: item.restaurantId,
-            name: item.restaurant?.restaurant_name || "Unknown",
-            restaurantId: item.restaurantId,
-            menuGroupSettings: item.restaurant?.menuGroupSettings,
-          },
-          dietaryFilters: item.dietaryFilters,
-        }));
+        const allMenuItems = (response || []).map(mapToMenuItem);
 
-        bundle.items.forEach((bundleItem: any) => {
+        bundle.items.forEach((bundleItem: CateringBundleItem) => {
           const menuItem = allMenuItems.find(
             (item: MenuItem) => item.id === bundleItem.menuItemId
           );
@@ -315,20 +400,6 @@ export default function CateringOrderBuilder() {
     if (!selectedDayDate) return null;
     return dayGroups.find((g) => g.date === selectedDayDate) || null;
   }, [dayGroups, selectedDayDate]);
-
-  // Filtered menu items for search
-  const filteredMenuItems = useMemo(() => {
-    if (!searchQuery.trim()) return menuItems;
-    const q = searchQuery.toLowerCase();
-    return menuItems.filter(
-      (item) =>
-        item.menuItemName.toLowerCase().includes(q) ||
-        item.description?.toLowerCase().includes(q) ||
-        item.groupTitle?.toLowerCase().includes(q)
-    );
-  }, [menuItems, searchQuery]);
-
-  const isSearchActive = searchQuery.trim().length > 0;
 
   // Handle clicking a date tab
   const handleDateClick = (dayDate: string) => {
@@ -615,24 +686,24 @@ export default function CateringOrderBuilder() {
 
         {
           const daySlots = cateringHours.filter(
-            (s: any) => s.day.toLowerCase() === dayOfWeek && s.enabled
+            (s: CateringHourSlot) => s.day.toLowerCase() === dayOfWeek && s.enabled
           );
           if (daySlots.length === 0) {
             errors[i] = `${restaurant.restaurant_name} does not accept event orders on ${dayOfWeek}s.`;
             break;
           }
-          const enabledSlots = daySlots.filter((s: any) => s.open && s.close);
+          const enabledSlots = daySlots.filter(hasDefinedHours);
           if (enabledSlots.length > 0 && session.eventTime) {
             const [eh, em] = session.eventTime.split(":").map(Number);
             const eventMins = eh * 60 + em;
-            const inSlot = enabledSlots.some((slot: any) => {
+            const inSlot = enabledSlots.some((slot) => {
               const [oh, om] = slot.open.split(":").map(Number);
               const [ch, cm] = slot.close.split(":").map(Number);
               return eventMins >= oh * 60 + om && eventMins <= ch * 60 + cm;
             });
             if (!inSlot) {
               const descs = enabledSlots
-                .map((s: any) => {
+                .map((s) => {
                   const [oh, om] = s.open.split(":").map(Number);
                   const [ch, cm] = s.close.split(":").map(Number);
                   return `${formatTimeRange(oh, om)} - ${formatTimeRange(ch, cm)}`;
@@ -720,10 +791,10 @@ export default function CateringOrderBuilder() {
             categoryName: oi.item.categoryName,
             subcategoryName: oi.item.subcategoryName,
             selectedAddons: oi.item.selectedAddons,
-            description: (oi.item as any).description,
-            allergens: (oi.item as any).allergens,
-            dietaryFilters: (oi.item as any).dietaryFilters,
-          },
+            description: (oi.item as PdfPreviewItem).description,
+            allergens: (oi.item as PdfPreviewItem).allergens,
+            dietaryFilters: (oi.item as PdfPreviewItem).dietaryFilters,
+          } satisfies PdfPreviewItem,
           quantity: oi.quantity,
         })),
       }));
@@ -777,137 +848,6 @@ export default function CateringOrderBuilder() {
   };
 
   // Render categories and menu items section (inside a session accordion)
-  const renderCategoriesSection = (sessionIndex: number) => (
-    <div>
-      {/* Search Bar */}
-      <div className="relative mt-2 mb-2">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search menu items..."
-          className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-base-300 bg-white text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-        />
-        {searchQuery && (
-          <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-            <X className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-
-      {/* Categories Row */}
-      {!isSearchActive && (
-        <div
-          ref={expandedSessionIndex === sessionIndex ? categoriesRowRef : undefined}
-          className="-mx-3 px-3 md:-mx-5 md:px-5 pt-2 pb-1"
-        >
-          {categoriesLoading ? (
-            <div className="flex items-center gap-3 overflow-x-auto pb-2">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="flex-shrink-0 w-28 h-10 bg-base-200 rounded-full animate-pulse" />
-              ))}
-            </div>
-          ) : categoriesError ? (
-            <div className="text-center py-4 text-red-500">{categoriesError}</div>
-          ) : (
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => handleCategoryClick(category)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    selectedCategory?.id === category.id
-                      ? "bg-primary text-white"
-                      : "bg-base-200 text-gray-700 hover:bg-base-300"
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Subcategories Row */}
-      {!isSearchActive && selectedCategory && selectedCategory.subcategories.length > 0 && (
-        <div className="sticky top-[67px] z-30 bg-white pb-1 pt-1 -mx-3 px-3 md:-mx-5 md:px-5">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            <span className="flex-shrink-0 text-xs text-gray-500 mr-1">{selectedCategory.name}:</span>
-            {selectedCategory.subcategories.map((subcategory) => (
-              <button
-                key={subcategory.id}
-                onClick={() => handleSubcategoryClick(subcategory)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all border border-primary/50 ${
-                  selectedSubcategory?.id === subcategory.id
-                    ? "bg-primary text-white"
-                    : "bg-white text-primary hover:bg-secondary/20"
-                }`}
-              >
-                {subcategory.name}
-                {selectedSubcategory?.id === subcategory.id && (
-                  <span className="ml-1.5 inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-white/20">×</span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Menu Items */}
-      <div className="bg-base-100 rounded-xl p-4 mt-2">
-        {menuItemsLoading ? (
-          <div className="text-center py-4">
-            <div className="inline-block w-6 h-6 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="mt-2 text-sm text-gray-500">Loading...</p>
-          </div>
-        ) : menuItemsError ? (
-          <div className="text-center py-4 text-red-500 text-sm">{menuItemsError}</div>
-        ) : !selectedCategory && !isSearchActive ? (
-          <div className="text-center py-6">
-            <ShoppingBag className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-500 text-sm">Select a category to browse items</p>
-          </div>
-        ) : filteredMenuItems.length === 0 ? (
-          <div className="text-center py-6">
-            <p className="text-gray-500 text-sm">
-              {isSearchActive
-                ? `No items matching "${searchQuery}"`
-                : `No items available for ${selectedSubcategory?.name || selectedCategory?.name}`}
-            </p>
-          </div>
-        ) : (
-          <div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-3">
-              {isSearchActive
-                ? `Results for "${searchQuery}"`
-                : selectedSubcategory?.name || selectedCategory?.name}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {filteredMenuItems.map((item, itemIdx) => (
-                <div
-                  key={item.id}
-                  ref={expandedSessionIndex === sessionIndex && itemIdx === 0 ? firstMenuItemRef : undefined}
-                >
-                  <MenuItemCard
-                    item={item}
-                    quantity={getItemQuantity(item.id)}
-                    isExpanded={expandedItemId === item.id}
-                    onToggleExpand={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}
-                    onAddItem={handleAddItem}
-                    onUpdateQuantity={handleUpdateQuantity}
-                    onAddOrderPress={handleAddOrderPress}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
   // Render session content
   const renderSessionContent = (
     session: MealSessionState,
@@ -941,7 +881,27 @@ export default function CateringOrderBuilder() {
           />
         </div>
       )}
-      {renderCategoriesSection(index)}
+      <RestaurantMenuBrowser
+        restaurants={restaurants}
+        restaurantsLoading={restaurantsLoading}
+        allMenuItems={allMenuItems}
+        fetchAllMenuItems={fetchAllMenuItems}
+        onAddItem={handleAddItem}
+        onUpdateQuantity={handleUpdateQuantity}
+        onAddOrderPress={handleAddOrderPress}
+        getItemQuantity={getItemQuantity}
+        expandedItemId={expandedItemId}
+        setExpandedItemId={setExpandedItemId}
+        selectedDietaryFilters={selectedDietaryFilters}
+        toggleDietaryFilter={toggleDietaryFilter}
+        categoriesRowRef={categoriesRowRef}
+        restaurantListRef={restaurantListRef}
+        firstMenuItemRef={firstMenuItemRef}
+        sessionIndex={index}
+        expandedSessionIndex={expandedSessionIndex}
+        autoOpenFirstRestaurant={currentTutorialStep?.id === "menu-item"}
+        tutorialResetKey={tutorialResetKey}
+      />
     </SessionAccordion>
   );
 
@@ -1037,7 +997,7 @@ export default function CateringOrderBuilder() {
                 <div className="hidden md:flex flex-shrink-0 w-12 h-12 rounded-xl bg-amber-500 flex-col items-center justify-center z-10 shadow-lg">
                   <Clock className="w-6 h-6 text-white" />
                 </div>
-                <div className="flex-1 md:bg-amber-50 md:rounded-2xl md:p-4 border border-amber-200 rounded-xl">
+                <div className="flex-1 md:bg-amber-50 md:rounded-2xl md:p-4 md:border md:border-amber-200">
                   <div className="mb-3 flex items-start gap-3 p-3 md:p-0">
                     <div className="md:hidden flex-shrink-0 w-11 h-11 rounded-xl bg-amber-500 text-white flex items-center justify-center">
                       <Clock className="w-5 h-5" />
@@ -1201,6 +1161,78 @@ export default function CateringOrderBuilder() {
           onCheckout={handleCheckout}
         />
       )}
+
+      <TutorialTooltip
+        step={currentTutorialStep}
+        onNext={handleTutorialNext}
+        onSkip={handleSkipTutorial}
+        currentStepIndex={tutorialStep ?? 0}
+        totalSteps={getTutorialSteps().length}
+      />
+
+      <div className="fixed bottom-4 left-4 md:bottom-8 md:left-8 z-40">
+        {isTutorialHintVisible && (
+          <div className="absolute bottom-14 left-0 md:bottom-16 w-64 rounded-2xl border border-base-300 bg-white shadow-xl p-3">
+            <div className="absolute -bottom-2 left-7 w-4 h-4 rotate-45 bg-white border-r border-b border-base-300" />
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Need a quick walkthrough?</p>
+                <p className="mt-1 text-xs text-gray-600">
+                  Use this button any time to restart the onboarding guide.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsTutorialHintVisible(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Dismiss tutorial hint"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+            <label className="mt-3 flex items-center gap-2 text-xs text-gray-600">
+              <input
+                type="checkbox"
+                checked={isTutorialHintDisabled}
+                onChange={(e) => handleTutorialHintDisabledChange(e.target.checked)}
+                className="checkbox checkbox-xs"
+              />
+              Don&apos;t show this again
+            </label>
+          </div>
+        )}
+
+        <button
+          onClick={handleRestartTutorial}
+          className="w-10 h-10 md:w-12 md:h-12 bg-white border border-base-300 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary transition-colors"
+          title="Restart Tutorial"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 md:h-6 md:w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }

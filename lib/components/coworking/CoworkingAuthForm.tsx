@@ -4,38 +4,13 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useCoworking } from "@/context/CoworkingContext";
 import { coworkingService } from "@/services/api/coworking.api";
-import { Mail, Building2, Calendar, Clock, MapPin, Users, CheckCircle2 } from "lucide-react";
 import { CoworkingVenue } from "@/types/api";
+import CoworkingBookingDetailsForm, {
+  isCoworkingBookingWindowValid,
+} from "./CoworkingBookingDetailsForm";
 
 interface CoworkingAuthFormProps {
   spaceSlug: string;
-}
-
-function generateTimeSlots() {
-  const slots: { value: string; label: string }[] = [];
-  for (let h = 7; h <= 22; h++) {
-    for (const m of [0, 30]) {
-      if (h === 22 && m === 30) break;
-      const hh = String(h).padStart(2, "0");
-      const mm = m === 0 ? "00" : "30";
-      const period = h < 12 ? "AM" : "PM";
-      const h12 = h % 12 || 12;
-      slots.push({ value: `${hh}:${mm}`, label: `${h12}:${mm} ${period}` });
-    }
-  }
-  return slots;
-}
-
-const TIME_SLOTS = generateTimeSlots();
-
-function getMinDate(): string {
-  return new Date().toISOString().split("T")[0];
-}
-
-function getMaxDate(): string {
-  const d = new Date();
-  d.setMonth(d.getMonth() + 6);
-  return d.toISOString().split("T")[0];
 }
 
 export default function CoworkingAuthForm({
@@ -60,19 +35,16 @@ export default function CoworkingAuthForm({
     coworkingService.getVenues(spaceInfo.id).then(setVenues).catch(() => {});
   }, [spaceInfo?.id]);
 
-  const endTimeOptions =
-    startTime && endDate === startDate
-      ? TIME_SLOTS.filter((s) => s.value > startTime)
-      : TIME_SLOTS;
 
   const isFormValid =
     name.trim().length >= 2 &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
-    startDate !== "" &&
-    startTime !== "" &&
-    endDate !== "" &&
-    endTime !== "" &&
-    (endDate > startDate || endTime > startTime) &&
+    isCoworkingBookingWindowValid({
+      startDate,
+      startTime,
+      endDate,
+      endTime,
+    }) &&
     selectedVenue !== null;
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
@@ -138,253 +110,51 @@ export default function CoworkingAuthForm({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-start justify-center py-10 px-4">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#f3f4f6_42%,#eef2f7_100%)] px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto w-full max-w-4xl">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Book your event</h2>
-          {spaceInfo && (
-            <p className="text-gray-500 mt-2 text-sm">
-              Powered by Swift
-            </p>
-          )}
+        <div className="mb-8 px-1">
+          <div className="mb-3 inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+            Powered by Swift
+          </div>
+          <div className="max-w-2xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+              Book your event
+            </h2>
+            {spaceInfo && (
+              <p className="mt-3 text-sm font-medium text-slate-500">
+                Ordering for {spaceInfo.name}
+              </p>
+            )}
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Section: Your Details */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
-              Your Details
-            </p>
-            <div className="space-y-4">
-              {/* Company Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5" htmlFor="coworking-name">
-                  Company Name
-                </label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    id="coworking-name"
-                    type="text"
-                    placeholder="Enter your company name"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    disabled={isSubmitting}
-                    minLength={2}
-                    maxLength={100}
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5" htmlFor="coworking-email">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    id="coworking-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isSubmitting}
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Section: Event Details */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
-              Event Details
-            </p>
-            <div className="space-y-4">
-              {/* Start Date + Time */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Start
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => {
-                        setStartDate(e.target.value);
-                        if (endDate && endDate < e.target.value) setEndDate(e.target.value);
-                        if (endTime && endDate === e.target.value && endTime <= startTime) setEndTime("");
-                      }}
-                      min={getMinDate()}
-                      max={getMaxDate()}
-                      disabled={isSubmitting}
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-white appearance-none"
-                      style={{ WebkitAppearance: "none" }}
-                      required
-                    />
-                  </div>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <select
-                      value={startTime}
-                      onChange={(e) => {
-                        setStartTime(e.target.value);
-                        if (endDate === startDate && endTime && endTime <= e.target.value) setEndTime("");
-                      }}
-                      disabled={isSubmitting}
-                      className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors"
-                      required
-                    >
-                      <option value="">Time</option>
-                      {TIME_SLOTS.map((s) => (
-                        <option key={s.value} value={s.value}>{s.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* End Date + Time */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  End
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => {
-                        setEndDate(e.target.value);
-                        if (e.target.value === startDate && endTime && endTime <= startTime) setEndTime("");
-                      }}
-                      min={startDate || getMinDate()}
-                      max={getMaxDate()}
-                      disabled={isSubmitting || !startDate}
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-white appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ WebkitAppearance: "none" }}
-                      required
-                    />
-                  </div>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <select
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      disabled={isSubmitting || !startTime || !endDate}
-                      className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      required
-                    >
-                      <option value="">Time</option>
-                      {endTimeOptions.map((s) => (
-                        <option key={s.value} value={s.value}>{s.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Section: Choose Venue */}
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-1">
-              Choose a Venue
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {venues.map((venue) => {
-                const isSelected = selectedVenue?.id === venue.id;
-                return (
-                  <button
-                    key={venue.id}
-                    type="button"
-                    onClick={() => setSelectedVenue(venue)}
-                    disabled={isSubmitting}
-                    className={`relative rounded-2xl overflow-hidden text-left transition-all shadow-sm group ${
-                      isSelected
-                        ? "ring-2 ring-primary ring-offset-2"
-                        : "ring-1 ring-gray-200 hover:ring-primary/50 hover:shadow-md"
-                    }`}
-                  >
-                    {/* Image */}
-                    <div className="relative h-60 w-full bg-gray-200">
-                      {venue.image ? (
-                        <Image
-                          src={venue.image}
-                          alt={venue.name}
-                          fill
-                          className={`object-cover transition-transform duration-300 group-hover:scale-105 ${
-                            isSelected ? "scale-105" : ""
-                          }`}
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300" />
-                      )}
-                      {/* Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-
-                      {/* Selected badge */}
-                      {isSelected && (
-                        <div className="absolute top-3 right-3">
-                          <CheckCircle2 className="w-6 h-6 text-white drop-shadow" />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <div className="bg-white p-4">
-                      <p className="font-semibold text-gray-900 text-sm">{venue.name}</p>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className="flex items-center gap-1 text-xs text-gray-500">
-                          <Users className="w-3.5 h-3.5" />
-                          Up to {venue.capacity} guests
-                        </span>
-                        {venue.description &&  (
-                          <span className="flex items-center gap-1 text-xs text-gray-500">
-                            <MapPin className="w-3.5 h-3.5" />
-                            {venue.description}
-                          </span>
-                        )}
-                        
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Submit */}
-          <button
-            type="submit"
-            className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all bg-primary text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-            disabled={isSubmitting || !isFormValid}
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="loading loading-spinner loading-sm"></span>
-                Setting up your order...
-              </span>
-            ) : (
-              "Continue to Menu"
-            )}
-          </button>
+        <form onSubmit={handleSubmit}>
+          <CoworkingBookingDetailsForm
+            name={name}
+            email={email}
+            venues={venues}
+            startDate={startDate}
+            startTime={startTime}
+            endDate={endDate}
+            endTime={endTime}
+            selectedVenue={selectedVenue}
+            isSubmitting={isSubmitting}
+            error={error}
+            submitLabel={
+              isSubmitting ? "Setting up your order..." : "Continue to Menu"
+            }
+            submitDisabled={!isFormValid}
+            onNameChange={setName}
+            onEmailChange={setEmail}
+            onVenueChange={setSelectedVenue}
+            onEventWindowApply={({ startDate, startTime, endDate, endTime }) => {
+              setStartDate(startDate);
+              setStartTime(startTime);
+              setEndDate(endDate);
+              setEndTime(endTime);
+            }}
+          />
         </form>
       </div>
     </div>

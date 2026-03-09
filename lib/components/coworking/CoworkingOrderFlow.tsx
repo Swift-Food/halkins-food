@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useCoworking } from "@/context/CoworkingContext";
 import { useCatering } from "@/context/CateringContext";
 import { coworkingService } from "@/services/api/coworking.api";
 import CoworkingAuthForm from "./CoworkingAuthForm";
+import CoworkingBookingDetailsForm, {
+  COWORKING_TIME_SLOTS,
+  isCoworkingBookingWindowValid,
+} from "./CoworkingBookingDetailsForm";
 import CateringOrderBuilder from "@/lib/components/catering/CateringOrderBuilder";
 import Step3ContactInfo from "@/lib/components/catering/Step3ContactDetails";
 import { CoworkingVenue } from "@/types/api";
@@ -33,7 +36,7 @@ const TIME_SLOTS = generateTimeSlots();
 
 function formatTime(value: string): string {
   if (!value) return "";
-  const slot = TIME_SLOTS.find((s) => s.value === value);
+  const slot = COWORKING_TIME_SLOTS.find((s) => s.value === value);
   return slot?.label ?? value;
 }
 
@@ -47,21 +50,21 @@ function formatDate(iso: string): string {
   });
 }
 
-function getMinDate(): string {
-  return new Date().toISOString().split("T")[0];
-}
-
-function getMaxDate(): string {
-  const d = new Date();
-  d.setMonth(d.getMonth() + 6);
-  return d.toISOString().split("T")[0];
-}
-
 // ── Edit Modal ────────────────────────────────────────────────────────────────
 
 interface EditModalProps {
   onClose: () => void;
-  onSave: (venue: CoworkingVenue, startDate: string, start: string, endDate: string, end: string) => void;
+  onSave: (
+    companyName: string,
+    email: string,
+    venue: CoworkingVenue,
+    startDate: string,
+    start: string,
+    endDate: string,
+    end: string
+  ) => void;
+  initialCompanyName: string;
+  initialEmail: string;
   initialVenue: CoworkingVenue | null;
   initialDate: string;
   initialStart: string;
@@ -73,6 +76,8 @@ interface EditModalProps {
 function EventEditModal({
   onClose,
   onSave,
+  initialCompanyName,
+  initialEmail,
   initialVenue,
   initialDate,
   initialStart,
@@ -80,181 +85,88 @@ function EventEditModal({
   initialEnd,
   venues,
 }: EditModalProps) {
+  const [companyName, setCompanyName] = useState(initialCompanyName);
+  const [email, setEmail] = useState(initialEmail);
   const [venue, setVenue] = useState<CoworkingVenue | null>(initialVenue);
   const [startDate, setStartDate] = useState(initialDate);
   const [start, setStart] = useState(initialStart);
   const [endDate, setEndDate] = useState(initialEndDate || initialDate);
   const [end, setEnd] = useState(initialEnd);
 
-  const endOptions =
-    start && endDate === startDate
-      ? TIME_SLOTS.filter((s) => s.value > start)
-      : TIME_SLOTS;
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
+
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   const canSave =
+    companyName.trim().length >= 2 &&
+    isEmailValid &&
     venue !== null &&
-    startDate !== "" &&
-    start !== "" &&
-    endDate !== "" &&
-    end !== "" &&
-    (endDate > startDate || end > start);
+    isCoworkingBookingWindowValid({
+      startDate,
+      startTime: start,
+      endDate,
+      endTime: end,
+    });
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[2rem] border border-white/70 bg-[linear-gradient(180deg,#f8fafc_0%,#f3f4f6_42%,#eef2f7_100%)] p-4 shadow-2xl sm:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-900">Edit Event Details</h3>
+        <div className="mb-6 flex items-center justify-between border-b border-slate-200 pb-4">
+          <h3 className="font-semibold text-slate-900">Edit Event Details</h3>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
+            className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
-          {/* Date + Times */}
-          <div className="space-y-4">
-            {/* Start */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Start</label>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => {
-                      setStartDate(e.target.value);
-                      if (endDate && endDate < e.target.value) setEndDate(e.target.value);
-                      if (endDate === e.target.value && end && end <= start) setEnd("");
-                    }}
-                    min={getMinDate()}
-                    max={getMaxDate()}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white appearance-none"
-                    style={{ WebkitAppearance: "none" }}
-                  />
-                </div>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  <select
-                    value={start}
-                    onChange={(e) => {
-                      setStart(e.target.value);
-                      if (endDate === startDate && end && end <= e.target.value) setEnd("");
-                    }}
-                    className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
-                  >
-                    <option value="">Time</option>
-                    {TIME_SLOTS.map((s) => (
-                      <option key={s.value} value={s.value}>{s.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-            {/* End */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">End</label>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => {
-                      setEndDate(e.target.value);
-                      if (e.target.value === startDate && end && end <= start) setEnd("");
-                    }}
-                    min={startDate || getMinDate()}
-                    max={getMaxDate()}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white appearance-none"
-                    style={{ WebkitAppearance: "none" }}
-                  />
-                </div>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  <select
-                    value={end}
-                    onChange={(e) => setEnd(e.target.value)}
-                    disabled={!start || !endDate}
-                    className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white disabled:opacity-50"
-                  >
-                    <option value="">Time</option>
-                    {endOptions.map((s) => (
-                      <option key={s.value} value={s.value}>{s.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Venue cards */}
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-3">Venue</p>
-            <div className="grid grid-cols-2 gap-3">
-              {venues.map((v) => {
-                const isSelected = venue?.id === v.id;
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={() => setVenue(v)}
-                    className={`relative rounded-xl overflow-hidden text-left transition-all group ${
-                      isSelected
-                        ? "ring-2 ring-primary ring-offset-1"
-                        : "ring-1 ring-gray-200 hover:ring-primary/40"
-                    }`}
-                  >
-                    <div className="relative h-28 w-full bg-gray-100">
-                      {v.image && (
-                        <Image
-                          src={v.image}
-                          alt={v.name}
-                          fill
-                          className="object-cover"
-                        />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                      {isSelected && (
-                        <div className="absolute top-2 right-2">
-                          <CheckCircle2 className="w-5 h-5 text-white drop-shadow" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="bg-white px-3 py-2.5">
-                      <p className="font-semibold text-xs text-gray-900">{v.name}</p>
-                      <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                        <Users className="w-3 h-3" /> Up to {v.capacity}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 pb-6 flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => canSave && onSave(venue!, startDate, start, endDate, end)}
-            disabled={!canSave}
-            className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-40 hover:opacity-90 transition-opacity"
-          >
-            Save Changes
-          </button>
-        </div>
+        <CoworkingBookingDetailsForm
+          name={companyName}
+          email={email}
+          venues={venues}
+          startDate={startDate}
+          startTime={start}
+          endDate={endDate}
+          endTime={end}
+          selectedVenue={venue}
+          submitLabel="Save Changes"
+          submitDisabled={!canSave}
+          submitButtonType="button"
+          onSubmit={() =>
+            canSave &&
+            onSave(
+              companyName.trim(),
+              email.trim(),
+              venue!,
+              startDate,
+              start,
+              endDate,
+              end
+            )
+          }
+          onNameChange={setCompanyName}
+          onEmailChange={setEmail}
+          onVenueChange={setVenue}
+          onEventWindowApply={({ startDate, startTime, endDate, endTime }) => {
+            setStartDate(startDate);
+            setStart(startTime);
+            setEndDate(endDate);
+            setEnd(endTime);
+          }}
+        />
       </div>
     </div>
   );
@@ -278,8 +190,10 @@ export default function CoworkingOrderFlow() {
     eventEndDate,
     eventEndTime,
     setVenueSelection,
+    setSession,
+    logout,
   } = useCoworking();
-  const { currentStep, setContactInfo, updateMealSession } = useCatering();
+  const { currentStep, contactInfo, setContactInfo, updateMealSession, resetOrder } = useCatering();
 
   const [spaceError, setSpaceError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -293,12 +207,14 @@ export default function CoworkingOrderFlow() {
     coworkingService
       .getSpaceInfo(spaceSlug)
       .then((info) => setSpaceInfo(info))
-      .catch((err) =>
-        setSpaceError(
-          err instanceof Error ? err.message : "Failed to load space info"
-        )
-      );
-  }, [spaceSlug, spaceInfo, setSpaceInfo]);
+      .catch((err) => {
+        logout();
+        resetOrder();
+        if (err instanceof Error && err.message === "Coworking space not found") {
+          setSpaceError(err.message);
+        }
+      });
+  }, [spaceSlug, spaceInfo, setSpaceInfo, logout, resetOrder]);
 
   // Fetch venues once spaceInfo (and its id) is available
   useEffect(() => {
@@ -340,12 +256,34 @@ export default function CoworkingOrderFlow() {
   }, [isAuthenticated, eventStartDate, eventStartTime, updateMealSession]);
 
   const handleSaveEventEdit = (
+    companyName: string,
+    email: string,
     venue: CoworkingVenue,
     startDate: string,
     start: string,
     endDate: string,
     end: string
   ) => {
+    setSession({
+      member: {
+        email,
+        name: companyName,
+        memberId: member?.memberId || "",
+      },
+    });
+    setContactInfo({
+      organization: companyName,
+      fullName: contactInfo?.fullName || "",
+      email,
+      phone: contactInfo?.phone || "",
+      addressLine1: contactInfo?.addressLine1 || "",
+      addressLine2: contactInfo?.addressLine2 || "",
+      city: contactInfo?.city || "",
+      zipcode: contactInfo?.zipcode || "",
+      billingAddress: contactInfo?.billingAddress,
+      ccEmails: contactInfo?.ccEmails || [],
+      specialInstructions: contactInfo?.specialInstructions || "",
+    });
     setVenueSelection(venue, startDate, start, endDate, end);
     updateMealSession(0, { sessionDate: startDate, eventTime: start });
     setShowEditModal(false);
@@ -446,7 +384,7 @@ export default function CoworkingOrderFlow() {
                 className="flex items-center gap-1.5 text-sm text-primary font-medium hover:opacity-75 transition-opacity shrink-0"
               >
                 <Pencil className="w-3.5 h-3.5" />
-                Edit
+                Edit Booking Details
               </button>
             </div>
           </div>
@@ -464,6 +402,8 @@ export default function CoworkingOrderFlow() {
         <EventEditModal
           onClose={() => setShowEditModal(false)}
           onSave={handleSaveEventEdit}
+          initialCompanyName={member?.name || ""}
+          initialEmail={member?.email || ""}
           initialVenue={selectedVenue}
           initialDate={eventStartDate}
           initialStart={eventStartTime}

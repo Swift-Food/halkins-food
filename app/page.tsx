@@ -9,7 +9,7 @@ export default function Home() {
         href="/coworking/testi/"
         className="btn btn-primary text-white px-8 py-3 rounded-lg text-lg"
       >
-        Start Your Order
+        Start Your Booking
       </Link>
     </div>
   );

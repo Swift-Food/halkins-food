@@ -72,8 +72,10 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     coworkingService.clearSession();
     sessionStorage.removeItem(STORAGE_KEYS.MEMBER_INFO);
+    sessionStorage.removeItem(STORAGE_KEYS.SPACE_INFO);
     sessionStorage.removeItem(STORAGE_KEYS.VENUE_SELECTION);
     setMember(null);
+    setSpaceInfoState(null);
     setSelectedVenue(null);
     setEventStartDate("");
     setEventStartTime("");

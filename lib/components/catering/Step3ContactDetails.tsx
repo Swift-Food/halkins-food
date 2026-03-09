@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, FormEvent, useEffect, useMemo } from "react";
+import { useState, FormEvent, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCatering } from "@/context/CateringContext";
 import { cateringService } from "@/services/api/catering.api";
@@ -14,6 +14,7 @@ import {
   transformLocalSessionsToPdfData,
 } from "@/lib/utils/menuPdfUtils";  
 import { pdf } from "@react-pdf/renderer";
+import { ArrowDown, FileText } from "lucide-react";
 import { CateringMenuPdf } from "@/lib/components/pdf/CateringMenuPdf";
 import PdfDownloadModal from "./modals/PdfDownloadModal";
 import ContactInfoForm from "./contact/ContactInfoForm";
@@ -41,8 +42,21 @@ interface ValidationErrors {
   };
 }
 
+type PdfPreviewItem = LocalMealSession["orderItems"][number]["item"];
+type ApiErrorWithResponse = {
+  response: {
+    status?: number;
+    statusText?: string;
+    data?: {
+      message?: string;
+    };
+  };
+};
+
 export default function Step3ContactInfo() {
   const router = useRouter();
+  const topSectionRef = useRef<HTMLDivElement | null>(null);
+  const orderDetailsRef = useRef<HTMLDivElement | null>(null);
   const {
     contactInfo,
     setContactInfo,
@@ -59,8 +73,6 @@ export default function Step3ContactInfo() {
     isAuthenticated,
     isLoading: authLoading,
     selectedVenue,
-    eventStartDate,
-    eventStartTime,
     eventEndTime,
     spaceSlug: coworkingSpaceSlug,
   } = useCoworking();
@@ -95,13 +107,14 @@ export default function Step3ContactInfo() {
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [specialInstructions, setSpecialInstructions] = useState<string>("");
-
+  const [showBackToTopButton, setShowBackToTopButton] = useState(false);
 
   const [importantNotesOpen, setImportantNotesOpen] = useState(false);
 
   // PDF generation state
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const hasRestoredDraft = useRef(false);
 
   // Calculate estimated total without triggering state updates
   const estimatedTotal = useMemo(() => {
@@ -123,6 +136,46 @@ export default function Step3ContactInfo() {
     }, 0);
   }, [selectedItems]);
 
+  useEffect(() => {
+    if (!contactInfo) {
+      hasRestoredDraft.current = true;
+      return;
+    }
+
+    setFormData({
+      organization: contactInfo.organization || "",
+      fullName: contactInfo.fullName || "",
+      email: contactInfo.email || "",
+      phone: contactInfo.phone || "",
+      addressLine1: contactInfo.addressLine1 || "",
+      addressLine2: contactInfo.addressLine2 || "",
+      city: contactInfo.city || "",
+      zipcode: contactInfo.zipcode || "",
+      billingAddress: contactInfo.billingAddress,
+      ccEmails: contactInfo.ccEmails || [],
+      specialInstructions: contactInfo.specialInstructions || "",
+    });
+    setCcEmails(contactInfo.ccEmails || []);
+    setSpecialInstructions(contactInfo.specialInstructions || "");
+    hasRestoredDraft.current = true;
+  }, [contactInfo]);
+
+  useEffect(() => {
+    if (!hasRestoredDraft.current) return;
+
+    const draftContactInfo: ContactInfo = {
+      ...formData,
+      ccEmails,
+      specialInstructions,
+    };
+
+    if (JSON.stringify(contactInfo) === JSON.stringify(draftContactInfo)) {
+      return;
+    }
+
+    setContactInfo(draftContactInfo);
+  }, [ccEmails, contactInfo, formData, setContactInfo, specialInstructions]);
+
   const validateEmail = (email: string): string | undefined => {
     if (!email.trim()) {
       return "Email is required";
@@ -133,6 +186,15 @@ export default function Step3ContactInfo() {
       return "Please enter a valid email address";
     }
     return undefined;
+  };
+
+  const hasApiErrorResponse = (error: unknown): error is ApiErrorWithResponse => {
+    if (!error || typeof error !== "object" || !("response" in error)) {
+      return false;
+    }
+
+    const response = (error as { response?: unknown }).response;
+    return typeof response === "object" && response !== null;
   };
 
   
@@ -408,7 +470,11 @@ export default function Step3ContactInfo() {
         return;
       }
 
-      setContactInfo(formData);
+      setContactInfo({
+        ...formData,
+        ccEmails,
+        specialInstructions,
+      });
 
       
       const { spaceSlug, orderData } = buildCoworkingOrderData();
@@ -423,11 +489,15 @@ export default function Step3ContactInfo() {
       } else {
         setSuccess(true);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("=== SUBMIT ORDER ERROR ===");
-      console.error("Error Type:", error?.name);
-      console.error("Error Message:", error?.message);
-      console.error("Error Stack:", error?.stack);
+      const errorDetails =
+        error instanceof Error
+          ? error
+          : new Error(typeof error === "string" ? error : "Unknown error");
+      console.error("Error Type:", errorDetails.name);
+      console.error("Error Message:", errorDetails.message);
+      console.error("Error Stack:", errorDetails.stack);
       console.error("Full Error Object:", JSON.stringify(error, null, 2));
 
       // Session expired — the event dispatch in coworkingService already
@@ -438,16 +508,19 @@ export default function Step3ContactInfo() {
       }
 
       // Handle catering portions limit error
-      if (error?.message?.includes("catering capacity") || error?.message?.includes("catering portions limit")) {
-        alert(error.message);
+      if (
+        errorDetails.message.includes("catering capacity") ||
+        errorDetails.message.includes("catering portions limit")
+      ) {
+        alert(errorDetails.message);
         console.error("=== END ERROR LOG ===");
         return;
       }
 
       // Check if it's a network error
       if (
-        error?.message?.includes("fetch") ||
-        error?.message?.includes("network")
+        errorDetails.message.includes("fetch") ||
+        errorDetails.message.includes("network")
       ) {
         console.error("Network Error Detected");
         alert(
@@ -455,7 +528,7 @@ export default function Step3ContactInfo() {
         );
       }
       // Check if it's an API error with response
-      else if (error?.response) {
+      else if (hasApiErrorResponse(error)) {
         console.error(
           "API Response Error:",
           JSON.stringify(error.response, null, 2)
@@ -478,7 +551,7 @@ export default function Step3ContactInfo() {
       else {
         console.error("Unknown Error Type");
         alert(
-          `Failed to submit order: ${error?.message || "Please try again."}`
+          `Failed to submit order: ${errorDetails.message || "Please try again."}`
         );
       }
 
@@ -507,7 +580,7 @@ export default function Step3ContactInfo() {
       }
 
       setPricing(pricingResult);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error calculating pricing:", error);
       setPricing(null);
     } finally {
@@ -518,6 +591,29 @@ export default function Step3ContactInfo() {
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    const updateBackToTopVisibility = () => {
+      if (window.innerWidth >= 1024) {
+        setShowBackToTopButton(false);
+        return;
+      }
+
+      const menuTop = orderDetailsRef.current?.getBoundingClientRect().top;
+      setShowBackToTopButton(menuTop !== undefined && menuTop <= 120);
+    };
+
+    updateBackToTopVisibility();
+    window.addEventListener("scroll", updateBackToTopVisibility, {
+      passive: true,
+    });
+    window.addEventListener("resize", updateBackToTopVisibility);
+
+    return () => {
+      window.removeEventListener("scroll", updateBackToTopVisibility);
+      window.removeEventListener("resize", updateBackToTopVisibility);
+    };
   }, []);
 
 
@@ -593,19 +689,19 @@ export default function Step3ContactInfo() {
             categoryName: orderItem.item.categoryName,
             subcategoryName: orderItem.item.subcategoryName,
             selectedAddons: orderItem.item.selectedAddons,
-            description: (orderItem.item as any).description,
-            allergens: (orderItem.item as any).allergens,
-            dietaryFilters: (orderItem.item as any).dietaryFilters,
-          },
+            description: (orderItem.item as PdfPreviewItem).description,
+            allergens: (orderItem.item as PdfPreviewItem).allergens,
+            dietaryFilters: (orderItem.item as PdfPreviewItem).dietaryFilters,
+          } satisfies PdfPreviewItem,
           quantity: orderItem.quantity,
         })),
       }));
 
-      // Transform to PDF data format (now async to fetch images)
-      // Don't pass delivery fee - show as TBC (same as CateringOrderBuilder)
+      // Transform to PDF data format with the latest priced totals from Step 3
       const pdfData = await transformLocalSessionsToPdfData(
         sessionsForPreview,
-        withPrices
+        withPrices,
+        pricing?.deliveryFee
       );
       // Generate and download PDF
       const blob = await pdf(
@@ -613,7 +709,8 @@ export default function Step3ContactInfo() {
           sessions={pdfData.sessions}
           showPrices={pdfData.showPrices}
           deliveryCharge={pdfData.deliveryCharge}
-          totalPrice={pdfData.totalPrice}
+          venueHireCharge={pricing?.venueHireFee}
+          totalPrice={pricing?.total ?? pdfData.totalPrice}
           logoUrl={pdfData.logoUrl}
         />
       ).toBlob();
@@ -633,6 +730,10 @@ export default function Step3ContactInfo() {
     } finally {
       setGeneratingPdf(false);
     }
+  };
+
+  const scrollToSection = (ref: { current: HTMLDivElement | null }) => {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   if (authLoading) {
@@ -675,7 +776,7 @@ export default function Step3ContactInfo() {
               Thank you! Your event order request has been submitted.
             </h2>
             <p className="text-base-content/70 text-lg">
-              We'll get back to you within 24 hours via your preferred contact
+              We&apos;ll get back to you within 24 hours via your preferred contact
               method. You will receive a payment link once the order is confirmed by the restaurants. Trusted by 90+ London university societies.
             </p>
           </div>
@@ -870,9 +971,9 @@ export default function Step3ContactInfo() {
         ></div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8 md:py-12">
+      <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
         {/* Header */}
-        <div className="mb-8">
+        <div ref={topSectionRef} className="mb-8">
           <div className="flex justify-between items-start mb-4">
             <div>
               {/* <p className="text-sm text-base-content/60 mb-2">
@@ -887,7 +988,14 @@ export default function Step3ContactInfo() {
               </p>
             </div>
             <button
-              onClick={() => setCurrentStep(1)}
+              onClick={() => {
+                setContactInfo({
+                  ...formData,
+                  ccEmails,
+                  specialInstructions,
+                });
+                setCurrentStep(1);
+              }}
               className="text-primary hover:opacity-80 font-medium flex items-center gap-1"
             >
               ← Back
@@ -895,24 +1003,74 @@ export default function Step3ContactInfo() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
           {/* Selected Items - Left Side */}
-          <div className="lg:col-span-2 order-2 lg:order-1">
-            <AllMealSessionsItems showActions={false} onViewMenu={handleViewMenu} isGeneratingPdf={generatingPdf} />
+          <div
+            ref={orderDetailsRef}
+            className="lg:col-span-3 order-2 lg:order-1 pb-24 lg:pb-0"
+          >
+            <AllMealSessionsItems
+              showActions={false}
+              onViewMenu={handleViewMenu}
+              isGeneratingPdf={generatingPdf}
+            />
+            <div
+              className={`lg:hidden fixed inset-x-4 bottom-4 z-30 transition-all duration-200 ${
+                showBackToTopButton
+                  ? "pointer-events-auto opacity-100 translate-y-0"
+                  : "pointer-events-none opacity-0 translate-y-4"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => scrollToSection(topSectionRef)}
+                className="w-full rounded-2xl border border-base-300 bg-base-100/95 px-4 py-3 text-sm font-semibold text-base-content shadow-lg backdrop-blur transition-all hover:bg-base-100"
+              >
+                Back to top
+              </button>
+            </div>
           </div>
 
           {/* Contact Form Card - Right Side */}
-          <div className="lg:col-span-1 order-1 lg:order-2">
-            <div className="bg-base-200/30 rounded-2xl p-6 border border-base-300">
-              <h3 className="text-xl font-bold mb-6 text-base-content">
+          <div className="lg:col-span-2 order-1 lg:order-2">
+            <button
+              type="button"
+              onClick={() => scrollToSection(orderDetailsRef)}
+              className="lg:hidden mb-4 flex w-full items-center justify-between rounded-2xl border border-base-300 bg-base-100/80 px-4 py-3 text-left shadow-sm transition-all hover:border-dark-pink/30 hover:bg-base-100"
+            >
+              <span className="min-w-0">
+                <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-base-content/45">
+                  Quick jump
+                </span>
+                <span className="mt-1 block text-sm font-semibold text-base-content">
+                  Review order details
+                </span>
+                <span className="mt-0.5 block text-xs text-base-content/60">
+                  Check the menu and quantities before submitting
+                </span>
+              </span>
+              <span className="ml-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-dark-pink/10 text-dark-pink">
+                <ArrowDown size={18} />
+              </span>
+            </button>
+
+            <div className="bg-base-200/40 rounded-3xl p-4 md:p-8">
+              <h3 className="text-xl font-bold mb-8 flex items-center gap-3 text-base-content">
+                <span className="w-1.5 h-6 bg-dark-pink rounded-full"></span>
                 Contact & Delivery Details
               </h3>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-10">
                 {/* Delivery Address */}
-                <div className="pb-4 mb-4 border-b border-base-300">
-                  <p className="text-sm font-bold text-base-content mb-1">Delivering to</p>
-                  <p className="text-sm text-base-content/70">{deliveryAddress}</p>
+                <div>
+                  <div className="rounded-2xl border border-base-300 bg-base-100/80 px-4 py-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-base-content/45 mb-2">
+                      Delivering to
+                    </p>
+                    <p className="text-sm font-semibold text-base-content">
+                      {deliveryAddress}
+                    </p>
+                  </div>
                 </div>
      
 
@@ -940,21 +1098,25 @@ export default function Step3ContactInfo() {
                 />
 
                 {/* Special Instructions */}
-                <div className="pt-4">
-                  <label
-                    htmlFor="specialInstructions"
-                    className="block text-sm font-medium text-base-content mb-2"
-                  >
-                    Special Instructions (Optional)
-                  </label>
+                <div className="-mt-4 pt-2">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-gray-200 border border-gray-300 flex items-center justify-center text-base-content/70">
+                      <FileText size={18} />
+                    </div>
+                    <h4 className="font-bold text-sm text-base-content">
+                      Special Instructions
+                    </h4>
+                    <span className="text-[9px] font-bold text-base-content/40 uppercase tracking-widest ml-2">
+                      (Optional)
+                    </span>
+                  </div>
                   <textarea
                     id="specialInstructions"
                     name="specialInstructions"
                     value={specialInstructions}
                     onChange={(e) => setSpecialInstructions(e.target.value)}
                     placeholder="Any special requests or instructions for your order..."
-                    rows={3}
-                    className="w-full px-4 py-3 rounded-xl border border-base-300 bg-base-100 text-base-content placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-dark-pink/50 resize-none"
+                    className="w-full bg-gray-50 border border-base-300 rounded-xl px-4 py-3 text-sm text-base-content placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-dark-pink/20 focus:border-dark-pink transition-all min-h-[100px] resize-none"
                   />
                 </div>
 
@@ -963,67 +1125,71 @@ export default function Step3ContactInfo() {
                   pricing={pricing}
                   calculatingPricing={calculatingPricing}
                   estimatedTotal={estimatedTotal}
+                  hasDeliveryAddress={Boolean(deliveryAddress)}
                 />
 
                 {/* Important Notes */}
-                <div className="pt-4">
-                  <button
-                    type="button"
-                    className="w-full bg-warning/10 border border-warning/30 rounded-xl p-4 flex items-center justify-between focus:outline-none group"
-                    onClick={() => setImportantNotesOpen((open) => !open)}
-                    aria-expanded={importantNotesOpen}
-                    aria-controls="important-notes-content"
-                  >
-                    <span className="text-xs font-semibold text-warning">
-                      Important Notes
-                    </span>
-                    <span className="ml-2 text-warning group-hover:underline flex items-center">
-                      <svg
-                        className={`transition-transform duration-200 w-4 h-4 ${
-                          importantNotesOpen ? "rotate-180" : "rotate-0"
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </span>
-                  </button>
-                  {importantNotesOpen && (
-                    <div
-                      id="important-notes-content"
-                      className="mt-2 text-xs text-base-content/80 leading-relaxed"
+                <div>
+                  <div className="w-full bg-orange-50/50 border border-orange-200 rounded-xl p-4">
+                    <button
+                      type="button"
+                      className="w-full flex items-center justify-between focus:outline-none group"
+                      onClick={() => setImportantNotesOpen((open) => !open)}
+                      aria-expanded={importantNotesOpen}
+                      aria-controls="important-notes-content"
                     >
-                      <p>
-                        For accurate allergen information, please contact restaurants directly.
-                      </p>
-                      <p>
-                        For any last-minute changes, please contact us at least
-                        two days before your event.
-                      </p>
-                    </div>
-                  )}
+                      <span className="text-xs font-bold uppercase tracking-widest text-orange-700">
+                        Important Notes
+                      </span>
+                      <span className="ml-2 text-orange-500 group-hover:underline flex items-center">
+                        <svg
+                          className={`transition-transform duration-200 w-4 h-4 ${
+                            importantNotesOpen ? "rotate-180" : "rotate-0"
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                    {importantNotesOpen && (
+                      <div
+                        id="important-notes-content"
+                        className="mt-3 text-xs text-base-content/80 leading-relaxed space-y-1"
+                      >
+                        <p>
+                          For accurate allergen information, please contact
+                          restaurants directly.
+                        </p>
+                        <p>
+                          For any last-minute changes, please contact us at
+                          least two days before your event.
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Terms and Conditions */}
-                <div className="pt-4">
-                  <div className="flex items-start gap-3 mb-4">
+                <div className="space-y-6 pt-2">
+                  <div className="flex items-center gap-3 cursor-pointer group">
                     <input
                       type="checkbox"
                       id="terms"
                       checked={termsAccepted}
                       onChange={(e) => setTermsAccepted(e.target.checked)}
-                      className="w-5 h-5 mt-0.5 rounded border-base-300 text-dark-pink focus:ring-2 focus:ring-dark-pink cursor-pointer"
+                      className="h-5 w-5 shrink-0 cursor-pointer rounded border-base-300 bg-base-100 text-dark-pink focus:outline-none focus:ring-0 focus:ring-offset-0"
                     />
                     <label
                       htmlFor="terms"
-                      className="text-sm text-base-content/80 cursor-pointer"
+                      className="text-[11px] text-base-content/70 leading-relaxed cursor-pointer"
                     >
                       I accept the{" "}
                       <a
@@ -1044,9 +1210,9 @@ export default function Step3ContactInfo() {
                 <button
                   type="submit"
                   disabled={submitting || !termsAccepted}
-                  className="w-full bg-dark-pink hover:opacity-90 text-white py-4 rounded-xl font-bold text-lg transition-all disabled:bg-base-300 disabled:cursor-not-allowed"
+                  className="w-full bg-dark-pink text-white py-4 rounded-2xl font-bold uppercase tracking-[0.2em] text-sm hover:opacity-90 transition-all disabled:bg-base-300 disabled:cursor-not-allowed disabled:tracking-[0.08em]"
                 >
-                  {submitting ? "Submitting..." : "Submit"}
+                  {submitting ? "Submitting..." : "Submit Order"}
                 </button>
               </form>
             </div>

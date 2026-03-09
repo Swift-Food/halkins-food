@@ -43,6 +43,18 @@ export const API_ENDPOINTS = {
     `/coworking-dashboard/${spaceId}/venues`,
   COWORKING_DASHBOARD_VENUE: (spaceId: string, venueId: string) =>
     `/coworking-dashboard/${spaceId}/venues/${venueId}`,
+  COWORKING_DASHBOARD_STRIPE_STATUS: (spaceId: string) =>
+    `/coworking-dashboard/${spaceId}/stripe/status`,
+  COWORKING_DASHBOARD_STRIPE_SETUP: (spaceId: string) =>
+    `/coworking-dashboard/${spaceId}/stripe/setup`,
+  COWORKING_DASHBOARD_STRIPE_REFRESH: (spaceId: string) =>
+    `/coworking-dashboard/${spaceId}/stripe/refresh`,
+  COWORKING_DASHBOARD_STRIPE_BALANCE: (spaceId: string) =>
+    `/coworking-dashboard/${spaceId}/stripe/balance`,
+  COWORKING_DASHBOARD_STRIPE_WITHDRAW: (spaceId: string) =>
+    `/coworking-dashboard/${spaceId}/stripe/withdraw`,
+  COWORKING_DASHBOARD_STRIPE_TRANSACTIONS: (spaceId: string) =>
+    `/coworking-dashboard/${spaceId}/stripe/transactions`,
 
   // Coworking Public (Member Flow)
   COWORKING_SPACE: (spaceSlug: string) => `/coworking/${spaceSlug}`,

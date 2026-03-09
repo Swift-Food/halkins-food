@@ -147,6 +147,8 @@ export interface ContactInfo {
   fullName: string;
   email: string;
   phone: string;
+  ccEmails?: string[];
+  specialInstructions?: string;
   addressLine1: string;
   addressLine2?: string;
   city: string;
@@ -702,6 +704,7 @@ export interface CategoryWithSubcategories {
   id: string;
   name: string;
   images?: string | null;
+  icon?: string | null;
   clicks: number;
   subcategories: Subcategory[];
 }
