@@ -115,6 +115,7 @@ export default function CateringOrderBuilder() {
 
   // Collapsed categories state
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [tutorialResetKey, setTutorialResetKey] = useState(0);
 
   // PDF generation state
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -172,6 +173,7 @@ export default function CateringOrderBuilder() {
     getTutorialSteps,
   } = useCateringTutorial({
     mealSessions,
+    navMode,
     refs: {
       addDayNavButtonRef,
       backButtonRef,
@@ -855,6 +857,7 @@ export default function CateringOrderBuilder() {
         sessionIndex={index}
         expandedSessionIndex={expandedSessionIndex}
         autoOpenFirstRestaurant={currentTutorialStep?.id === "menu-item"}
+        tutorialResetKey={tutorialResetKey}
       />
     </SessionAccordion>
   );
@@ -1129,6 +1132,8 @@ export default function CateringOrderBuilder() {
           resetTutorial();
           setNavMode("dates");
           setSelectedDayDate(null);
+          setExpandedItemId(null);
+          setTutorialResetKey((key) => key + 1);
         }}
         className="fixed bottom-4 left-4 md:bottom-8 md:left-8 w-10 h-10 md:w-12 md:h-12 bg-white border border-base-300 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary transition-colors z-40"
         title="Restart Tutorial"

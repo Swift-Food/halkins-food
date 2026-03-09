@@ -34,6 +34,7 @@ interface RestaurantMenuBrowserProps {
   sessionIndex: number;
   expandedSessionIndex: number | null;
   autoOpenFirstRestaurant?: boolean;
+  tutorialResetKey?: number;
 }
 
 export default function RestaurantMenuBrowser({
@@ -55,6 +56,7 @@ export default function RestaurantMenuBrowser({
   sessionIndex,
   expandedSessionIndex,
   autoOpenFirstRestaurant = false,
+  tutorialResetKey = 0,
 }: RestaurantMenuBrowserProps) {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<
     string | null
@@ -89,6 +91,14 @@ export default function RestaurantMenuBrowser({
 
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    setSelectedRestaurantId(null);
+    setSearchQuery("");
+    setRestaurantSearchQuery("");
+    setSelectedCategoryId(null);
+    setCollapsedGroups(new Set());
+  }, [tutorialResetKey]);
 
   const isSearchActive = searchQuery.trim().length > 0;
   const isRestaurantSearchActive = restaurantSearchQuery.trim().length > 0;

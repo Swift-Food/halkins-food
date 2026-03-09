@@ -20,11 +20,13 @@ interface TutorialRefs {
 
 interface UseCateringTutorialOptions {
   mealSessions: MealSessionState[];
+  navMode: "dates" | "sessions";
   refs: TutorialRefs;
 }
 
 export function useCateringTutorial({
   mealSessions,
+  navMode,
   refs,
 }: UseCateringTutorialOptions) {
   const [tutorialStep, setTutorialStep] = useState<number | null>(null);
@@ -59,7 +61,7 @@ export function useCateringTutorial({
         return [];
 
       case "navigation":
-        if (!refs.backButtonRef.current) {
+        if (navMode === "dates") {
           return [
             {
               id: "day-tab",
@@ -220,7 +222,7 @@ export function useCateringTutorial({
       default:
         return [];
     }
-  }, [tutorialPhase, refs]);
+  }, [tutorialPhase, navMode, refs]);
 
   // Get current tutorial step
   const currentTutorialStep = useMemo(() => {
