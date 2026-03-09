@@ -43,6 +43,15 @@ interface ValidationErrors {
 }
 
 type PdfPreviewItem = LocalMealSession["orderItems"][number]["item"];
+type ApiErrorWithResponse = {
+  response: {
+    status?: number;
+    statusText?: string;
+    data?: {
+      message?: string;
+    };
+  };
+};
 
 export default function Step3ContactInfo() {
   const router = useRouter();
@@ -177,6 +186,15 @@ export default function Step3ContactInfo() {
       return "Please enter a valid email address";
     }
     return undefined;
+  };
+
+  const hasApiErrorResponse = (error: unknown): error is ApiErrorWithResponse => {
+    if (!error || typeof error !== "object" || !("response" in error)) {
+      return false;
+    }
+
+    const response = (error as { response?: unknown }).response;
+    return typeof response === "object" && response !== null;
   };
 
   
@@ -490,16 +508,19 @@ export default function Step3ContactInfo() {
       }
 
       // Handle catering portions limit error
-      if (error?.message?.includes("catering capacity") || error?.message?.includes("catering portions limit")) {
-        alert(error.message);
+      if (
+        errorDetails.message.includes("catering capacity") ||
+        errorDetails.message.includes("catering portions limit")
+      ) {
+        alert(errorDetails.message);
         console.error("=== END ERROR LOG ===");
         return;
       }
 
       // Check if it's a network error
       if (
-        error?.message?.includes("fetch") ||
-        error?.message?.includes("network")
+        errorDetails.message.includes("fetch") ||
+        errorDetails.message.includes("network")
       ) {
         console.error("Network Error Detected");
         alert(
@@ -507,7 +528,7 @@ export default function Step3ContactInfo() {
         );
       }
       // Check if it's an API error with response
-      else if (error?.response) {
+      else if (hasApiErrorResponse(error)) {
         console.error(
           "API Response Error:",
           JSON.stringify(error.response, null, 2)
@@ -530,7 +551,7 @@ export default function Step3ContactInfo() {
       else {
         console.error("Unknown Error Type");
         alert(
-          `Failed to submit order: ${error?.message || "Please try again."}`
+          `Failed to submit order: ${errorDetails.message || "Please try again."}`
         );
       }
 

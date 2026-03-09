@@ -79,7 +79,7 @@ function parseTimeParts(value: string) {
   }
 
   const [rawHours, rawMinutes] = value.split(":").map(Number);
-  const period = rawHours >= 12 ? "PM" : "AM";
+  const period = (rawHours >= 12 ? "PM" : "AM") as "AM" | "PM";
   const hour12 = rawHours % 12 || 12;
 
   return {
@@ -118,12 +118,15 @@ function isSameDay(startDate: string, endDate: string) {
   return Boolean(startDate && endDate && startDate === endDate);
 }
 
-function buildCalendarDays(month: number, year: number) {
+function buildCalendarDays(month: number, year: number): Array<Date | null> {
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const leadingBlankDays = firstDay.getDay();
 
-  const days = Array.from({ length: leadingBlankDays }, () => null);
+  const days: Array<Date | null> = Array.from(
+    { length: leadingBlankDays },
+    () => null
+  );
   for (let day = 1; day <= daysInMonth; day += 1) {
     days.push(new Date(year, month, day));
   }
