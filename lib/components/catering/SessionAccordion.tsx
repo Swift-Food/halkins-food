@@ -94,7 +94,7 @@ export default function SessionAccordion({
                 e.stopPropagation();
                 onEditSession();
               }}
-              className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-gray-600 hover:text-primary transition-colors"
+              className="inline-flex items-center gap-1.5 md:gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs md:text-sm font-semibold text-primary hover:bg-primary/15 transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -110,8 +110,7 @@ export default function SessionAccordion({
                   d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                 />
               </svg>
-              <span className="hidden sm:inline">Edit Session Details</span>
-              <span className="sm:hidden">Edit</span>
+              <span>Edit Session Details</span>
             </button>
             {canRemove && (
               <button
