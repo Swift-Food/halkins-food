@@ -220,3 +220,35 @@ export interface DashboardStatsResponse {
   ordersByHour: OrdersByHourStat[];
   calculatedAt: string | null;
 }
+
+// ============================================================================
+// PAYMENTS & TRANSACTIONS
+// ============================================================================
+
+export interface StripeBalance {
+  available: number;
+  pending: number;
+  currency: string;
+}
+
+export interface WithdrawResponse {
+  success: boolean;
+  amount: number;
+  payoutId: string;
+}
+
+export interface Transaction {
+  date: string;
+  type: 'transfer' | 'withdrawal';
+  description: string;
+  amount: number;
+  status: string;
+  reference: string | null;
+}
+
+export interface TransactionsResponse {
+  transactions: Transaction[];
+  pagination: PaginationInfo;
+}
+
+export type TransactionFilter = 'all' | 'transfers' | 'withdrawals';
