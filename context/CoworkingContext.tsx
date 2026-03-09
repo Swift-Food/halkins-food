@@ -90,7 +90,7 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
 
       const token = coworkingService.getSessionToken();
       const savedMember = sessionStorage.getItem(STORAGE_KEYS.MEMBER_INFO);
-      const savedSpaceInfo = sessionStorage.getItem(STORAGE_KEYS.SPACE_INFO);
+      const savedSpaceInfo = null //sessionStorage.getItem(STORAGE_KEYS.SPACE_INFO);
       const savedVenueSelection = sessionStorage.getItem(STORAGE_KEYS.VENUE_SELECTION);
 
       if (token && savedMember) {
