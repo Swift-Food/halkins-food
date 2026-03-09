@@ -142,6 +142,7 @@ export default function CateringOrderBuilder() {
   const firstDayTabRef = useRef<HTMLButtonElement>(null);
   const firstSessionPillRef = useRef<HTMLButtonElement>(null);
   const addSessionNavButtonRef = useRef<HTMLButtonElement>(null);
+  const categoriesRowRef = useRef<HTMLDivElement>(null);
   const restaurantListRef = useRef<HTMLDivElement>(null);
   const firstMenuItemRef = useRef<HTMLDivElement>(null);
 
@@ -177,10 +178,18 @@ export default function CateringOrderBuilder() {
       firstDayTabRef,
       firstSessionPillRef,
       addSessionNavButtonRef,
-      categoriesRowRef: restaurantListRef,
+      categoriesRowRef,
+      restaurantListRef,
       firstMenuItemRef,
     },
   });
+
+  useEffect(() => {
+    if (currentTutorialStep?.id !== "add-day-nav" || navMode === "dates") return;
+
+    setNavMode("dates");
+    setSelectedDayDate(null);
+  }, [currentTutorialStep, navMode]);
 
   // Get quantity for an item in the current session
   const getItemQuantity = (itemId: string): number => {
@@ -840,10 +849,12 @@ export default function CateringOrderBuilder() {
         setExpandedItemId={setExpandedItemId}
         selectedDietaryFilters={selectedDietaryFilters}
         toggleDietaryFilter={toggleDietaryFilter}
+        categoriesRowRef={categoriesRowRef}
         restaurantListRef={restaurantListRef}
         firstMenuItemRef={firstMenuItemRef}
         sessionIndex={index}
         expandedSessionIndex={expandedSessionIndex}
+        autoOpenFirstRestaurant={currentTutorialStep?.id === "menu-item"}
       />
     </SessionAccordion>
   );

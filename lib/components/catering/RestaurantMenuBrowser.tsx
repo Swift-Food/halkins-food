@@ -28,10 +28,12 @@ interface RestaurantMenuBrowserProps {
   setExpandedItemId: (id: string | null) => void;
   selectedDietaryFilters: DietaryFilter[];
   toggleDietaryFilter: (filter: DietaryFilter) => void;
+  categoriesRowRef: RefObject<HTMLDivElement | null>;
   restaurantListRef: RefObject<HTMLDivElement | null>;
   firstMenuItemRef: RefObject<HTMLDivElement | null>;
   sessionIndex: number;
   expandedSessionIndex: number | null;
+  autoOpenFirstRestaurant?: boolean;
 }
 
 export default function RestaurantMenuBrowser({
@@ -47,10 +49,12 @@ export default function RestaurantMenuBrowser({
   setExpandedItemId,
   selectedDietaryFilters,
   toggleDietaryFilter,
+  categoriesRowRef,
   restaurantListRef,
   firstMenuItemRef,
   sessionIndex,
   expandedSessionIndex,
+  autoOpenFirstRestaurant = false,
 }: RestaurantMenuBrowserProps) {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<
     string | null
@@ -280,6 +284,20 @@ export default function RestaurantMenuBrowser({
     setCollapsedGroups(new Set());
   };
 
+  useEffect(() => {
+    if (!autoOpenFirstRestaurant || selectedRestaurantId || isSearchActive) return;
+
+    const firstRestaurant = filteredRestaurants[0];
+    if (!firstRestaurant) return;
+
+    handleSelectRestaurant(firstRestaurant.id);
+  }, [
+    autoOpenFirstRestaurant,
+    filteredRestaurants,
+    isSearchActive,
+    selectedRestaurantId,
+  ]);
+
   const renderRestaurantCard = (
     restaurant: Restaurant,
     onClick?: () => void
@@ -317,7 +335,7 @@ export default function RestaurantMenuBrowser({
 
     if (!onClick) {
       return (
-        <div className="bg-white rounded-xl border border-base-300 overflow-hidden">
+        <div className="w-full bg-white rounded-xl border border-base-300 overflow-hidden">
           {cardContent}
         </div>
       );
@@ -326,7 +344,7 @@ export default function RestaurantMenuBrowser({
     return (
       <button
         onClick={onClick}
-        className="bg-white rounded-xl border border-base-300 overflow-hidden text-left hover:shadow-md transition-shadow"
+        className="block w-full bg-white rounded-xl border border-base-300 overflow-hidden text-left hover:shadow-md transition-shadow"
       >
         {cardContent}
       </button>
@@ -365,7 +383,7 @@ export default function RestaurantMenuBrowser({
   );
 
   const renderCategoryFilters = () => (
-    <div className="overflow-x-auto pb-2 pt-1 scrollbar-hide">
+    <div ref={categoriesRowRef} className="overflow-x-auto pb-2 pt-1 scrollbar-hide">
       <div className="flex items-center gap-4 md:gap-6">
         {categoriesLoading
           ? [...Array(6)].map((_, index) => (

@@ -14,6 +14,7 @@ interface TutorialRefs {
   firstSessionPillRef: RefObject<HTMLButtonElement | null>;
   addSessionNavButtonRef: RefObject<HTMLButtonElement | null>;
   categoriesRowRef: RefObject<HTMLDivElement | null>;
+  restaurantListRef: RefObject<HTMLDivElement | null>;
   firstMenuItemRef: RefObject<HTMLDivElement | null>;
 }
 
@@ -41,7 +42,7 @@ export function useCateringTutorial({
       mealSessions[0].orderItems.length === 0
     ) {
       // Start tutorial if not completed and cart is empty
-      setTutorialPhase("initial");
+      setTutorialPhase("navigation");
       setTutorialStep(0);
     } else {
       // Has items but never completed tutorial - mark as completed so help button shows
@@ -55,20 +56,34 @@ export function useCateringTutorial({
   const getTutorialSteps = useCallback((): TutorialStep[] => {
     switch (tutorialPhase) {
       case "initial":
-        return [
-          {
-            id: "add-day",
-            targetRef: refs.addDayNavButtonRef,
-            title: "Add a Day",
-            description:
-              "To add meal sessions to your catering order, first add which day you would like your delivery.",
-            position: "bottom",
-            requiresClick: true,
-            showSkip: true,
-          },
-        ];
+        return [];
 
       case "navigation":
+        if (!refs.backButtonRef.current) {
+          return [
+            {
+              id: "day-tab",
+              targetRef: refs.firstDayTabRef,
+              title: "Select a Day",
+              description:
+                "Click on a day to view the sessions scheduled for that day.",
+              position: "bottom",
+              requiresClick: true,
+              showSkip: true,
+            },
+            {
+              id: "session-pill",
+              targetRef: refs.firstSessionPillRef,
+              title: "Go to Session",
+              description:
+                "Click on a meal session to jump directly to that session's menu order.",
+              position: "bottom",
+              requiresClick: true,
+              showSkip: true,
+            },
+          ];
+        }
+
         return [
           {
             id: "back-button",
@@ -81,30 +96,11 @@ export function useCateringTutorial({
             showSkip: true,
           },
           {
-            id: "add-day-nav",
-            targetRef: refs.addDayNavButtonRef,
-            title: "Add More Days",
-            description: "You can add more days to your order by clicking here.",
-            position: "bottom",
-            showNext: true,
-            showSkip: true,
-          },
-          {
-            id: "day-tab",
-            targetRef: refs.firstDayTabRef,
-            title: "Select a Day",
-            description:
-              "Click on a day to view the sessions scheduled for that day.",
-            position: "bottom",
-            requiresClick: true,
-            showSkip: true,
-          },
-          {
             id: "session-pill",
             targetRef: refs.firstSessionPillRef,
             title: "Go to Session",
             description:
-              "Click on a session to jump directly to that session's menu order.",
+              "Click on a meal session to jump directly to that session's menu order.",
             position: "bottom",
             requiresClick: true,
             showSkip: true,
@@ -119,6 +115,29 @@ export function useCateringTutorial({
             showNext: true,
             showSkip: true,
           },
+          {
+            id: "back-button-return",
+            targetRef: refs.backButtonRef,
+            title: "Back to Days",
+            description:
+              "Click the back button to return to the full list of delivery days.",
+            position: "bottom",
+            requiresClick: true,
+            showSkip: true,
+          },
+        ];
+
+      case "days_overview":
+        return [
+          {
+            id: "add-day-nav",
+            targetRef: refs.addDayNavButtonRef,
+            title: "Add More Days",
+            description: "You can add more days to your order by clicking here.",
+            position: "bottom",
+            showNext: true,
+            showSkip: true,
+          },
         ];
 
       case "categories":
@@ -128,12 +147,28 @@ export function useCateringTutorial({
             targetRef: refs.categoriesRowRef,
             title: "Browse Categories",
             description:
-              "Browse food items by category. Click on a category to see available items, and use subcategories to filter further.",
+              "Browse food items by category. Click on a category to see the available options.",
             position: "bottom",
             showNext: true,
             showSkip: true,
             highlightPadding: 12,
             highlightExtendBottom: 50, // Extend to cover subcategories row below
+          },
+        ];
+
+      case "restaurants":
+        return [
+          {
+            id: "restaurants",
+            targetRef: refs.restaurantListRef,
+            title: "Choose a Restaurant",
+            description:
+              "Browse the restaurants available for this session, then click into any restaurant to view its menu.",
+            position: "bottom",
+            requiresClick: true,
+            showSkip: true,
+            highlightPadding: 12,
+            highlightMinTop: 72,
           },
         ];
 
@@ -169,20 +204,35 @@ export function useCateringTutorial({
     const steps = getTutorialSteps();
     const nextStep = (tutorialStep ?? 0) + 1;
 
+    if (currentTutorialStep?.id === "back-button-return") {
+      setTutorialPhase("days_overview");
+      setTutorialStep(0);
+      return;
+    }
+
     if (nextStep >= steps.length) {
       // Move to next phase or complete
       switch (tutorialPhase) {
         case "initial":
-          // After adding a day, wait for the session to be created
-          // The navigation phase will be triggered by handleConfirmAddDay
-          setTutorialStep(null);
+          setTutorialPhase("navigation");
+          setTutorialStep(0);
           break;
         case "navigation":
           // Move to categories phase
           setTutorialPhase("categories");
           setTutorialStep(0);
           break;
+        case "days_overview":
+          // Move to categories phase
+          setTutorialPhase("categories");
+          setTutorialStep(0);
+          break;
         case "categories":
+          // Move to restaurant selection phase
+          setTutorialPhase("restaurants");
+          setTutorialStep(0);
+          break;
+        case "restaurants":
           // Move to menu items phase
           setTutorialPhase("menu_items");
           setTutorialStep(0);
@@ -199,7 +249,7 @@ export function useCateringTutorial({
     } else {
       setTutorialStep(nextStep);
     }
-  }, [tutorialStep, tutorialPhase, getTutorialSteps]);
+  }, [currentTutorialStep, tutorialStep, tutorialPhase, getTutorialSteps]);
 
   // Handle skip tutorial
   const handleSkipTutorial = useCallback(() => {
@@ -220,7 +270,7 @@ export function useCateringTutorial({
   // Reset tutorial
   const resetTutorial = useCallback(() => {
     localStorage.removeItem(TUTORIAL_STORAGE_KEY);
-    setTutorialPhase("initial");
+    setTutorialPhase("navigation");
     setTutorialStep(0);
   }, []);
 
