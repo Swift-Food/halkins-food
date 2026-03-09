@@ -46,6 +46,7 @@ import { CateringBundleItem } from "@/types/api/catering.api.types";
 import { Plus, Clock } from "lucide-react";
 
 const CATERING_TIME_SLOTS = ["11:00", "13:00", "18:00"] as const;
+const TUTORIAL_HINT_DISABLED_KEY = "catering_tutorial_hint_disabled";
 
 const toMinutes = (time: string) => {
   const [hours, minutes] = time.split(":").map(Number);
@@ -116,6 +117,8 @@ export default function CateringOrderBuilder() {
   // Collapsed categories state
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [tutorialResetKey, setTutorialResetKey] = useState(0);
+  const [isTutorialHintVisible, setIsTutorialHintVisible] = useState(false);
+  const [isTutorialHintDisabled, setIsTutorialHintDisabled] = useState(false);
 
   // PDF generation state
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -192,6 +195,37 @@ export default function CateringOrderBuilder() {
     setNavMode("dates");
     setSelectedDayDate(null);
   }, [currentTutorialStep, navMode]);
+
+  useEffect(() => {
+    const storedPreference =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem(TUTORIAL_HINT_DISABLED_KEY)
+        : null;
+    const isDisabled = storedPreference === "true";
+
+    setIsTutorialHintDisabled(isDisabled);
+    setIsTutorialHintVisible(!isDisabled);
+  }, []);
+
+  const handleTutorialHintDisabledChange = (checked: boolean) => {
+    setIsTutorialHintDisabled(checked);
+    setIsTutorialHintVisible(!checked);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(TUTORIAL_HINT_DISABLED_KEY, checked ? "true" : "false");
+    }
+  };
+
+  const handleRestartTutorial = () => {
+    resetTutorial();
+    setNavMode("dates");
+    setSelectedDayDate(null);
+    setExpandedItemId(null);
+    setTutorialResetKey((key) => key + 1);
+    if (!isTutorialHintDisabled) {
+      setIsTutorialHintVisible(false);
+    }
+  };
 
   // Get quantity for an item in the current session
   const getItemQuantity = (itemId: string): number => {
@@ -1127,32 +1161,69 @@ export default function CateringOrderBuilder() {
         totalSteps={getTutorialSteps().length}
       />
 
-      <button
-        onClick={() => {
-          resetTutorial();
-          setNavMode("dates");
-          setSelectedDayDate(null);
-          setExpandedItemId(null);
-          setTutorialResetKey((key) => key + 1);
-        }}
-        className="fixed bottom-4 left-4 md:bottom-8 md:left-8 w-10 h-10 md:w-12 md:h-12 bg-white border border-base-300 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary transition-colors z-40"
-        title="Restart Tutorial"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5 md:h-6 md:w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+      <div className="fixed bottom-4 left-4 md:bottom-8 md:left-8 z-40">
+        {isTutorialHintVisible && (
+          <div className="absolute bottom-14 left-0 md:bottom-16 w-64 rounded-2xl border border-base-300 bg-white shadow-xl p-3">
+            <div className="absolute -bottom-2 left-7 w-4 h-4 rotate-45 bg-white border-r border-b border-base-300" />
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Need a quick walkthrough?</p>
+                <p className="mt-1 text-xs text-gray-600">
+                  Use this button any time to restart the onboarding guide.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsTutorialHintVisible(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Dismiss tutorial hint"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+            <label className="mt-3 flex items-center gap-2 text-xs text-gray-600">
+              <input
+                type="checkbox"
+                checked={isTutorialHintDisabled}
+                onChange={(e) => handleTutorialHintDisabledChange(e.target.checked)}
+                className="checkbox checkbox-xs"
+              />
+              Don&apos;t show this again
+            </label>
+          </div>
+        )}
+
+        <button
+          onClick={handleRestartTutorial}
+          className="w-10 h-10 md:w-12 md:h-12 bg-white border border-base-300 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary transition-colors"
+          title="Restart Tutorial"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      </button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 md:h-6 md:w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }
