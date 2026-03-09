@@ -70,6 +70,7 @@ class CoworkingAdminService {
    * Get a single coworking space with credential status
    */
   async getSpace(id: string): Promise<CoworkingSpaceAdmin> {
+    console.log("id is", id)
     const response = await fetchWithAuth(
       `${API_BASE_URL}${API_ENDPOINTS.ADMIN_COWORKING_SPACE(id)}`
     );
@@ -340,6 +341,7 @@ class CoworkingAdminService {
       throw new Error('Failed to remove user');
     }
   }
+
 }
 
 // Export singleton instance

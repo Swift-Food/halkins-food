@@ -115,14 +115,11 @@ export interface CoworkingMealSessionRequest {
 export interface CoworkingVenue {
   id: string;
   name: string;
-  maxCapacity: number;
-  address: string;
-  addressLine1: string;
-  city: string;
-  zipcode: string;
+  capacity: number;
   latitude: number;
   longitude: number;
   image?: string;
+  description?: string;
 }
 
 /**
@@ -164,6 +161,7 @@ export const COWORKING_VENUES: CoworkingVenue[] = [
  * Backend: SpaceInfoResponse in coworking.service.ts
  */
 export interface CoworkingSpaceInfo {
+  id: string;
   name: string;
   slug: string;
   address: string;

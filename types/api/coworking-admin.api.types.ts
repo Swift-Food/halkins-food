@@ -184,6 +184,58 @@ export interface UpdateSpaceUserResponse {
 }
 
 // ============================================================================
+// VENUE TYPES
+// ============================================================================
+
+/**
+ * A bookable venue within a coworking space
+ * Backend: CoworkingVenueEntity
+ */
+export interface CoworkingVenueAdmin {
+  id: string;
+  name: string;
+  capacity: number;
+  latitude: string;
+  longitude: string;
+  image?: string | null;
+  description?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  coworkingSpaceId: string;
+}
+
+/**
+ * Create a venue for a coworking space
+ * Backend: CreateCoworkingVenueDto
+ */
+export interface CreateCoworkingVenueRequest {
+  name: string;
+  capacity: number;
+  latitude: number;
+  longitude: number;
+  image?: string;
+  description?: string;
+}
+
+/**
+ * Update a venue
+ * Backend: UpdateCoworkingVenueDto
+ */
+export interface UpdateCoworkingVenueRequest {
+  name?: string;
+  capacity?: number;
+  latitude?: number;
+  longitude?: number;
+  image?: string;
+  description?: string;
+}
+
+/**
+ * Response for GET coworking-dashboard/:id/venues — plain array
+ */
+export type ListVenuesResponse = CoworkingVenueAdmin[];
+
+// ============================================================================
 // WEBHOOK TYPES (for admin display, not invocation)
 // ============================================================================
 

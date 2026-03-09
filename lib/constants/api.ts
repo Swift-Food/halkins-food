@@ -39,6 +39,10 @@ export const API_ENDPOINTS = {
     `/coworking-dashboard/${spaceId}/orders/${orderId}/approve`,
   COWORKING_DASHBOARD_REJECT_ORDER: (spaceId: string, orderId: string) =>
     `/coworking-dashboard/${spaceId}/orders/${orderId}/reject`,
+  COWORKING_DASHBOARD_VENUES: (spaceId: string) =>
+    `/coworking-dashboard/${spaceId}/venues`,
+  COWORKING_DASHBOARD_VENUE: (spaceId: string, venueId: string) =>
+    `/coworking-dashboard/${spaceId}/venues/${venueId}`,
 
   // Coworking Public (Member Flow)
   COWORKING_SPACE: (spaceSlug: string) => `/coworking/${spaceSlug}`,
@@ -58,6 +62,7 @@ export const API_ENDPOINTS = {
     `/coworking/${spaceSlug}/orders/${orderId}`,
   COWORKING_CART_PRICING: (spaceSlug: string) =>
     `/coworking/${spaceSlug}/cart-pricing`,
+  COWORKING_VENUES: (spaceSlug: string) => `/coworking-dashboard/${spaceSlug}/venues`,
 
   // Coworking Admin
   ADMIN_COWORKING: '/admin/coworking',

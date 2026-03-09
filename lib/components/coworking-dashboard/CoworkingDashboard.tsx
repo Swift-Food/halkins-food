@@ -12,7 +12,8 @@ import DashboardLogin from "./DashboardLogin";
 import StatsCards from "./StatsCards";
 import OrdersList from "./OrdersList";
 import OrderDetailModal from "./OrderDetailModal";
-import { LogOut, Building2 } from "lucide-react";
+import VenuesModal from "./VenuesModal";
+import { LogOut, Building2, MapPin } from "lucide-react";
 
 interface CoworkingDashboardProps {
   spaceSlug: string;
@@ -28,6 +29,7 @@ export default function CoworkingDashboard({ spaceSlug }: CoworkingDashboardProp
   const [activeStatus, setActiveStatus] = useState<DashboardOrderStatusFilter>("all");
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [showVenues, setShowVenues] = useState(false);
 
   const [error, setError] = useState("");
 
@@ -140,13 +142,22 @@ export default function CoworkingDashboard({ spaceSlug }: CoworkingDashboardProp
             </p>
           )}
         </div>
-        <button
-          onClick={handleLogout}
-          className="btn btn-ghost btn-sm gap-2 text-gray-600"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowVenues(true)}
+            className="btn btn-sm bg-pink-500 hover:bg-pink-600 text-white border-none gap-2"
+          >
+            <MapPin className="h-4 w-4" />
+            Venues
+          </button>
+          <button
+            onClick={handleLogout}
+            className="btn btn-ghost btn-sm gap-2 text-gray-600"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </button>
+        </div>
       </div>
 
       {/* Error */}
@@ -185,6 +196,11 @@ export default function CoworkingDashboard({ spaceSlug }: CoworkingDashboardProp
           onClose={() => setSelectedOrderId(null)}
           onOrderUpdated={fetchOrders}
         />
+      )}
+
+      {/* Venues Modal */}
+      {showVenues && spaceId && (
+        <VenuesModal spaceId={spaceId} onClose={() => setShowVenues(false)} />
       )}
     </div>
   );

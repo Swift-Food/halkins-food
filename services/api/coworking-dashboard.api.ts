@@ -16,6 +16,9 @@ import {
   DashboardStatsResponse,
   DashboardOrderQuery,
   DashboardStatsQuery,
+  CoworkingVenueAdmin,
+  CreateCoworkingVenueRequest,
+  UpdateCoworkingVenueRequest,
 } from '@/types/api';
 
 class CoworkingDashboardService {
@@ -207,6 +210,57 @@ class CoworkingDashboardService {
     }
 
     return response.json();
+  }
+  // ============================================================
+  // VENUE MANAGEMENT
+  // ============================================================
+
+  async listVenues(spaceId: string): Promise<CoworkingVenueAdmin[]> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_VENUES(spaceId)}`
+    );
+    if (!response.ok) throw new Error('Failed to fetch venues');
+    return response.json();
+  }
+
+  async createVenue(spaceId: string, data: CreateCoworkingVenueRequest): Promise<CoworkingVenueAdmin> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_VENUES(spaceId)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to create venue');
+    }
+    return response.json();
+  }
+
+  async updateVenue(spaceId: string, venueId: string, data: UpdateCoworkingVenueRequest): Promise<CoworkingVenueAdmin> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_VENUE(spaceId, venueId)}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }
+    );
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to update venue');
+    }
+    return response.json();
+  }
+
+  async deleteVenue(spaceId: string, venueId: string): Promise<void> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_VENUE(spaceId, venueId)}`,
+      { method: 'DELETE' }
+    );
+    if (!response.ok) throw new Error('Failed to delete venue');
   }
 }
 

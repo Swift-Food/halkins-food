@@ -11,6 +11,7 @@
 import { API_BASE_URL, API_ENDPOINTS } from '@/lib/constants';
 import {
   CoworkingSpaceInfo,
+  CoworkingVenue,
   StartSessionRequest,
   StartSessionResponse,
   VerifyEmailRequest,
@@ -225,6 +226,20 @@ class CoworkingService {
   // ============================================================
   // PUBLIC ENDPOINTS (no auth required)
   // ============================================================
+
+  /**
+   * Get venues for a coworking space (public, no auth required)
+   */
+  async getVenues(spaceId: string): Promise<CoworkingVenue[]> {
+    console.log(`${API_BASE_URL}${API_ENDPOINTS.COWORKING_VENUES(spaceId)}`)
+    const response = await fetch(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_VENUES(spaceId)}`
+    );
+
+    if (!response.ok) throw new Error('Failed to fetch venues');
+    const data = await response.json();
+    return Array.isArray(data) ? data : data.venues ?? [];
+  }
 
   /**
    * Get coworking space info (public)

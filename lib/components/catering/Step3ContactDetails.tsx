@@ -65,7 +65,7 @@ export default function Step3ContactInfo() {
     spaceSlug: coworkingSpaceSlug,
   } = useCoworking();
 
-  const deliveryAddress = selectedVenue?.address ?? FALLBACK_DELIVERY_ADDRESS;
+  const deliveryAddress = selectedVenue?.name ?? FALLBACK_DELIVERY_ADDRESS;
   const deliveryLat = selectedVenue?.latitude ?? FALLBACK_DELIVERY_LAT;
   const deliveryLng = selectedVenue?.longitude ?? FALLBACK_DELIVERY_LNG;
 

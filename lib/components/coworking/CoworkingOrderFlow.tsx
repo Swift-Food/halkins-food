@@ -9,7 +9,7 @@ import { coworkingService } from "@/services/api/coworking.api";
 import CoworkingAuthForm from "./CoworkingAuthForm";
 import CateringOrderBuilder from "@/lib/components/catering/CateringOrderBuilder";
 import Step3ContactInfo from "@/lib/components/catering/Step3ContactDetails";
-import { COWORKING_VENUES, CoworkingVenue } from "@/types/api";
+import { CoworkingVenue } from "@/types/api";
 import { Calendar, Clock, MapPin, Users, CheckCircle2, Pencil, X } from "lucide-react";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -67,6 +67,7 @@ interface EditModalProps {
   initialStart: string;
   initialEndDate: string;
   initialEnd: string;
+  venues: CoworkingVenue[];
 }
 
 function EventEditModal({
@@ -77,6 +78,7 @@ function EventEditModal({
   initialStart,
   initialEndDate,
   initialEnd,
+  venues,
 }: EditModalProps) {
   const [venue, setVenue] = useState<CoworkingVenue | null>(initialVenue);
   const [startDate, setStartDate] = useState(initialDate);
@@ -193,7 +195,7 @@ function EventEditModal({
           <div>
             <p className="text-sm font-medium text-gray-700 mb-3">Venue</p>
             <div className="grid grid-cols-2 gap-3">
-              {COWORKING_VENUES.map((v) => {
+              {venues.map((v) => {
                 const isSelected = venue?.id === v.id;
                 return (
                   <button
@@ -225,7 +227,7 @@ function EventEditModal({
                     <div className="bg-white px-3 py-2.5">
                       <p className="font-semibold text-xs text-gray-900">{v.name}</p>
                       <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                        <Users className="w-3 h-3" /> Up to {v.maxCapacity}
+                        <Users className="w-3 h-3" /> Up to {v.capacity}
                       </p>
                     </div>
                   </button>
@@ -281,6 +283,7 @@ export default function CoworkingOrderFlow() {
 
   const [spaceError, setSpaceError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [venues, setVenues] = useState<CoworkingVenue[]>([]);
   const hasPrefilledContact = useRef(false);
   const hasPrefilledSession = useRef(false);
 
@@ -296,6 +299,12 @@ export default function CoworkingOrderFlow() {
         )
       );
   }, [spaceSlug, spaceInfo, setSpaceInfo]);
+
+  // Fetch venues once spaceInfo (and its id) is available
+  useEffect(() => {
+    if (!spaceInfo?.id) return;
+    coworkingService.getVenues(spaceInfo.id).then(setVenues).catch(() => {});
+  }, [spaceInfo?.id]);
 
   // Pre-fill contact info from member data once when authenticated
   useEffect(() => {
@@ -460,6 +469,7 @@ export default function CoworkingOrderFlow() {
           initialStart={eventStartTime}
           initialEndDate={eventEndDate}
           initialEnd={eventEndTime}
+          venues={venues}
         />
       )}
     </div>

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useCoworking } from "@/context/CoworkingContext";
 import { coworkingService } from "@/services/api/coworking.api";
 import { Mail, Building2, Calendar, Clock, MapPin, Users, CheckCircle2 } from "lucide-react";
-import { COWORKING_VENUES, CoworkingVenue } from "@/types/api";
+import { CoworkingVenue } from "@/types/api";
 
 interface CoworkingAuthFormProps {
   spaceSlug: string;
@@ -50,8 +50,15 @@ export default function CoworkingAuthForm({
   const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("");
   const [selectedVenue, setSelectedVenue] = useState<CoworkingVenue | null>(null);
+  const [venues, setVenues] = useState<CoworkingVenue[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    console.log("space info is", JSON.stringify(spaceInfo))
+    if (!spaceInfo?.id) return;
+    coworkingService.getVenues(spaceInfo.id).then(setVenues).catch(() => {});
+  }, [spaceInfo?.id]);
 
   const endTimeOptions =
     startTime && endDate === startDate
@@ -294,7 +301,7 @@ export default function CoworkingAuthForm({
               Choose a Venue
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {COWORKING_VENUES.map((venue) => {
+              {venues.map((venue) => {
                 const isSelected = selectedVenue?.id === venue.id;
                 return (
                   <button
@@ -339,12 +346,15 @@ export default function CoworkingAuthForm({
                       <div className="flex items-center gap-3 mt-1.5">
                         <span className="flex items-center gap-1 text-xs text-gray-500">
                           <Users className="w-3.5 h-3.5" />
-                          Up to {venue.maxCapacity} guests
+                          Up to {venue.capacity} guests
                         </span>
-                        <span className="flex items-center gap-1 text-xs text-gray-500">
-                          <MapPin className="w-3.5 h-3.5" />
-                          {venue.addressLine1}
-                        </span>
+                        {venue.description &&  (
+                          <span className="flex items-center gap-1 text-xs text-gray-500">
+                            <MapPin className="w-3.5 h-3.5" />
+                            {venue.description}
+                          </span>
+                        )}
+                        
                       </div>
                     </div>
                   </button>
