@@ -42,6 +42,8 @@ interface ValidationErrors {
   };
 }
 
+type PdfPreviewItem = LocalMealSession["orderItems"][number]["item"];
+
 export default function Step3ContactInfo() {
   const router = useRouter();
   const topSectionRef = useRef<HTMLDivElement | null>(null);
@@ -469,11 +471,15 @@ export default function Step3ContactInfo() {
       } else {
         setSuccess(true);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("=== SUBMIT ORDER ERROR ===");
-      console.error("Error Type:", error?.name);
-      console.error("Error Message:", error?.message);
-      console.error("Error Stack:", error?.stack);
+      const errorDetails =
+        error instanceof Error
+          ? error
+          : new Error(typeof error === "string" ? error : "Unknown error");
+      console.error("Error Type:", errorDetails.name);
+      console.error("Error Message:", errorDetails.message);
+      console.error("Error Stack:", errorDetails.stack);
       console.error("Full Error Object:", JSON.stringify(error, null, 2));
 
       // Session expired — the event dispatch in coworkingService already
@@ -553,7 +559,7 @@ export default function Step3ContactInfo() {
       }
 
       setPricing(pricingResult);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error calculating pricing:", error);
       setPricing(null);
     } finally {
@@ -662,19 +668,19 @@ export default function Step3ContactInfo() {
             categoryName: orderItem.item.categoryName,
             subcategoryName: orderItem.item.subcategoryName,
             selectedAddons: orderItem.item.selectedAddons,
-            description: (orderItem.item as any).description,
-            allergens: (orderItem.item as any).allergens,
-            dietaryFilters: (orderItem.item as any).dietaryFilters,
-          },
+            description: (orderItem.item as PdfPreviewItem).description,
+            allergens: (orderItem.item as PdfPreviewItem).allergens,
+            dietaryFilters: (orderItem.item as PdfPreviewItem).dietaryFilters,
+          } satisfies PdfPreviewItem,
           quantity: orderItem.quantity,
         })),
       }));
 
-      // Transform to PDF data format (now async to fetch images)
-      // Don't pass delivery fee - show as TBC (same as CateringOrderBuilder)
+      // Transform to PDF data format with the latest priced totals from Step 3
       const pdfData = await transformLocalSessionsToPdfData(
         sessionsForPreview,
-        withPrices
+        withPrices,
+        pricing?.deliveryFee
       );
       // Generate and download PDF
       const blob = await pdf(
@@ -682,7 +688,8 @@ export default function Step3ContactInfo() {
           sessions={pdfData.sessions}
           showPrices={pdfData.showPrices}
           deliveryCharge={pdfData.deliveryCharge}
-          totalPrice={pdfData.totalPrice}
+          venueHireCharge={pricing?.venueHireFee}
+          totalPrice={pricing?.total ?? pdfData.totalPrice}
           logoUrl={pdfData.logoUrl}
         />
       ).toBlob();
