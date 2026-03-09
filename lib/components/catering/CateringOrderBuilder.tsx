@@ -63,6 +63,11 @@ const getNextCateringTime = (time: string) => {
 };
 
 type CateringHourSlot = NonNullable<Restaurant["cateringOperatingHours"]>[number];
+type PopulatedCateringHourSlot = CateringHourSlot & {
+  open: string;
+  close: string;
+};
+type PdfPreviewItem = LocalMealSession["orderItems"][number]["item"];
 
 export default function CateringOrderBuilder() {
   const searchParams = useSearchParams();
@@ -273,6 +278,12 @@ export default function CateringOrderBuilder() {
   // Handle updating item quantity
   const handleUpdateQuantity = (itemId: string, quantity: number) => {
     updateItemQuantity(activeSessionIndex, itemId, quantity);
+  };
+
+  const hasDefinedHours = (
+    slot: CateringHourSlot
+  ): slot is PopulatedCateringHourSlot => {
+    return Boolean(slot.open && slot.close);
   };
 
   // Handle opening modal for add/edit
@@ -681,20 +692,18 @@ export default function CateringOrderBuilder() {
             errors[i] = `${restaurant.restaurant_name} does not accept event orders on ${dayOfWeek}s.`;
             break;
           }
-          const enabledSlots = daySlots.filter(
-            (s: CateringHourSlot) => s.open && s.close
-          );
+          const enabledSlots = daySlots.filter(hasDefinedHours);
           if (enabledSlots.length > 0 && session.eventTime) {
             const [eh, em] = session.eventTime.split(":").map(Number);
             const eventMins = eh * 60 + em;
-            const inSlot = enabledSlots.some((slot: CateringHourSlot) => {
+            const inSlot = enabledSlots.some((slot) => {
               const [oh, om] = slot.open.split(":").map(Number);
               const [ch, cm] = slot.close.split(":").map(Number);
               return eventMins >= oh * 60 + om && eventMins <= ch * 60 + cm;
             });
             if (!inSlot) {
               const descs = enabledSlots
-                .map((s: CateringHourSlot) => {
+                .map((s) => {
                   const [oh, om] = s.open.split(":").map(Number);
                   const [ch, cm] = s.close.split(":").map(Number);
                   return `${formatTimeRange(oh, om)} - ${formatTimeRange(ch, cm)}`;
@@ -782,10 +791,10 @@ export default function CateringOrderBuilder() {
             categoryName: oi.item.categoryName,
             subcategoryName: oi.item.subcategoryName,
             selectedAddons: oi.item.selectedAddons,
-            description: oi.item.description,
-            allergens: oi.item.allergens,
-            dietaryFilters: oi.item.dietaryFilters,
-          },
+            description: (oi.item as PdfPreviewItem).description,
+            allergens: (oi.item as PdfPreviewItem).allergens,
+            dietaryFilters: (oi.item as PdfPreviewItem).dietaryFilters,
+          } satisfies PdfPreviewItem,
           quantity: oi.quantity,
         })),
       }));
