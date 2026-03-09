@@ -52,7 +52,8 @@ export default function StripeSettings({ spaceId }: StripeSettingsProps) {
     setError("");
     try {
       const { onboardingUrl } = await coworkingDashboardService.setupStripeAccount(spaceId);
-      window.location.href = onboardingUrl;
+      window.open(onboardingUrl, '_blank');
+      setActionLoading(false);
     } catch (err: any) {
       setError(err.message || "Failed to start Stripe setup");
       setActionLoading(false);
@@ -64,7 +65,8 @@ export default function StripeSettings({ spaceId }: StripeSettingsProps) {
     setError("");
     try {
       const { onboardingUrl } = await coworkingDashboardService.refreshStripeOnboardingLink(spaceId);
-      window.location.href = onboardingUrl;
+      window.open(onboardingUrl, '_blank');
+      setActionLoading(false);
     } catch (err: any) {
       setError(err.message || "Failed to refresh onboarding link");
       setActionLoading(false);
