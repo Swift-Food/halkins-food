@@ -11,6 +11,7 @@ export interface TutorialStep {
   position: "top" | "bottom" | "left" | "right";
   requiresClick?: boolean; // User must click the target to proceed
   showNext?: boolean; // Show "Next" button
+  nextLabel?: string; // Custom label for the primary action
   showSkip?: boolean; // Show "Skip Tutorial" button
   highlightPadding?: number; // Padding around highlight
   highlightExtendBottom?: number; // Extra height to extend highlight downward
@@ -295,7 +296,7 @@ export default function TutorialTooltip({
                 onClick={onNext}
                 className="ml-auto px-4 py-1.5 bg-white text-primary text-sm font-medium rounded-lg hover:bg-white/90 transition-colors"
               >
-                Next
+                {step.nextLabel || "Next"}
               </button>
             )}
             {step.requiresClick && (

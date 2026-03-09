@@ -169,6 +169,20 @@ export function useCateringTutorial({
             showSkip: true,
             highlightPadding: 12,
             highlightMinTop: 72,
+            onBeforeShow: () => {
+              const restaurantList = refs.restaurantListRef.current;
+              if (!restaurantList) return;
+
+              const stickyOffset = 72;
+              const rect = restaurantList.getBoundingClientRect();
+              const distanceFromTarget = rect.top - stickyOffset;
+              if (Math.abs(distanceFromTarget) < 4) return;
+
+              window.scrollTo({
+                top: window.scrollY + distanceFromTarget,
+                behavior: "auto",
+              });
+            },
           },
         ];
 
@@ -182,8 +196,24 @@ export function useCateringTutorial({
               "Click on a menu item card to see more details, or click the + button to quickly add it to your session.",
             position: "top",
             showNext: true,
+            nextLabel: "Finish Tutorial",
             showSkip: false,
             highlightPadding: 8,
+            highlightMinTop: 72,
+            onBeforeShow: () => {
+              const firstMenuItem = refs.firstMenuItemRef.current;
+              if (!firstMenuItem) return;
+
+              const stickyOffset = 72;
+              const rect = firstMenuItem.getBoundingClientRect();
+
+              if (rect.top >= stickyOffset) return;
+
+              window.scrollTo({
+                top: window.scrollY + rect.top - stickyOffset,
+                behavior: "auto",
+              });
+            },
           },
         ];
 
