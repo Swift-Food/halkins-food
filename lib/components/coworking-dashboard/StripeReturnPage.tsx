@@ -29,16 +29,6 @@ export default function StripeReturnPage({ spaceSlug }: StripeReturnPageProps) {
     checkStatus();
   }, [checkStatus]);
 
-  // Try to auto-close after a short delay
-  useEffect(() => {
-    if (!checking) {
-      const timer = setTimeout(() => {
-        window.close();
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [checking]);
-
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-md w-full text-center">
