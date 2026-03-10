@@ -130,7 +130,7 @@ export default function DeliveryAddressForm({
               value={formData.addressLine2 || ""}
               onChange={(e) => onFieldChange("addressLine2", e.target.value)}
               placeholder="Apartment, suite, etc."
-              className="w-full px-3 py-2 text-sm bg-base-200/50 border border-base-300 rounded-lg focus:ring-2 focus:ring-dark-pink focus:border-transparent transition-all"
+              className="w-full px-3 py-2 text-sm bg-base-200/50 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
           </div>
 

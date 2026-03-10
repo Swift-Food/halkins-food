@@ -955,7 +955,7 @@ export default function Step3ContactInfo() {
               href="https://www.instagram.com/swiftfood_uk?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-dark-pink hover:bg-base-content/10 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all inline-block text-center"
+              className="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all inline-block text-center"
             >
               Follow us on Instagram
             </a>
@@ -1040,7 +1040,7 @@ export default function Step3ContactInfo() {
             <button
               type="button"
               onClick={() => scrollToSection(orderDetailsRef)}
-              className="lg:hidden mb-4 flex w-full items-center justify-between rounded-2xl border border-base-300 bg-base-100/80 px-4 py-3 text-left shadow-sm transition-all hover:border-dark-pink/30 hover:bg-base-100"
+              className="lg:hidden mb-4 flex w-full items-center justify-between rounded-2xl border border-base-300 bg-base-100/80 px-4 py-3 text-left shadow-sm transition-all hover:border-primary/30 hover:bg-base-100"
             >
               <span className="min-w-0">
                 <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-base-content/45">
@@ -1053,14 +1053,14 @@ export default function Step3ContactInfo() {
                   Check the menu and quantities before submitting
                 </span>
               </span>
-              <span className="ml-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-dark-pink/10 text-dark-pink">
+              <span className="ml-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary/80">
                 <ArrowDown size={18} />
               </span>
             </button>
 
             <div className="bg-base-200/40 rounded-3xl p-4 md:p-8">
               <h3 className="text-xl font-bold mb-8 flex items-center gap-3 text-base-content">
-                <span className="w-1.5 h-6 bg-dark-pink rounded-full"></span>
+                <span className="w-1.5 h-6 bg-primary/80 rounded-full"></span>
                 Contact & Delivery Details
               </h3>
 
@@ -1120,7 +1120,7 @@ export default function Step3ContactInfo() {
                     value={specialInstructions}
                     onChange={(e) => setSpecialInstructions(e.target.value)}
                     placeholder="Any special requests or instructions for your order..."
-                    className="w-full bg-gray-50 border border-base-300 rounded-xl px-4 py-3 text-sm text-base-content placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-dark-pink/20 focus:border-dark-pink transition-all min-h-[100px] resize-none"
+                    className="w-full bg-gray-50 border border-base-300 rounded-xl px-4 py-3 text-sm text-base-content placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[100px] resize-none"
                   />
                 </div>
 
@@ -1189,7 +1189,7 @@ export default function Step3ContactInfo() {
                       id="terms"
                       checked={termsAccepted}
                       onChange={(e) => setTermsAccepted(e.target.checked)}
-                      className="h-5 w-5 shrink-0 cursor-pointer rounded border-base-300 bg-base-100 text-dark-pink focus:outline-none focus:ring-0 focus:ring-offset-0"
+                      className="h-5 w-5 shrink-0 cursor-pointer rounded border-base-300 bg-base-100 text-primary focus:outline-none focus:ring-0 focus:ring-offset-0"
                     />
                     <label
                       htmlFor="terms"
@@ -1200,7 +1200,7 @@ export default function Step3ContactInfo() {
                         href="https://swiftfood.uk/terms"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-dark-pink hover:underline font-medium"
+                        className="text-primary hover:underline font-medium"
                         onClick={(e) => e.stopPropagation()}
                       >
                         Terms and Conditions
@@ -1214,7 +1214,7 @@ export default function Step3ContactInfo() {
                 <button
                   type="submit"
                   disabled={submitting || !termsAccepted}
-                  className="w-full bg-dark-pink text-white py-4 rounded-2xl font-bold uppercase tracking-[0.2em] text-sm hover:opacity-90 transition-all disabled:bg-base-300 disabled:cursor-not-allowed disabled:tracking-[0.08em]"
+                  className="w-full bg-primary text-white py-4 rounded-2xl font-bold uppercase tracking-[0.2em] text-sm hover:bg-primary/90 transition-all disabled:bg-base-300 disabled:cursor-not-allowed disabled:tracking-[0.08em]"
                 >
                   {submitting ? "Submitting..." : "Submit Order"}
                 </button>

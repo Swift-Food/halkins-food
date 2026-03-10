@@ -81,13 +81,13 @@ export default function PromoCodeSection({
                 }
               }}
               placeholder="Add discount code or voucher"
-              className="flex-1 px-3 py-2 text-sm bg-gray-100 border border-base-300 rounded-lg focus:ring-2 focus:ring-dark-pink focus:border-transparent transition-all"
+              className="flex-1 px-3 py-2 text-sm bg-gray-100 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
             <button
               type="button"
               onClick={handleApply}
               disabled={validatingPromo || !promoInput.trim()}
-              className="px-4 py-2 bg-dark-pink text-white rounded-lg font-medium hover:opacity-90 transition-all disabled:bg-base-300 disabled:cursor-not-allowed text-sm"
+              className="px-4 py-2 rounded-lg font-medium text-sm transition-all bg-primary text-white hover:bg-primary/90 disabled:bg-primary/15 disabled:text-primary/50 disabled:cursor-not-allowed"
             >
               {validatingPromo ? "..." : "Apply"}
             </button>

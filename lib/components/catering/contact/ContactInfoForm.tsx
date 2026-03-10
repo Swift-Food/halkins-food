@@ -31,7 +31,7 @@ interface ContactInfoFormProps {
 const fieldLabelClass =
   "block text-[10px] font-bold text-base-content/60 uppercase tracking-widest mb-1.5";
 const fieldClass =
-  "w-full bg-gray-50 border border-base-300 rounded-lg px-4 py-2.5 text-sm text-base-content placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-dark-pink/20 focus:border-dark-pink transition-all";
+  "w-full bg-gray-50 border border-base-300 rounded-lg px-4 py-2.5 text-sm text-base-content placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all";
 
 export default function ContactInfoForm({
   formData,
@@ -89,7 +89,7 @@ export default function ContactInfoForm({
     <div className="mb-8 last:mb-0">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-pink-100 flex items-center justify-center text-primary">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
             <svg
               className="w-[18px] h-[18px]"
               fill="none"
@@ -131,7 +131,7 @@ export default function ContactInfoForm({
 
         <div>
           <label className={fieldLabelClass}>
-            Name<span className="text-dark-pink ml-0.5">*</span>
+            Name<span className="text-primary ml-0.5">*</span>
           </label>
           <input
             type="text"
@@ -152,7 +152,7 @@ export default function ContactInfoForm({
 
         <div>
           <label className={fieldLabelClass}>
-            Telephone<span className="text-dark-pink ml-0.5">*</span>
+            Telephone<span className="text-primary ml-0.5">*</span>
           </label>
           <input
             type="tel"
@@ -171,7 +171,7 @@ export default function ContactInfoForm({
 
         <div className="col-span-full">
           <label className={fieldLabelClass}>
-            Email<span className="text-dark-pink ml-0.5">*</span>
+            Email<span className="text-primary ml-0.5">*</span>
           </label>
           <input
             type="email"
@@ -213,7 +213,7 @@ export default function ContactInfoForm({
             <button
               type="button"
               onClick={handleAddCcEmail}
-              className="bg-dark-pink text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all"
+              className="bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-primary/90 transition-all"
             >
               Add
             </button>
@@ -230,7 +230,7 @@ export default function ContactInfoForm({
                   <button
                     type="button"
                     onClick={() => onRemoveCcEmail(email)}
-                    className="hover:text-dark-pink"
+                    className="hover:text-primary"
                   >
                     x
                   </button>
@@ -279,7 +279,7 @@ export default function ContactInfoForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div className="col-span-full">
               <label className={fieldLabelClass}>
-                Address Line 1<span className="text-dark-pink ml-0.5">*</span>
+                Address Line 1<span className="text-primary ml-0.5">*</span>
               </label>
               <input
                 type="text"
@@ -320,7 +320,7 @@ export default function ContactInfoForm({
 
             <div>
               <label className={fieldLabelClass}>
-                City<span className="text-dark-pink ml-0.5">*</span>
+                City<span className="text-primary ml-0.5">*</span>
               </label>
               <input
                 type="text"
@@ -343,7 +343,7 @@ export default function ContactInfoForm({
 
             <div>
               <label className={fieldLabelClass}>
-                Postcode<span className="text-dark-pink ml-0.5">*</span>
+                Postcode<span className="text-primary ml-0.5">*</span>
               </label>
               <input
                 type="text"
