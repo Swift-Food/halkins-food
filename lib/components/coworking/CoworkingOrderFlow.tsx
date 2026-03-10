@@ -326,14 +326,14 @@ export default function CoworkingOrderFlow() {
             </div>
             <div className="h-2 bg-gray-200 rounded-full">
               <div
-                className="h-full bg-dark-pink rounded-full transition-all duration-500"
+                className="h-full bg-primary rounded-full transition-all duration-500"
                 style={{ width: `${(currentStep / 2) * 100}%` }}
               />
             </div>
             <div className="mt-2 text-sm text-gray-600 font-medium flex items-center gap-2">
               {steps.map((s, idx) => (
                 <div key={s.step} className="flex items-center gap-2">
-                  <span className={currentStep === s.step ? "text-dark-pink" : "text-gray-600"}>
+                  <span className={currentStep === s.step ? "text-primary" : "text-gray-600"}>
                     {s.label}
                   </span>
                   {idx < steps.length - 1 && (
