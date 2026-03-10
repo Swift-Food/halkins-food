@@ -164,8 +164,16 @@ export default function CoworkingAuthForm({
       <div className="mx-auto w-full max-w-4xl">
         {/* Header */}
         <div className="mb-8 px-1">
-          <div className="mb-3 inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-            Powered by Swift
+          <div className="mb-3 inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em]">
+            <span className="text-slate-500">Powered by</span>
+            <a
+              href="https://swiftfood.uk"
+              target="_blank"
+              rel="noreferrer"
+              className="ml-2 inline-block font-bold text-primary-pink hover:underline"
+            >
+              Swift
+            </a>
           </div>
           <div className="max-w-2xl">
             <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
