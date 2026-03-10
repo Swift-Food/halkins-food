@@ -22,7 +22,10 @@ import PromoCodeSection from "./contact/PromoCodeSection";
 import PricingSummary from "./contact/PricingSummary";
 import { coworkingService } from "@/services/api";
 import { CreateCoworkingOrderRequest } from "@/types/api";
-import { useCoworking } from "@/context/CoworkingContext";
+import {
+  clearCoworkingSessionStorage,
+  useCoworking,
+} from "@/context/CoworkingContext";
 import CoworkingAuthForm from "@/lib/components/coworking/CoworkingAuthForm";
 
 const FALLBACK_DELIVERY_ADDRESS = "1-2 Paris Gardens, London";
@@ -481,6 +484,7 @@ export default function Step3ContactInfo() {
       const createOrderResponse = await coworkingService.createOrder(spaceSlug, orderData);
 
       markOrderAsSubmitted();
+      clearCoworkingSessionStorage();
 
 
       const accessToken = createOrderResponse?.accessToken;

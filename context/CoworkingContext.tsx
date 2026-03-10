@@ -18,6 +18,15 @@ const STORAGE_KEYS = {
   VENUE_SELECTION: "coworking_venue_selection",
 } as const;
 
+export function clearCoworkingSessionStorage() {
+  if (typeof window === "undefined") return;
+
+  coworkingService.clearSession();
+  sessionStorage.removeItem(STORAGE_KEYS.MEMBER_INFO);
+  sessionStorage.removeItem(STORAGE_KEYS.SPACE_INFO);
+  sessionStorage.removeItem(STORAGE_KEYS.VENUE_SELECTION);
+}
+
 interface VenueSelection {
   venue: CoworkingVenue;
   startDate: string;
@@ -70,10 +79,7 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
 
   const clearSession = useCallback(() => {
     if (typeof window === "undefined") return;
-    coworkingService.clearSession();
-    sessionStorage.removeItem(STORAGE_KEYS.MEMBER_INFO);
-    sessionStorage.removeItem(STORAGE_KEYS.SPACE_INFO);
-    sessionStorage.removeItem(STORAGE_KEYS.VENUE_SELECTION);
+    clearCoworkingSessionStorage();
     setMember(null);
     setSpaceInfoState(null);
     setSelectedVenue(null);
@@ -170,10 +176,8 @@ export function CoworkingProvider({ children }: { children: ReactNode }) {
     clearSession();
   }, [clearSession]);
 
-  const spaceSlug = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    return coworkingService.getSpaceSlug();
-  }, [isAuthenticated]); // re-derive when auth state changes
+  const spaceSlug =
+    typeof window === "undefined" ? null : coworkingService.getSpaceSlug();
 
   const contextValue = useMemo(
     () => ({

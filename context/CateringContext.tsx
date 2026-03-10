@@ -620,7 +620,7 @@ export function CateringProvider({ children }: { children: ReactNode }) {
   };
 
   const markOrderAsSubmitted = () => {
-    localStorage.setItem(STORAGE_KEYS.ORDER_SUBMITTED, "true");
+    Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
   };
 
   if (!isHydrated) {
