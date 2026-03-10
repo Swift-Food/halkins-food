@@ -123,7 +123,7 @@ export default function OrderDetailModal({
     }
   };
 
-  const isPending = order?.status === "pending_review";
+  const isPending = order?.adminReviewStatus === "pending";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -167,6 +167,21 @@ export default function OrderDetailModal({
                 >
                   {formatStatus(order.status)}
                 </span>
+                {order.adminReviewStatus === "pending" && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border bg-amber-100 text-amber-800 border-amber-300">
+                    Awaiting Review
+                  </span>
+                )}
+                {order.adminReviewStatus === "approved" && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border bg-green-100 text-green-800 border-green-300">
+                    Approved
+                  </span>
+                )}
+                {order.adminReviewStatus === "rejected" && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border bg-red-100 text-red-800 border-red-300">
+                    Rejected
+                  </span>
+                )}
                 <span className="text-sm text-gray-500">
                   {formatDate(order.createdAt)}
                 </span>

@@ -18,7 +18,8 @@ export type DashboardOrderStatusFilter =
   | 'upcoming'
   | 'active'
   | 'completed'
-  | 'all';
+  | 'all'
+  | 'needs_review'; // frontend-only: fetches 'upcoming' + filters by adminReviewStatus === 'pending'
 
 /**
  * Query parameters for listing orders

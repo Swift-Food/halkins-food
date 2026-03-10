@@ -14,7 +14,7 @@ import OrdersList from "./OrdersList";
 import OrderDetailModal from "./OrderDetailModal";
 import VenuesModal from "./VenuesModal";
 import PaymentsTab from "./PaymentsTab";
-import { LogOut, Building2, MapPin, ShoppingBag, CreditCard } from "lucide-react";
+import { LogOut, Building2, MapPin, ShoppingBag, CreditCard, AlertTriangle } from "lucide-react";
 import StripeReturnPage from "./StripeReturnPage";
 
 interface CoworkingDashboardProps {
@@ -104,17 +104,35 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
     if (!spaceId) return;
     setOrdersLoading(true);
     try {
+      // "needs_review" is a frontend pseudo-filter: fetch upcoming, filter client-side
+      const apiStatus = activeStatus === "needs_review" ? "upcoming" : activeStatus;
       const data = await coworkingDashboardService.getOrders(spaceId, {
-        status: activeStatus,
+        status: apiStatus,
         limit: 50,
       });
-      setOrders(data.orders);
+      const filtered =
+        activeStatus === "needs_review"
+          ? data.orders.filter((o) => o.adminReviewStatus === "pending" && o.status == "pending_review")
+          : data.orders;
+      setOrders(filtered);
     } catch (err: any) {
       console.error("Failed to fetch orders:", err);
     } finally {
       setOrdersLoading(false);
     }
   }, [spaceId, activeStatus]);
+
+  const handleQuickApprove = useCallback(
+    async (orderId: string) => {
+      if (!spaceId) return;
+      await coworkingDashboardService.approveOrder(spaceId, orderId);
+      await fetchOrders();
+    },
+    [spaceId, fetchOrders]
+  );
+
+  // Count of pending-review orders across all loaded orders (or from a separate fetch)
+  const pendingCount = orders.filter((o) => o.adminReviewStatus === "pending" && o.status == "pending_review").length;
 
   useEffect(() => {
     if (spaceId) {
@@ -224,12 +242,33 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
       {activeTab === "orders" && (
         <>
           {stats && <StatsCards stats={stats} />}
+
+          {/* Pending approval banner */}
+          {spaceId && pendingCount > 0 && activeStatus !== "needs_review" && (
+            <button
+              onClick={() => setActiveStatus("needs_review")}
+              className="w-full flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 text-left hover:bg-amber-100 transition-colors"
+            >
+              <span className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                <span className="text-sm font-semibold text-amber-800">
+                  {pendingCount} order{pendingCount !== 1 ? "s" : ""} need{pendingCount === 1 ? "s" : ""} your approval
+                </span>
+              </span>
+              <span className="text-xs font-semibold text-amber-700 underline underline-offset-2">
+                Review now
+              </span>
+            </button>
+          )}
+
           {spaceId && (
             <OrdersList
               orders={orders}
               activeStatus={activeStatus}
+              pendingCount={pendingCount}
               onStatusChange={setActiveStatus}
               onOrderClick={setSelectedOrderId}
+              onQuickApprove={handleQuickApprove}
               loading={ordersLoading}
             />
           )}
