@@ -355,34 +355,37 @@ export default function RestaurantMenuBrowser({
   useEffect(() => {
     if (!selectedRestaurantId || groupedItems.length === 0) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (isProgrammaticScroll.current) return;
+    const updateActiveGroup = () => {
+      if (isProgrammaticScroll.current) return;
 
-        const visibleEntries = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      const activationLine = stickyTopOffset + 96;
+      let nextActiveGroup = groupedItems[0]?.name || null;
 
-        if (visibleEntries.length === 0) return;
+      for (const group of groupedItems) {
+        const section = sectionRefs.current.get(group.name);
+        if (!section) continue;
 
-        const nextGroupName = visibleEntries[0].target.getAttribute("data-group-name");
-        if (nextGroupName) {
-          setActiveGroupName(nextGroupName);
+        const { top } = section.getBoundingClientRect();
+        if (top <= activationLine) {
+          nextActiveGroup = group.name;
+        } else {
+          break;
         }
-      },
-      {
-        rootMargin: `-${stickyTopOffset + 80}px 0px -55% 0px`,
-        threshold: [0, 0.1, 0.25, 0.5],
       }
-    );
 
-    const sections = groupedItems
-      .map((group) => sectionRefs.current.get(group.name))
-      .filter((section): section is HTMLDivElement => Boolean(section));
+      setActiveGroupName((prev) =>
+        prev === nextActiveGroup ? prev : nextActiveGroup
+      );
+    };
 
-    sections.forEach((section) => observer.observe(section));
+    updateActiveGroup();
+    window.addEventListener("scroll", updateActiveGroup, { passive: true });
+    window.addEventListener("resize", updateActiveGroup);
 
-    return () => observer.disconnect();
+    return () => {
+      window.removeEventListener("scroll", updateActiveGroup);
+      window.removeEventListener("resize", updateActiveGroup);
+    };
   }, [groupedItems, selectedRestaurantId, stickyTopOffset]);
 
   const handleGroupTabClick = (groupName: string) => {
@@ -601,7 +604,7 @@ export default function RestaurantMenuBrowser({
           ) : (
             <>
               <div
-                className="sticky z-30 mb-3 w-full border-b border-base-200 bg-white py-1"
+                className="sticky z-30 mb-3 w-full border-b border-base-200 bg-white py-1 overflow-x-auto scrollbar-hide"
                 style={{ top: stickyTopOffset }}
               >
                 <div className="flex w-full gap-6 overflow-x-auto scrollbar-hide">
