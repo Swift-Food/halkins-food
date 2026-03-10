@@ -604,10 +604,10 @@ export default function RestaurantMenuBrowser({
           ) : (
             <>
               <div
-                className="sticky z-30 mt-2 mb-3 w-full overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white px-4 py-2 shadow-sm"
+                className="sticky z-30 mt-2 mb-3 w-full overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 py-1.5 md:px-4 md:py-2 shadow-sm backdrop-blur-md"
                 style={{ top: stickyTopOffset + 8 }}
               >
-                <div className="flex gap-5">
+                <div className="flex gap-2 md:gap-5">
                   {groupedItems.map((group) => {
                     const isActive = activeGroupName === group.name;
                     return (
@@ -618,10 +618,10 @@ export default function RestaurantMenuBrowser({
                           else groupButtonRefs.current.delete(group.name);
                         }}
                         onClick={() => handleGroupTabClick(group.name)}
-                        className={`flex-shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
+                        className={`flex-shrink-0 whitespace-nowrap rounded-full px-2 py-1 md:px-3 md:py-1.5 text-xs md:text-sm font-semibold transition-colors ${
                           isActive
                             ? "bg-primary text-white"
-                            : "text-gray-500 hover:bg-base-100 hover:text-primary"
+                            : "text-gray-500 hover:bg-black/5 hover:text-gray-700"
                         }`}
                       >
                         {group.name}
