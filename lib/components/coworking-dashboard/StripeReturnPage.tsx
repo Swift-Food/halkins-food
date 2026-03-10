@@ -49,11 +49,11 @@ export default function StripeReturnPage({ spaceSlug }: StripeReturnPageProps) {
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-md w-full text-center">
-        <Building2 className="h-8 w-8 text-pink-500 mx-auto mb-4" />
+        <Building2 className="h-8 w-8 text-primary mx-auto mb-4" />
 
         {checking ? (
           <>
-            <span className="loading loading-spinner loading-md text-pink-500 mb-4" />
+            <span className="loading loading-spinner loading-md text-primary mb-4" />
             <p className="text-sm text-gray-600">Checking your Stripe setup status...</p>
           </>
         ) : error ? (

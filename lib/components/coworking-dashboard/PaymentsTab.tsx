@@ -54,7 +54,7 @@ export default function PaymentsTab({ spaceId }: PaymentsTabProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <span className="loading loading-spinner loading-lg text-pink-500" />
+        <span className="loading loading-spinner loading-lg text-primary" />
       </div>
     );
   }

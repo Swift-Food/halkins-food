@@ -98,7 +98,7 @@ export default function StripeSettings({ spaceId, onOnboardingComplete }: Stripe
           <h3 className="text-lg font-semibold text-gray-900">Payment Settings</h3>
         </div>
         <div className="flex items-center justify-center py-8">
-          <span className="loading loading-spinner loading-md text-pink-500" />
+          <span className="loading loading-spinner loading-md text-primary" />
         </div>
       </div>
     );
@@ -109,7 +109,7 @@ export default function StripeSettings({ spaceId, onOnboardingComplete }: Stripe
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center gap-2 mb-4">
-          <CreditCard className="h-5 w-5 text-pink-500" />
+          <CreditCard className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold text-gray-900">Payment Settings</h3>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 text-center">
@@ -123,7 +123,7 @@ export default function StripeSettings({ spaceId, onOnboardingComplete }: Stripe
           <button
             onClick={handleCheckStatus}
             disabled={checkingStatus}
-            className="btn bg-pink-500 hover:bg-pink-600 border-none text-white gap-2"
+            className="btn btn-primary gap-2"
           >
             {checkingStatus ? (
               <span className="loading loading-spinner loading-sm" />
@@ -140,7 +140,7 @@ export default function StripeSettings({ spaceId, onOnboardingComplete }: Stripe
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
       <div className="flex items-center gap-2 mb-4">
-        <CreditCard className="h-5 w-5 text-pink-500" />
+        <CreditCard className="h-5 w-5 text-primary" />
         <h3 className="text-lg font-semibold text-gray-900">Payment Settings</h3>
       </div>
 
@@ -164,7 +164,7 @@ export default function StripeSettings({ spaceId, onOnboardingComplete }: Stripe
           <button
             onClick={handleSetup}
             disabled={actionLoading}
-            className="btn btn-primary bg-pink-500 hover:bg-pink-600 border-none text-white gap-2"
+            className="btn btn-primary gap-2"
           >
             {actionLoading ? (
               <span className="loading loading-spinner loading-sm" />

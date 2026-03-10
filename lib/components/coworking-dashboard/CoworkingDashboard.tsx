@@ -153,7 +153,7 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
   if (checkingAuth) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <span className="loading loading-spinner loading-lg text-pink-500" />
+        <span className="loading loading-spinner loading-lg text-primary" />
       </div>
     );
   }
@@ -169,7 +169,7 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <Building2 className="h-7 w-7 text-pink-500" />
+            <Building2 className="h-7 w-7 text-primary" />
             {me?.space.name || "Dashboard"}
           </h1>
           {me && (
@@ -181,7 +181,7 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowVenues(true)}
-            className="btn btn-sm bg-pink-500 hover:bg-pink-600 text-white border-none gap-2"
+            className="btn btn-sm btn-primary gap-2"
           >
             <MapPin className="h-4 w-4" />
             Venues
@@ -206,7 +206,7 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
       {/* Loading state while resolving spaceId */}
       {!spaceId && !error && (
         <div className="flex items-center justify-center py-16">
-          <span className="loading loading-spinner loading-lg text-pink-500" />
+          <span className="loading loading-spinner loading-lg text-primary" />
         </div>
       )}
 
@@ -217,7 +217,7 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
             onClick={() => setActiveTab("orders")}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               activeTab === "orders"
-                ? "border-pink-500 text-pink-600"
+                ? "border-primary text-primary"
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
@@ -228,7 +228,7 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
             onClick={() => setActiveTab("payments")}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               activeTab === "payments"
-                ? "border-pink-500 text-pink-600"
+                ? "border-primary text-primary"
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >

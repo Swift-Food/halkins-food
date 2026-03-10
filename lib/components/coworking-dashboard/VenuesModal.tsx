@@ -159,7 +159,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-pink-500" />
+            <MapPin className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold text-gray-900">
               {mode === "list" ? "Venues" : mode === "create" ? "New Venue" : "Edit Venue"}
             </h2>
@@ -180,7 +180,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
           {mode === "list" && (
             <>
               <div className="flex justify-end mb-4">
-                <button onClick={openCreate} className="btn btn-sm bg-pink-500 hover:bg-pink-600 text-white border-none gap-2">
+                <button onClick={openCreate} className="btn btn-sm btn-primary gap-2">
                   <Plus className="h-4 w-4" />
                   Add Venue
                 </button>
@@ -188,7 +188,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
 
               {loading ? (
                 <div className="flex justify-center py-12">
-                  <span className="loading loading-spinner loading-md text-pink-500" />
+                  <span className="loading loading-spinner loading-md text-primary" />
                 </div>
               ) : !venues || venues.length === 0 ? (
                 <div className="text-center py-12 text-gray-400 text-sm">
@@ -332,10 +332,10 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={imageUploading}
-                      className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 hover:border-pink-400 hover:bg-pink-50 transition-colors flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-pink-500"
+                      className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 hover:border-primary hover:bg-primary/5 transition-colors flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-primary"
                     >
                       {imageUploading ? (
-                        <span className="loading loading-spinner loading-sm text-pink-500" />
+                        <span className="loading loading-spinner loading-sm text-primary" />
                       ) : (
                         <>
                           <ImageIcon className="h-6 w-6" />
@@ -364,7 +364,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
               type="submit"
               form="venue-form"
               disabled={saving}
-              className="btn btn-sm bg-pink-500 hover:bg-pink-600 text-white border-none"
+              className="btn btn-sm btn-primary"
             >
               {saving ? <span className="loading loading-spinner loading-xs" /> : null}
               {mode === "create" ? "Create Venue" : "Save Changes"}

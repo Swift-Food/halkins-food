@@ -101,7 +101,7 @@ export default function OrdersList({
                   isActive
                     ? isNeedsReview
                       ? "bg-amber-100 text-amber-700 border border-amber-300"
-                      : "bg-pink-100 text-pink-700 border border-pink-300"
+                      : "bg-primary/10 text-primary border border-primary/30"
                     : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-transparent"
                 }`}
               >
@@ -122,7 +122,7 @@ export default function OrdersList({
       <div className="divide-y divide-gray-100">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <span className="loading loading-spinner loading-md text-pink-500" />
+            <span className="loading loading-spinner loading-md text-primary" />
           </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-16 text-gray-400">

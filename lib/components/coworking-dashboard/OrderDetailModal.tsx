@@ -149,7 +149,7 @@ export default function OrderDetailModal({
         <div className="px-6 py-5 space-y-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <span className="loading loading-spinner loading-md text-pink-500" />
+              <span className="loading loading-spinner loading-md text-primary" />
             </div>
           ) : error ? (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
@@ -273,7 +273,7 @@ export default function OrderDetailModal({
               {/* Totals */}
               <div className="space-y-2 bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Receipt className="h-4 w-4 text-pink-500" />
+                  <Receipt className="h-4 w-4 text-primary" />
                   <h3 className="text-sm font-semibold text-gray-700">Summary</h3>
                 </div>
                 <div className="flex justify-between text-sm text-gray-600">
@@ -286,7 +286,7 @@ export default function OrderDetailModal({
                 </div>
                 <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-200">
                   <span>Total</span>
-                  <span className="text-pink-600">
+                  <span className="text-primary">
                     £{order.total.total.toFixed(2)}
                   </span>
                 </div>

@@ -35,7 +35,7 @@ export default function BalanceCard({ spaceId, onWithdrawClick }: BalanceCardPro
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
         <div className="flex items-center justify-center py-8">
-          <span className="loading loading-spinner loading-md text-pink-500" />
+          <span className="loading loading-spinner loading-md text-primary" />
         </div>
       </div>
     );
@@ -55,7 +55,7 @@ export default function BalanceCard({ spaceId, onWithdrawClick }: BalanceCardPro
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-pink-50 text-pink-600">
+          <div className="p-2 rounded-lg bg-primary/10 text-primary">
             <Wallet className="h-5 w-5" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900">Balance</h3>
@@ -85,7 +85,7 @@ export default function BalanceCard({ spaceId, onWithdrawClick }: BalanceCardPro
         <button
           onClick={onWithdrawClick}
           disabled={!balance || balance.available <= 0}
-          className="btn bg-pink-500 hover:bg-pink-600 border-none text-white gap-2 disabled:bg-gray-300 disabled:text-gray-500"
+          className="btn bg-primary hover:bg-primary/90 border-none text-white gap-2 disabled:bg-gray-300 disabled:text-gray-500"
         >
           <ArrowUpRight className="h-4 w-4" />
           Withdraw Funds

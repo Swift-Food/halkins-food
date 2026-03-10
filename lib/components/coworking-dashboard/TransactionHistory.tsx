@@ -85,7 +85,7 @@ export default function TransactionHistory({ spaceId, refreshKey }: TransactionH
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <span className="loading loading-spinner loading-md text-pink-500" />
+          <span className="loading loading-spinner loading-md text-primary" />
         </div>
       ) : transactions.length === 0 ? (
         <div className="text-center py-12 text-gray-500">

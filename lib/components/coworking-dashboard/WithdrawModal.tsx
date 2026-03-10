@@ -85,7 +85,7 @@ export default function WithdrawModal({
                       setError("");
                     }
                   }}
-                  className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-gray-900"
+                  className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">
@@ -110,7 +110,7 @@ export default function WithdrawModal({
               <button
                 onClick={handleWithdraw}
                 disabled={loading}
-                className="btn bg-pink-500 hover:bg-pink-600 border-none text-white flex-1 gap-2"
+                className="btn bg-primary hover:bg-primary/90 border-none text-white flex-1 gap-2"
               >
                 {loading ? (
                   <span className="loading loading-spinner loading-sm" />
