@@ -61,7 +61,7 @@ export default function PaymentsTab({ spaceId }: PaymentsTabProps) {
 
   // Not onboarded — show the onboarding flow
   if (!stripeStatus?.connected || !stripeStatus?.onboardingComplete) {
-    return <StripeSettings spaceId={spaceId} />;
+    return <StripeSettings spaceId={spaceId} onOnboardingComplete={fetchStatus} />;
   }
 
   // Onboarded — show balance + transactions
