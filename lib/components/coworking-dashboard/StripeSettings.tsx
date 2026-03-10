@@ -70,9 +70,24 @@ export default function StripeSettings({ spaceId, onOnboardingComplete }: Stripe
     }
   };
 
-  const handleCheckStatus = () => {
+  const handleCheckStatus = async () => {
     setCheckingStatus(true);
-    fetchStatus();
+    try {
+      const data = await coworkingDashboardService.getStripeStatus(spaceId);
+      setStatus(data);
+      if (data.connected && data.onboardingComplete) {
+        setWaitingForOnboarding(false);
+        onOnboardingComplete?.();
+      } else {
+        // Not complete — exit waiting state so user can try again
+        setWaitingForOnboarding(false);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to check status");
+      setWaitingForOnboarding(false);
+    } finally {
+      setCheckingStatus(false);
+    }
   };
 
   if (loading) {
