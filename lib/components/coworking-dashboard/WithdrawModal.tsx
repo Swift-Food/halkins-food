@@ -75,14 +75,15 @@ export default function WithdrawModal({
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">£</span>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0.50"
-                  max={availableBalance}
+                  type="text"
+                  inputMode="decimal"
                   value={amount}
                   onChange={(e) => {
-                    setAmount(e.target.value);
-                    setError("");
+                    const val = e.target.value;
+                    if (/^\d*\.?\d{0,2}$/.test(val)) {
+                      setAmount(val);
+                      setError("");
+                    }
                   }}
                   className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-gray-900"
                 />
