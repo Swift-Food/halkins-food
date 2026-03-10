@@ -88,13 +88,13 @@ export default function SharedAccessManager({ order, onUpdate, currentUserRole }
     <div className="bg-white rounded-xl p-4 sm:p-6">
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
-          <Users className="h-4 w-4 sm:h-5 sm:w-5 text-pink-500" />
+          <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           Shared Access
         </h3>
         {!isAdding && isManager && (
           <button
             onClick={() => setIsAdding(true)}
-            className="text-xs sm:text-sm text-pink-600 hover:text-pink-700 font-semibold flex items-center gap-1"
+            className="text-xs sm:text-sm text-primary hover:text-primary/80 font-semibold flex items-center gap-1"
           >
             <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
             Add User
@@ -112,7 +112,7 @@ export default function SharedAccessManager({ order, onUpdate, currentUserRole }
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-xs sm:text-sm"
+              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs sm:text-sm"
               placeholder="Jane Smith"
               required
             />
@@ -126,7 +126,7 @@ export default function SharedAccessManager({ order, onUpdate, currentUserRole }
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-xs sm:text-sm"
+              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs sm:text-sm"
               placeholder="jane@example.com"
               required
             />
@@ -139,7 +139,7 @@ export default function SharedAccessManager({ order, onUpdate, currentUserRole }
             <select
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value as SharedAccessRole })}
-              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-xs sm:text-sm"
+              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs sm:text-sm"
             >
               <option value={SharedAccessRole.VIEWER}>Viewer (View Only)</option>
               <option value={SharedAccessRole.MANAGER}>Manager (Can Edit)</option>
@@ -162,7 +162,7 @@ export default function SharedAccessManager({ order, onUpdate, currentUserRole }
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-pink-500 text-white py-1.5 sm:py-2 rounded-lg font-semibold hover:bg-pink-600 disabled:opacity-50 text-xs sm:text-sm"
+              className="flex-1 bg-primary text-white py-1.5 sm:py-2 rounded-lg font-semibold hover:bg-primary/90 disabled:opacity-50 text-xs sm:text-sm"
             >
               {loading ? 'Adding...' : 'Add User'}
             </button>
@@ -195,7 +195,7 @@ export default function SharedAccessManager({ order, onUpdate, currentUserRole }
                     <select
                       value={user.role}
                       onChange={(e) => handleRoleChange(user.email, e.target.value as SharedAccessRole)}
-                      className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 w-full sm:w-auto"
+                      className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-primary/20 focus:border-primary w-full sm:w-auto"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <option value={SharedAccessRole.VIEWER}>Viewer</option>

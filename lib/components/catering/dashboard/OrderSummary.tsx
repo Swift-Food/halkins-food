@@ -18,7 +18,7 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
   return (
     <div className="bg-white rounded-xl p-4 sm:p-6">
       <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-        <Receipt className="h-5 w-5 text-pink-500" />
+        <Receipt className="h-5 w-5 text-primary" />
         Order Summary
       </h3>
       <div className="space-y-2 sm:space-y-3">
@@ -46,7 +46,7 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
               {deliveryBreakdown && (order as any).mealSessions && (
                 <button
                   onClick={() => setShowDeliveryBreakdown(!showDeliveryBreakdown)}
-                  className="text-xs text-pink-600 hover:underline whitespace-nowrap"
+                  className="text-xs text-primary hover:underline whitespace-nowrap"
                   type="button"
                 >
                   {showDeliveryBreakdown ? "hide" : "details"}
@@ -102,7 +102,7 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
 
         <div className="flex justify-between text-lg sm:text-xl font-bold text-gray-900 pt-2 sm:pt-3 border-t-2 border-gray-200">
           <span>Total:</span>
-          <span className="text-pink-600">
+          <span className="text-primary">
             £{Number(order.finalTotal ?? order.estimatedTotal).toFixed(2)}
           </span>
         </div>
@@ -147,7 +147,7 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
             href={order.paymentLinkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full bg-pink-500 text-white text-center py-2.5 sm:py-3 rounded-lg font-bold hover:bg-pink-600 transition-colors text-sm sm:text-base"
+            className="block w-full bg-primary text-white text-center py-2.5 sm:py-3 rounded-lg font-bold hover:bg-primary/90 transition-colors text-sm sm:text-base"
           >
             Complete Payment
           </a>

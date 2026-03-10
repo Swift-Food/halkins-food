@@ -31,8 +31,8 @@ export function OrderStatusTimeline({ status }: OrderStatusTimelineProps) {
   return (
     <div className="bg-white rounded-xl p-4 sm:p-6">
       <div className="flex items-center gap-3 mb-6">
-        <div className="rounded-lg bg-pink-100 p-2">
-          <ClipboardList className="h-5 w-5 text-pink-500" />
+        <div className="rounded-lg bg-primary/10 p-2">
+          <ClipboardList className="h-5 w-5 text-primary" />
         </div>
         <div>
           <h3 className="text-lg font-bold text-gray-900">Order Progress</h3>
@@ -53,7 +53,7 @@ export function OrderStatusTimeline({ status }: OrderStatusTimelineProps) {
                   {index > 0 && (
                     <div
                       className={`flex-1 h-1 ${
-                        isCompleted && !isCancelled ? "bg-pink-500" : "bg-gray-200"
+                        isCompleted && !isCancelled ? "bg-primary" : "bg-gray-200"
                       }`}
                     />
                   )}
@@ -62,16 +62,16 @@ export function OrderStatusTimeline({ status }: OrderStatusTimelineProps) {
                       isCancelled
                         ? "border-red-500 bg-red-50"
                         : isCompleted
-                          ? "border-pink-500 bg-pink-100"
+                          ? "border-primary bg-primary/10"
                           : "border-gray-200 bg-white"
-                    } ${isCurrent && !isCancelled ? "ring-2 sm:ring-4 ring-pink-200" : ""}`}
+                    } ${isCurrent && !isCancelled ? "ring-2 sm:ring-4 ring-primary/20" : ""}`}
                   >
                     <Icon
                       className={`w-4 h-4 sm:w-5 sm:h-5 ${
                         isCancelled
                           ? "text-red-500"
                           : isCompleted
-                            ? "text-pink-500"
+                            ? "text-primary"
                             : "text-gray-400"
                       }`}
                     />
@@ -79,7 +79,7 @@ export function OrderStatusTimeline({ status }: OrderStatusTimelineProps) {
                   {index < timelineSteps.length - 1 && (
                     <div
                       className={`flex-1 h-1 ${
-                        isCompleted && !isCancelled ? "bg-pink-500" : "bg-gray-200"
+                        isCompleted && !isCancelled ? "bg-primary" : "bg-gray-200"
                       }`}
                     />
                   )}

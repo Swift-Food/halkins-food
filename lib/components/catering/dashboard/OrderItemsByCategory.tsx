@@ -238,14 +238,14 @@ export default function OrderItemsByCategory({
             </p>
             <p className="text-xs text-gray-500 mt-1">From: {restaurantName}</p>
           </div>
-          <p className="font-bold text-pink-600 text-sm sm:text-base whitespace-nowrap self-end sm:self-auto">
+          <p className="font-bold text-primary text-sm sm:text-base whitespace-nowrap self-end sm:self-auto">
             £{Number(item.customerTotalPrice || 0).toFixed(2)}
           </p>
         </div>
 
         {/* Addons */}
         {itemAddons.length > 0 && (
-          <div className="mt-2 sm:mt-3 pl-3 sm:pl-4 border-l-2 sm:border-l-3 border-pink-300 bg-white rounded-r-lg p-2 sm:p-3">
+          <div className="mt-2 sm:mt-3 pl-3 sm:pl-4 border-l-2 sm:border-l-3 border-primary/30 bg-white rounded-r-lg p-2 sm:p-3">
             <p className="text-xs font-semibold text-gray-700 mb-1 sm:mb-2 uppercase tracking-wide">
               Add-ons:
             </p>
@@ -259,7 +259,7 @@ export default function OrderItemsByCategory({
                     &bull; {addon.name}{" "}
                     <span className="text-gray-500">x {addon.quantity}</span>
                   </span>
-                  <span className="text-pink-600 font-semibold whitespace-nowrap">
+                  <span className="text-primary font-semibold whitespace-nowrap">
                     +£
                     {((addon.customerUnitPrice || 0) * addon.quantity).toFixed(
                       2
@@ -301,7 +301,7 @@ export default function OrderItemsByCategory({
           className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <ChefHat className="h-4 w-4 text-pink-500" />
+            <ChefHat className="h-4 w-4 text-primary" />
             <span className="font-semibold text-gray-800">{categoryName}</span>
             <span className="text-sm text-gray-500">
               ({totalItems} item{totalItems !== 1 ? "s" : ""})
@@ -356,36 +356,36 @@ export default function OrderItemsByCategory({
     return (
       <div
         key={session.id}
-        className="border-2 border-pink-200 rounded-xl overflow-hidden bg-white"
+        className="border-2 border-primary/20 rounded-xl overflow-hidden bg-white shadow-sm"
       >
         {/* Session Header */}
         <button
           onClick={() => toggleSession(session.id)}
-          className="w-full flex items-center justify-between gap-3 p-4 sm:p-5 bg-secondary/50 transition-colors"
+          className="w-full flex items-center justify-between gap-3 p-4 sm:p-5 bg-gradient-to-r from-primary/20 to-primary/15 hover:from-priamry/25 hover:to-primary/20 transition-colors"
         >
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-left">
-            <h3 className="text-lg sm:text-xl font-bold text-pink-700">
+            <h3 className="text-lg sm:text-xl font-bold text-primary">
               {session.sessionName}
             </h3>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-gray-600">
               <span className="flex items-center gap-1">
-                <Calendar className="h-4 w-4 text-pink-500" />
+                <Calendar className="h-4 w-4 text-primary/80" />
                 {formatDate(session.sessionDate)}
               </span>
               <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4 text-pink-500" />
+                <Clock className="h-4 w-4 text-primary/80" />
                 {formatTime(session.eventTime)}
               </span>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm sm:text-base font-bold text-pink-600">
+            <span className="text-sm sm:text-base font-bold text-primary">
               £{Number(session.sessionTotal || 0).toFixed(2)}
             </span>
             {isExpanded ? (
-              <ChevronUp className="h-5 w-5 text-pink-400 flex-shrink-0" />
+              <ChevronUp className="h-5 w-5 text-primary/60 flex-shrink-0" />
             ) : (
-              <ChevronDown className="h-5 w-5 text-pink-400 flex-shrink-0" />
+              <ChevronDown className="h-5 w-5 text-primary/60 flex-shrink-0" />
             )}
           </div>
         </button>
@@ -448,7 +448,7 @@ export default function OrderItemsByCategory({
                 )}
                 <div className="flex justify-between text-gray-900 font-bold border-t border-gray-300 pt-2 mt-2">
                   <span>Session Total:</span>
-                  <span className="text-pink-600">
+                  <span className="text-primary">
                     £{Number(session.sessionTotal || 0).toFixed(2)}
                   </span>
                 </div>
@@ -478,14 +478,14 @@ export default function OrderItemsByCategory({
     <div className="bg-white rounded-xl p-4 sm:p-6">
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Package className="h-5 w-5 sm:h-6 sm:w-6 text-pink-500" />
+          <Package className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
           Order Items
         </h2>
         {onViewMenu && (
           <button
             onClick={onViewMenu}
             disabled={isGeneratingPdf}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-pink-600 bg-pink-50 hover:bg-pink-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isGeneratingPdf ? (
               <Loader2 className="h-4 w-4 animate-spin" />

@@ -115,7 +115,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
 
 
         <div className="flex items-start gap-2 sm:gap-3 sm:col-span-2">
-          <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-pink-500 mt-1 flex-shrink-0" />
+          <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-1 flex-shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-xs sm:text-sm text-gray-600">Delivery Address</p>
             <p className="font-semibold text-sm sm:text-base text-gray-900 break-words">{formatDeliveryAddress(order.deliveryAddress)}</p>

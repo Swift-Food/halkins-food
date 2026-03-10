@@ -44,7 +44,7 @@ export default function RefundsList({ refunds }: RefundsListProps) {
   return (
     <div className="bg-white rounded-xl p-6">
       <div className="flex items-center gap-2 mb-4">
-        <AlertCircle className="h-5 w-5 text-pink-600" />
+        <AlertCircle className="h-5 w-5 text-primary" />
         <h3 className="text-lg font-bold text-gray-900">Refund Requests</h3>
       </div>
 
@@ -52,7 +52,7 @@ export default function RefundsList({ refunds }: RefundsListProps) {
         {refunds.map((refund) => (
           <div
             key={refund.id}
-            className="border border-gray-200 rounded-lg p-4 hover:border-pink-300 transition-colors"
+            className="border border-gray-200 rounded-lg p-4 hover:border-primary/30 transition-colors"
           >
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">

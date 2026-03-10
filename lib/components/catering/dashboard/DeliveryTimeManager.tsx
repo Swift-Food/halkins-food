@@ -63,13 +63,13 @@ export default function DeliveryTimeManager({ order, onUpdate, accessToken }: De
     <div className="bg-white rounded-xl p-4 sm:p-6">
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
-          <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-pink-500" />
+          <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           Delivery Time
         </h3>
         {canChangeTime && !isEditing && (
           <button
             onClick={() => setIsEditing(true)}
-            className="text-xs sm:text-sm text-pink-600 hover:text-pink-700 font-semibold"
+            className="text-xs sm:text-sm text-primary hover:text-primary/80 font-semibold"
           >
             Change Time
           </button>
@@ -101,7 +101,7 @@ export default function DeliveryTimeManager({ order, onUpdate, accessToken }: De
               type="time"
               value={newTime}
               onChange={(e) => setNewTime(e.target.value)}
-              className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-sm sm:text-base"
+              className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base"
               required
             />
           </div>
@@ -116,7 +116,7 @@ export default function DeliveryTimeManager({ order, onUpdate, accessToken }: De
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-pink-500 text-white py-2 rounded-lg font-semibold hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
+              className="flex-1 bg-primary text-white py-2 rounded-lg font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
             >
               {loading ? 'Updating...' : 'Update Time'}
             </button>

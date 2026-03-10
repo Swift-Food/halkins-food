@@ -155,7 +155,7 @@ export default function CoworkingOrderViewPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin text-pink-500 mx-auto mb-4" />
+          <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin text-primary mx-auto mb-4" />
           <p className="text-gray-600 text-sm sm:text-base">
             Loading your order...
           </p>
@@ -195,13 +195,13 @@ export default function CoworkingOrderViewPage() {
 
       <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8">
         {/* Header */}
-        <div className="bg-gradient-to-r from-pink-500 to-pink-400 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 lg:mb-8 text-white">
+        <div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 lg:mb-8 text-white">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-1">
                 Your Order
               </h1>
-              <p className="text-pink-100 text-sm sm:text-base">
+              <p className="text-white/80 text-sm sm:text-base">
                 Reference:{" "}
                 <span className="font-mono font-bold">
                   #{order.id.substring(0, 4).toUpperCase()}
