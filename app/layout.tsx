@@ -15,8 +15,8 @@ export const metadata: Metadata = {
   title: "Halkin - Events Made Easy",
   description: "Order catering for your events with Halkin",
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: "/halkinLogo.svg",
+    apple: "/halkinLogo.svg",
   },
 };
 
