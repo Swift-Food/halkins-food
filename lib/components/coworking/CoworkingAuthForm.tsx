@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { useCoworking } from "@/context/CoworkingContext";
 import { coworkingService } from "@/services/api/coworking.api";
 import { CoworkingVenue } from "@/types/api";
@@ -16,25 +15,69 @@ interface CoworkingAuthFormProps {
 export default function CoworkingAuthForm({
   spaceSlug,
 }: CoworkingAuthFormProps) {
-  const { setSession, spaceInfo, setVenueSelection } = useCoworking();
+  const {
+    isAuthenticated,
+    member,
+    spaceInfo,
+    selectedVenue: persistedVenue,
+    eventStartDate: persistedStartDate,
+    eventStartTime: persistedStartTime,
+    eventEndDate: persistedEndDate,
+    eventEndTime: persistedEndTime,
+    setSession,
+    setVenueSelection,
+  } = useCoworking();
 
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [selectedVenue, setSelectedVenue] = useState<CoworkingVenue | null>(null);
+  const [email, setEmail] = useState(member?.email ?? "");
+  const [name, setName] = useState(member?.name ?? "");
+  const [startDate, setStartDate] = useState(persistedStartDate);
+  const [startTime, setStartTime] = useState(persistedStartTime);
+  const [endDate, setEndDate] = useState(persistedEndDate);
+  const [endTime, setEndTime] = useState(persistedEndTime);
+  const [selectedVenue, setSelectedVenue] = useState<CoworkingVenue | null>(
+    persistedVenue
+  );
   const [venues, setVenues] = useState<CoworkingVenue[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log("space info is", JSON.stringify(spaceInfo))
     if (!spaceInfo?.id) return;
     coworkingService.getVenues(spaceInfo.id).then(setVenues).catch(() => {});
   }, [spaceInfo?.id]);
 
+  useEffect(() => {
+    if (member?.email) {
+      setEmail((current) => current || member.email);
+    }
+    if (member?.name) {
+      setName((current) => current || member.name);
+    }
+  }, [member]);
+
+  useEffect(() => {
+    if (persistedVenue) {
+      setSelectedVenue((current) => current ?? persistedVenue);
+    }
+    if (persistedStartDate) {
+      setStartDate((current) => current || persistedStartDate);
+    }
+    if (persistedStartTime) {
+      setStartTime((current) => current || persistedStartTime);
+    }
+    if (persistedEndDate) {
+      setEndDate((current) => current || persistedEndDate);
+    }
+    if (persistedEndTime) {
+      setEndTime((current) => current || persistedEndTime);
+    }
+  }, [
+    persistedVenue,
+    persistedStartDate,
+    persistedStartTime,
+    persistedEndDate,
+    persistedEndTime,
+  ]);
 
   const isFormValid =
     name.trim().length >= 2 &&
@@ -88,20 +131,27 @@ export default function CoworkingAuthForm({
     setIsSubmitting(true);
 
     try {
-      const result = await coworkingService.startSession(spaceSlug, {
+      let sessionMember = {
         email: trimmedEmail,
         name: trimmedName,
-      });
+        memberId: member?.memberId || "",
+      };
 
-      setVenueSelection(selectedVenue, startDate, startTime, endDate, endTime);
+      if (!isAuthenticated) {
+        const result = await coworkingService.startSession(spaceSlug, {
+          email: trimmedEmail,
+          name: trimmedName,
+        });
 
-      setSession({
-        member: {
+        sessionMember = {
           email: result.email,
           name: result.name,
           memberId: "",
-        },
-      });
+        };
+      }
+
+      setVenueSelection(selectedVenue, startDate, startTime, endDate, endTime);
+      setSession({ member: sessionMember });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start session.");
     } finally {

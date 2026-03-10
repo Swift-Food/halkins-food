@@ -13,26 +13,9 @@ import CoworkingBookingDetailsForm, {
 import CateringOrderBuilder from "@/lib/components/catering/CateringOrderBuilder";
 import Step3ContactInfo from "@/lib/components/catering/Step3ContactDetails";
 import { CoworkingVenue } from "@/types/api";
-import { Calendar, Clock, MapPin, Users, CheckCircle2, Pencil, X } from "lucide-react";
+import { Calendar, Clock, MapPin, Pencil, X } from "lucide-react";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function generateTimeSlots() {
-  const slots: { value: string; label: string }[] = [];
-  for (let h = 7; h <= 22; h++) {
-    for (const m of [0, 30]) {
-      if (h === 22 && m === 30) break;
-      const hh = String(h).padStart(2, "0");
-      const mm = m === 0 ? "00" : "30";
-      const period = h < 12 ? "AM" : "PM";
-      const h12 = h % 12 || 12;
-      slots.push({ value: `${hh}:${mm}`, label: `${h12}:${mm} ${period}` });
-    }
-  }
-  return slots;
-}
-
-const TIME_SLOTS = generateTimeSlots();
 
 function formatTime(value: string): string {
   if (!value) return "";
@@ -200,6 +183,13 @@ export default function CoworkingOrderFlow() {
   const [venues, setVenues] = useState<CoworkingVenue[]>([]);
   const hasPrefilledContact = useRef(false);
   const hasPrefilledSession = useRef(false);
+  const hasBookingDetails = Boolean(
+    selectedVenue &&
+      eventStartDate &&
+      eventStartTime &&
+      eventEndDate &&
+      eventEndTime
+  );
 
   // Fetch space info on mount
   useEffect(() => {
@@ -308,8 +298,8 @@ export default function CoworkingOrderFlow() {
     );
   }
 
-  // Auth screen
-  if (!isAuthenticated) {
+  // Booking setup screen
+  if (!isAuthenticated || !hasBookingDetails) {
     return (
       <div className="min-h-screen">
         <div className="py-2 max-w mx-auto bg-base-100">

@@ -1,16 +1,5 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
-      <h1 className="text-4xl font-bold text-gray-900 mb-4">Halkin</h1>
-      <p className="text-lg text-gray-600 mb-8">Events made easy.</p>
-      <Link
-        href="/coworking/testi/"
-        className="btn btn-primary text-white px-8 py-3 rounded-lg text-lg"
-      >
-        Start Your Booking
-      </Link>
-    </div>
-  );
+  redirect("/coworking/testi/");
 }
