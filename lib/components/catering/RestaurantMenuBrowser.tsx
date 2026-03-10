@@ -534,7 +534,7 @@ export default function RestaurantMenuBrowser({
 
   if (selectedRestaurantId && selectedRestaurant) {
     return (
-      <div>
+      <div style={{ contain: "inline-size" }}>
         <button
           onClick={handleBackToRestaurants}
           className="flex items-center gap-1.5 text-sm text-primary font-medium hover:underline mb-3"
