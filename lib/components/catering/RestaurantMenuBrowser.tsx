@@ -500,16 +500,20 @@ export default function RestaurantMenuBrowser({
   );
 
   const renderCategoryFilters = () => (
-    <div ref={categoriesRowRef} className="overflow-x-auto pb-2 pt-1 scrollbar-hide">
-      <div className="flex items-center gap-2 md:gap-3">
-        {categoriesLoading
-          ? [...Array(6)].map((_, index) => (
+    <div style={{ contain: "inline-size" }}>
+      <div
+        ref={categoriesRowRef}
+        className="overflow-x-auto pb-2 pt-1 scrollbar-hide"
+      >
+        <div className="flex items-center gap-2 md:gap-3">
+          {categoriesLoading
+            ? [...Array(6)].map((_, index) => (
               <div
                 key={index}
                 className="h-10 w-20 md:w-24 flex-shrink-0 rounded-xl bg-base-200 animate-pulse"
               />
             ))
-          : categories.map((category) => (
+            : categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() =>
@@ -535,6 +539,7 @@ export default function RestaurantMenuBrowser({
                 </span>
               </button>
             ))}
+        </div>
       </div>
     </div>
   );
@@ -717,7 +722,7 @@ export default function RestaurantMenuBrowser({
   }
 
   return (
-    <div>
+    <div style={{ contain: "inline-size" }}>
       <div className="relative mt-2 mb-2">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
