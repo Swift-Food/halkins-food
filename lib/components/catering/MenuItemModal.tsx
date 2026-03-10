@@ -16,10 +16,13 @@ const DIETARY_ICON_MAP: Record<string, { file: string; label: string }> = {
 // Utility function to format allergen enum values into human-readable labels
 const formatAllergen = (allergen: string): string => {
   const allergenObj = ALLERGENS.find((a) => a.value === allergen);
-  return allergenObj?.label || allergen
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
+  return (
+    allergenObj?.label ||
+    allergen
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ")
+  );
 };
 
 interface MenuItemModalProps {
@@ -68,7 +71,7 @@ export default function MenuItemModal({
     Record<string, Record<string, string>>
   >({}); // String values for input fields
   const [addonGroups, setAddonGroups] = useState<Record<string, AddonGroup>>(
-    {}
+    {},
   );
   const [totalPrice, setTotalPrice] = useState(0);
   const [isAllergenExpanded, setIsAllergenExpanded] = useState(false);
@@ -126,28 +129,29 @@ export default function MenuItemModal({
 
   // Group addons and initialize selections
   useEffect(() => {
-
     if (!item?.addons || item.addons.length === 0) {
       setAddonGroups({});
       setSelectedAddons({});
       return;
     }
 
-
     // Group addons by groupTitle
-    const grouped = item.addons.reduce((acc, addon) => {
-      // console.log("Processing addon:", addon);
-      const groupTitle = addon.groupTitle || "Default";
-      if (!acc[groupTitle]) {
-        acc[groupTitle] = {
-          items: [],
-          isRequired: addon.isRequired,
-          selectionType: addon.selectionType,
-        };
-      }
-      acc[groupTitle].items.push(addon);
-      return acc;
-    }, {} as Record<string, AddonGroup>);
+    const grouped = item.addons.reduce(
+      (acc, addon) => {
+        // console.log("Processing addon:", addon);
+        const groupTitle = addon.groupTitle || "Default";
+        if (!acc[groupTitle]) {
+          acc[groupTitle] = {
+            items: [],
+            isRequired: addon.isRequired,
+            selectionType: addon.selectionType,
+          };
+        }
+        acc[groupTitle].items.push(addon);
+        return acc;
+      },
+      {} as Record<string, AddonGroup>,
+    );
 
     // console.log("Grouped addons:", grouped);
     setAddonGroups(grouped);
@@ -240,7 +244,7 @@ export default function MenuItemModal({
   const updateAddonQuantity = (
     groupTitle: string,
     addonName: string,
-    change: number
+    change: number,
   ) => {
     setAddonQuantities((prev) => {
       const newQuantities: Record<string, Record<string, number>> = {};
@@ -291,7 +295,7 @@ export default function MenuItemModal({
   const setAddonQuantityDirect = (
     groupTitle: string,
     addonName: string,
-    newQty: number
+    newQty: number,
   ) => {
     const validQty = Math.max(0, Math.floor(newQty));
 
@@ -435,7 +439,7 @@ export default function MenuItemModal({
 
       // Check if at least one addon is selected in required groups
       return Object.values(selectedAddons[groupTitle] || {}).some(
-        (isSelected) => isSelected
+        (isSelected) => isSelected,
       );
     });
   };
@@ -448,14 +452,13 @@ export default function MenuItemModal({
       if (group.selectionType === "single") {
         const total = getSingleSelectionTotal(groupTitle);
         const hasAnySelection = Object.values(
-          selectedAddons[groupTitle] || {}
+          selectedAddons[groupTitle] || {},
         ).some((isSelected) => isSelected);
 
         if (hasAnySelection && total !== itemQuantity) {
           errors.push(
-            `${groupTitle}: Please select exactly ${itemQuantity} portion${
-              itemQuantity > 1 ? "s" : ""
-            } (currently ${total})`
+            `${groupTitle}: Please select exactly ${itemQuantity} portion${itemQuantity > 1 ? "s" : ""
+            } (currently ${total})`,
           );
         }
       }
@@ -558,7 +561,7 @@ export default function MenuItemModal({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-secondary hover:bg-primary transition-colors z-30"
+          className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-primary/20 hover:bg-primary/30 transition-colors z-30"
           aria-label="Close modal"
         >
           ✕
@@ -569,7 +572,7 @@ export default function MenuItemModal({
           {item.image && (
             <div
               className="w-full flex-shrink-0 mb-3 overflow-hidden rounded-2xl"
-              style={{ maxHeight: '50vh', aspectRatio: '5/4' }}
+              style={{ maxHeight: "50vh", aspectRatio: "5/4" }}
               onClick={(e) => {
                 e.stopPropagation();
               }}
@@ -612,7 +615,9 @@ export default function MenuItemModal({
                 >
                   <h3 className="font-semibold text-xs md:text-sm text-base-content flex items-center justify-between gap-2">
                     <span className="flex items-center gap-2">
-                      <span className="text-warning text-sm md:text-base">⚠️</span>
+                      <span className="text-warning text-sm md:text-base">
+                        ⚠️
+                      </span>
                       Allergens
                     </span>
                     <span className="text-[10px] md:text-xs text-base-content/60 font-normal">
@@ -687,7 +692,9 @@ export default function MenuItemModal({
                           quantity > 0 &&
                           (!item.addons || item.addons.length === 0)
                         ) {
-                          setHasModifiedQuantity(newQty !== initialModalQuantity);
+                          setHasModifiedQuantity(
+                            newQty !== initialModalQuantity,
+                          );
                         }
                       }}
                       className="w-8 h-8 md:w-10 md:h-10 bg-base-100 border border-base-300 rounded-lg hover:bg-base-200 flex items-center justify-center text-base md:text-lg font-medium flex-shrink-0"
@@ -712,7 +719,7 @@ export default function MenuItemModal({
                                 (!item.addons || item.addons.length === 0)
                               ) {
                                 setHasModifiedQuantity(
-                                  newQty !== initialModalQuantity
+                                  newQty !== initialModalQuantity,
                                 );
                               }
                             }
@@ -729,7 +736,9 @@ export default function MenuItemModal({
                               quantity > 0 &&
                               (!item.addons || item.addons.length === 0)
                             ) {
-                              setHasModifiedQuantity(1 !== initialModalQuantity);
+                              setHasModifiedQuantity(
+                                1 !== initialModalQuantity,
+                              );
                             }
                           }
                         }}
@@ -748,7 +757,9 @@ export default function MenuItemModal({
                           quantity > 0 &&
                           (!item.addons || item.addons.length === 0)
                         ) {
-                          setHasModifiedQuantity(newQty !== initialModalQuantity);
+                          setHasModifiedQuantity(
+                            newQty !== initialModalQuantity,
+                          );
                         }
                       }}
                       className="w-8 h-8 md:w-10 md:h-10 bg-base-100 border border-base-300 rounded-lg hover:bg-base-200 flex items-center justify-center text-base md:text-lg font-medium flex-shrink-0"
@@ -780,8 +791,8 @@ export default function MenuItemModal({
                           <span className="text-[10px] md:text-xs text-base-content/60 italic">
                             {group.selectionType === "single"
                               ? `Select portions (total: ${getSingleSelectionTotal(
-                                  groupTitle
-                                )}/${itemQuantity})`
+                                groupTitle,
+                              )}/${itemQuantity})`
                               : "Choose multiple (applies to all portions)"}
                           </span>
                         )}
@@ -806,28 +817,32 @@ export default function MenuItemModal({
                                 <span className="text-sm text-base-content">
                                   {addon.name}
                                 </span>
-                                {addon.dietaryRestrictions && addon.dietaryRestrictions.length > 0 && (
-                                  <div className="flex items-center gap-0.5">
-                                    {addon.dietaryRestrictions.map((restriction) => {
-                                      const iconInfo = DIETARY_ICON_MAP[restriction];
-                                      if (!iconInfo) return null;
-                                      return (
-                                        <div
-                                          key={restriction}
-                                          className="relative w-4 h-4"
-                                          title={iconInfo.label}
-                                        >
-                                          <Image
-                                            src={`/dietary-icons/unfilled/${iconInfo.file}`}
-                                            alt={iconInfo.label}
-                                            fill
-                                            className="object-contain"
-                                          />
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
+                                {addon.dietaryRestrictions &&
+                                  addon.dietaryRestrictions.length > 0 && (
+                                    <div className="flex items-center gap-0.5">
+                                      {addon.dietaryRestrictions.map(
+                                        (restriction) => {
+                                          const iconInfo =
+                                            DIETARY_ICON_MAP[restriction];
+                                          if (!iconInfo) return null;
+                                          return (
+                                            <div
+                                              key={restriction}
+                                              className="relative w-4 h-4"
+                                              title={iconInfo.label}
+                                            >
+                                              <Image
+                                                src={`/dietary-icons/unfilled/${iconInfo.file}`}
+                                                alt={iconInfo.label}
+                                                fill
+                                                className="object-contain"
+                                              />
+                                            </div>
+                                          );
+                                        },
+                                      )}
+                                    </div>
+                                  )}
                               </div>
                               {parseFloat(addon.price) > 0 && (
                                 <span className="text-sm font-medium text-primary">
@@ -842,11 +857,10 @@ export default function MenuItemModal({
                           // Single selection: Show quantity controls
                           <div
                             key={index}
-                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer ${
-                              addonQty > 0
-                                ? "border-primary bg-primary/5"
-                                : "border-base-300 bg-base-100 hover:border-primary/30"
-                            }`}
+                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer ${addonQty > 0
+                              ? "border-primary bg-primary/5"
+                              : "border-base-300 bg-base-100 hover:border-primary/30"
+                              }`}
                             onClick={() =>
                               handleAddonRowClick(groupTitle, addon.name)
                             }
@@ -856,28 +870,32 @@ export default function MenuItemModal({
                                 <span className="text-sm text-base-content">
                                   {addon.name}
                                 </span>
-                                {addon.dietaryRestrictions && addon.dietaryRestrictions.length > 0 && (
-                                  <div className="flex items-center gap-0.5">
-                                    {addon.dietaryRestrictions.map((restriction) => {
-                                      const iconInfo = DIETARY_ICON_MAP[restriction];
-                                      if (!iconInfo) return null;
-                                      return (
-                                        <div
-                                          key={restriction}
-                                          className="relative w-4 h-4"
-                                          title={iconInfo.label}
-                                        >
-                                          <Image
-                                            src={`/dietary-icons/unfilled/${iconInfo.file}`}
-                                            alt={iconInfo.label}
-                                            fill
-                                            className="object-contain"
-                                          />
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
+                                {addon.dietaryRestrictions &&
+                                  addon.dietaryRestrictions.length > 0 && (
+                                    <div className="flex items-center gap-0.5">
+                                      {addon.dietaryRestrictions.map(
+                                        (restriction) => {
+                                          const iconInfo =
+                                            DIETARY_ICON_MAP[restriction];
+                                          if (!iconInfo) return null;
+                                          return (
+                                            <div
+                                              key={restriction}
+                                              className="relative w-4 h-4"
+                                              title={iconInfo.label}
+                                            >
+                                              <Image
+                                                src={`/dietary-icons/unfilled/${iconInfo.file}`}
+                                                alt={iconInfo.label}
+                                                fill
+                                                className="object-contain"
+                                              />
+                                            </div>
+                                          );
+                                        },
+                                      )}
+                                    </div>
+                                  )}
                               </div>
                               {parseFloat(addon.price) > 0 && (
                                 <span className="text-xs font-medium text-primary">
@@ -894,7 +912,7 @@ export default function MenuItemModal({
                                   updateAddonQuantity(
                                     groupTitle,
                                     addon.name,
-                                    -1
+                                    -1,
                                   )
                                 }
                                 disabled={addonQty === 0}
@@ -937,13 +955,13 @@ export default function MenuItemModal({
                                         itemQuantity - otherAddonsTotal;
                                       const finalQty = Math.min(
                                         requestedQty,
-                                        Math.max(0, maxAllowed)
+                                        Math.max(0, maxAllowed),
                                       );
 
                                       setAddonQuantityDirect(
                                         groupTitle,
                                         addon.name,
-                                        finalQty
+                                        finalQty,
                                       );
                                     }
                                   }
@@ -956,7 +974,7 @@ export default function MenuItemModal({
                                     setAddonQuantityDirect(
                                       groupTitle,
                                       addon.name,
-                                      0
+                                      0,
                                     );
                                   }
                                 }}
@@ -982,19 +1000,17 @@ export default function MenuItemModal({
                           <button
                             key={index}
                             onClick={() => toggleAddon(groupTitle, addon.name)}
-                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
-                              selectedAddons[groupTitle]?.[addon.name]
-                                ? "border-primary bg-primary/5"
-                                : "border-base-300 bg-base-100 hover:border-primary/50"
-                            }`}
+                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${selectedAddons[groupTitle]?.[addon.name]
+                              ? "border-primary bg-primary/5"
+                              : "border-base-300 bg-base-100 hover:border-primary/50"
+                              }`}
                           >
                             <div className="flex items-center gap-3">
                               <div
-                                className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                                  selectedAddons[groupTitle]?.[addon.name]
-                                    ? "border-primary bg-primary"
-                                    : "border-base-300"
-                                }`}
+                                className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedAddons[groupTitle]?.[addon.name]
+                                  ? "border-primary bg-primary"
+                                  : "border-base-300"
+                                  }`}
                               >
                                 {selectedAddons[groupTitle]?.[addon.name] && (
                                   <svg
@@ -1015,32 +1031,39 @@ export default function MenuItemModal({
                               <span className="text-sm text-base-content">
                                 {addon.name}
                               </span>
-                              {addon.dietaryRestrictions && addon.dietaryRestrictions.length > 0 && (
-                                <div className="flex items-center gap-0.5">
-                                  {addon.dietaryRestrictions.map((restriction) => {
-                                    const iconInfo = DIETARY_ICON_MAP[restriction];
-                                    if (!iconInfo) return null;
-                                    return (
-                                      <div
-                                        key={restriction}
-                                        className="relative w-4 h-4"
-                                        title={iconInfo.label}
-                                      >
-                                        <Image
-                                          src={`/dietary-icons/unfilled/${iconInfo.file}`}
-                                          alt={iconInfo.label}
-                                          fill
-                                          className="object-contain"
-                                        />
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
+                              {addon.dietaryRestrictions &&
+                                addon.dietaryRestrictions.length > 0 && (
+                                  <div className="flex items-center gap-0.5">
+                                    {addon.dietaryRestrictions.map(
+                                      (restriction) => {
+                                        const iconInfo =
+                                          DIETARY_ICON_MAP[restriction];
+                                        if (!iconInfo) return null;
+                                        return (
+                                          <div
+                                            key={restriction}
+                                            className="relative w-4 h-4"
+                                            title={iconInfo.label}
+                                          >
+                                            <Image
+                                              src={`/dietary-icons/unfilled/${iconInfo.file}`}
+                                              alt={iconInfo.label}
+                                              fill
+                                              className="object-contain"
+                                            />
+                                          </div>
+                                        );
+                                      },
+                                    )}
+                                  </div>
+                                )}
                             </div>
                             {parseFloat(addon.price) > 0 && (
                               <span className="text-sm font-medium text-primary">
-                                +£{(parseFloat(addon.price) * itemQuantity).toFixed(2)}
+                                +£
+                                {(
+                                  parseFloat(addon.price) * itemQuantity
+                                ).toFixed(2)}
                               </span>
                             )}
                           </button>
@@ -1056,7 +1079,8 @@ export default function MenuItemModal({
               <div className="pt-2 border-t border-base-300">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-base-content/70">
-                    Total {itemQuantity > 1 ? `(${itemQuantity} portions)` : ""}:
+                    Total {itemQuantity > 1 ? `(${itemQuantity} portions)` : ""}
+                    :
                   </span>
                   <span className="text-lg font-bold text-primary">
                     £{totalPrice.toFixed(2)}
@@ -1106,7 +1130,8 @@ export default function MenuItemModal({
                 {hasModifiedQuantity && (
                   <button
                     onClick={() => {
-                      const newBackendQty = itemQuantity * BACKEND_QUANTITY_UNIT;
+                      const newBackendQty =
+                        itemQuantity * BACKEND_QUANTITY_UNIT;
                       onUpdateQuantity?.(item.id, newBackendQty);
                       onClose();
                     }}
