@@ -501,7 +501,7 @@ export default function RestaurantMenuBrowser({
 
   const renderCategoryFilters = () => (
     <div ref={categoriesRowRef} className="overflow-x-auto pb-2 pt-1 scrollbar-hide">
-      <div className="flex items-center gap-4 md:gap-6">
+      <div className="flex items-center gap-2 md:gap-3">
         {categoriesLoading
           ? [...Array(6)].map((_, index) => (
               <div
@@ -517,15 +517,19 @@ export default function RestaurantMenuBrowser({
                     selectedCategoryId === category.id ? null : category.id
                   )
                 }
-                className={`flex-shrink-0 py-2.5 rounded-xl text-sm font-medium transition-all border flex min-h-16 flex-col items-center justify-center gap-0.5 leading-none ${
+                className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border flex flex-col items-center justify-center gap-0.5 leading-none ${
+                  category.icon ? "min-h-16" : ""
+                } ${
                   selectedCategoryId === category.id
-                    ? "bg-transparent border-primary text-primary"
-                    : "bg-transparent border-transparent text-gray-700 hover:text-primary"
+                    ? "bg-base-200/30 border-primary text-primary"
+                    : "bg-base-200/30 border-transparent text-gray-700 hover:text-primary"
                 }`}
               >
-                <span className="flex h-6 md:h-7 items-center justify-center text-xl md:text-2xl leading-none">
-                  {category.icon || ""}
-                </span>
+                {category.icon && (
+                  <span className="flex h-6 md:h-7 items-center justify-center text-xl md:text-2xl leading-none">
+                    {category.icon}
+                  </span>
+                )}
                 <span className="text-center text-xs md:text-sm">
                   {category.name}
                 </span>
