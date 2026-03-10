@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, RefObject } from "react";
+import { useState, useMemo, useEffect, useRef, RefObject } from "react";
 import {
   Search,
   X,
@@ -71,6 +71,11 @@ export default function RestaurantMenuBrowser({
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     new Set()
   );
+  const [activeGroupName, setActiveGroupName] = useState<string | null>(null);
+  const [stickyTopOffset, setStickyTopOffset] = useState(72);
+  const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const groupButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const isProgrammaticScroll = useRef(false);
 
   useEffect(() => {
     fetchAllMenuItems();
@@ -286,12 +291,14 @@ export default function RestaurantMenuBrowser({
     setRestaurantSearchQuery("");
     setSelectedCategoryId(null);
     setCollapsedGroups(new Set());
+    setActiveGroupName(null);
   };
 
   const handleBackToRestaurants = () => {
     setSelectedRestaurantId(null);
     setRestaurantSearchQuery("");
     setCollapsedGroups(new Set());
+    setActiveGroupName(null);
   };
 
   useEffect(() => {
@@ -307,6 +314,103 @@ export default function RestaurantMenuBrowser({
     isSearchActive,
     selectedRestaurantId,
   ]);
+
+  useEffect(() => {
+    const navElement = document.querySelector<HTMLElement>(
+      "[data-catering-session-nav='true']"
+    );
+    if (!navElement) return;
+
+    const updateOffset = () => {
+      setStickyTopOffset(navElement.getBoundingClientRect().height);
+    };
+
+    updateOffset();
+
+    if (typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver(updateOffset);
+    observer.observe(navElement);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    sectionRefs.current.clear();
+    groupButtonRefs.current.clear();
+    setActiveGroupName(groupedItems[0]?.name || null);
+  }, [groupedItems, selectedRestaurantId]);
+
+  useEffect(() => {
+    if (!activeGroupName) return;
+
+    const activeButton = groupButtonRefs.current.get(activeGroupName);
+    activeButton?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [activeGroupName]);
+
+  useEffect(() => {
+    if (!selectedRestaurantId || groupedItems.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isProgrammaticScroll.current) return;
+
+        const visibleEntries = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (visibleEntries.length === 0) return;
+
+        const nextGroupName = visibleEntries[0].target.getAttribute("data-group-name");
+        if (nextGroupName) {
+          setActiveGroupName(nextGroupName);
+        }
+      },
+      {
+        rootMargin: `-${stickyTopOffset + 80}px 0px -55% 0px`,
+        threshold: [0, 0.1, 0.25, 0.5],
+      }
+    );
+
+    const sections = groupedItems
+      .map((group) => sectionRefs.current.get(group.name))
+      .filter((section): section is HTMLDivElement => Boolean(section));
+
+    sections.forEach((section) => observer.observe(section));
+
+    return () => observer.disconnect();
+  }, [groupedItems, selectedRestaurantId, stickyTopOffset]);
+
+  const handleGroupTabClick = (groupName: string) => {
+    setCollapsedGroups((prev) => {
+      if (!prev.has(groupName)) return prev;
+      const next = new Set(prev);
+      next.delete(groupName);
+      return next;
+    });
+
+    setActiveGroupName(groupName);
+
+    const section = sectionRefs.current.get(groupName);
+    if (!section) return;
+
+    isProgrammaticScroll.current = true;
+    const topOffset = stickyTopOffset + 80;
+    const nextTop = section.getBoundingClientRect().top + window.scrollY - topOffset;
+
+    window.scrollTo({
+      top: Math.max(nextTop, 0),
+      behavior: "smooth",
+    });
+
+    window.setTimeout(() => {
+      isProgrammaticScroll.current = false;
+    }, 450);
+  };
 
   const renderRestaurantCard = (
     restaurant: Restaurant,
@@ -495,71 +599,113 @@ export default function RestaurantMenuBrowser({
               </p>
             </div>
           ) : (
-            groupedItems.map((group) => {
-              const isCollapsed = collapsedGroups.has(group.name);
-              return (
-                <div key={group.name} className="mb-4">
-                  <button
-                    onClick={() => toggleGroupCollapse(group.name)}
-                    className="w-full flex items-center justify-between py-2 px-1 hover:bg-gray-50 rounded-lg transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-primary">
+            <>
+              <div
+                className="sticky z-30 mb-3 w-full border-b border-base-200 bg-white py-1"
+                style={{ top: stickyTopOffset }}
+              >
+                <div className="flex w-full gap-6 overflow-x-auto scrollbar-hide">
+                  {groupedItems.map((group) => {
+                    const isActive = activeGroupName === group.name;
+                    return (
+                      <button
+                        key={group.name}
+                        ref={(el) => {
+                          if (el) groupButtonRefs.current.set(group.name, el);
+                          else groupButtonRefs.current.delete(group.name);
+                        }}
+                        onClick={() => handleGroupTabClick(group.name)}
+                        className={`relative flex-shrink-0 whitespace-nowrap pb-3 pt-0.5 text-sm font-semibold transition-colors ${
+                          isActive
+                            ? "text-primary"
+                            : "text-gray-500 hover:text-primary"
+                        }`}
+                      >
                         {group.name}
-                      </h3>
-                      <span className="text-xs text-gray-400 font-normal">
-                        ({group.items.length})
-                      </span>
-                    </div>
-                    {isCollapsed ? (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    ) : (
-                      <ChevronUp className="w-4 h-4 text-gray-400" />
-                    )}
-                  </button>
-
-                  {group.information && !isCollapsed && (
-                    <div className="flex items-start gap-1.5 px-1 pb-2">
-                      <Info className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-gray-500 whitespace-pre-line">
-                        {group.information}
-                      </p>
-                    </div>
-                  )}
-
-                  {!isCollapsed && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
-                      {group.items.map((item, itemIdx) => (
-                        <div
-                          key={item.id}
-                          ref={
-                            expandedSessionIndex === sessionIndex &&
-                            itemIdx === 0 &&
-                            group === groupedItems[0]
-                              ? firstMenuItemRef
-                              : undefined
-                          }
-                        >
-                          <MenuItemCard
-                            item={item}
-                            quantity={getItemQuantity(item.id)}
-                            isExpanded={expandedItemId === item.id}
-                            onToggleExpand={() =>
-                              setExpandedItemId(
-                                expandedItemId === item.id ? null : item.id
-                              )
-                            }
-                            onAddItem={onAddItem}
-                            onUpdateQuantity={onUpdateQuantity}
-                            onAddOrderPress={onAddOrderPress}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        {isActive && (
+                          <span className="absolute bottom-0 left-0 h-1 w-full rounded-t-full bg-primary" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
-              );
-            })
+              </div>
+
+              {groupedItems.map((group) => {
+                const isCollapsed = collapsedGroups.has(group.name);
+                return (
+                  <div
+                    key={group.name}
+                    ref={(el) => {
+                      if (el) sectionRefs.current.set(group.name, el);
+                      else sectionRefs.current.delete(group.name);
+                    }}
+                    data-group-name={group.name}
+                    style={{ scrollMarginTop: stickyTopOffset + 80 }}
+                    className="mb-4"
+                  >
+                    <button
+                      onClick={() => toggleGroupCollapse(group.name)}
+                      className="w-full flex items-center justify-between py-2 px-1 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-bold text-primary">
+                          {group.name}
+                        </h3>
+                        <span className="text-xs text-gray-400 font-normal">
+                          ({group.items.length})
+                        </span>
+                      </div>
+                      {isCollapsed ? (
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <ChevronUp className="w-4 h-4 text-gray-400" />
+                      )}
+                    </button>
+
+                    {group.information && !isCollapsed && (
+                      <div className="flex items-start gap-1.5 px-1 pb-2">
+                        <Info className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-gray-500 whitespace-pre-line">
+                          {group.information}
+                        </p>
+                      </div>
+                    )}
+
+                    {!isCollapsed && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
+                        {group.items.map((item, itemIdx) => (
+                          <div
+                            key={item.id}
+                            ref={
+                              expandedSessionIndex === sessionIndex &&
+                              itemIdx === 0 &&
+                              group === groupedItems[0]
+                                ? firstMenuItemRef
+                                : undefined
+                            }
+                          >
+                            <MenuItemCard
+                              item={item}
+                              quantity={getItemQuantity(item.id)}
+                              isExpanded={expandedItemId === item.id}
+                              onToggleExpand={() =>
+                                setExpandedItemId(
+                                  expandedItemId === item.id ? null : item.id
+                                )
+                              }
+                              onAddItem={onAddItem}
+                              onUpdateQuantity={onUpdateQuantity}
+                              onAddOrderPress={onAddOrderPress}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </>
           )}
         </div>
       </div>
