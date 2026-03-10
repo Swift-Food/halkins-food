@@ -292,11 +292,6 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
       {showVenues && spaceId && (
         <VenuesModal spaceId={spaceId} onClose={() => setShowVenues(false)} />
       )}
-
-      {/* Venues Modal */}
-      {showVenues && spaceId && (
-        <VenuesModal spaceId={spaceId} onClose={() => setShowVenues(false)} />
-      )}
     </div>
   );
 }

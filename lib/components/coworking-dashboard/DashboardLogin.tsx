@@ -72,7 +72,7 @@ export default function DashboardLogin({
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="input input-bordered w-full pl-10"
+                  className="input input-bordered w-full"
                   placeholder="you@example.com"
                   required
                 />
@@ -89,7 +89,7 @@ export default function DashboardLogin({
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input input-bordered w-full pl-10"
+                  className="input input-bordered w-full"
                   placeholder="Enter your password"
                   required
                 />
