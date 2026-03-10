@@ -7,7 +7,9 @@ interface DashboardLoginProps {
   onLoginSuccess: () => void;
 }
 
-export default function DashboardLogin({ onLoginSuccess }: DashboardLoginProps) {
+export default function DashboardLogin({
+  onLoginSuccess,
+}: DashboardLoginProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -48,16 +50,22 @@ export default function DashboardLogin({ onLoginSuccess }: DashboardLoginProps) 
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-pink-100 mb-4">
-              <Lock className="h-8 w-8 text-pink-600" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 mb-4">
+              <Lock className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Partner Dashboard</h1>
-            <p className="text-sm text-gray-500 mt-1">Sign in to manage your coworking space</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Partner Dashboard
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Sign in to manage your coworking space
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="label text-sm font-medium text-gray-700">Email</label>
+              <label className="label text-sm font-medium text-gray-700">
+                Email
+              </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
@@ -72,7 +80,9 @@ export default function DashboardLogin({ onLoginSuccess }: DashboardLoginProps) 
             </div>
 
             <div>
-              <label className="label text-sm font-medium text-gray-700">Password</label>
+              <label className="label text-sm font-medium text-gray-700">
+                Password
+              </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
