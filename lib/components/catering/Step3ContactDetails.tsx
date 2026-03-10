@@ -445,6 +445,7 @@ export default function Step3ContactInfo() {
           latitude: deliveryLat,
           longitude: deliveryLng,
         },
+        venueId: selectedVenue?.id,
         customerPhone: formData.phone,
         mealSessions: builtMealSessions,
         specialInstructions: specialInstructions || undefined,

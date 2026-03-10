@@ -83,6 +83,7 @@ export interface LocationDto {
 export interface CreateCoworkingOrderRequest {
   deliveryAddress: string; // 10-500 chars
   deliveryLocation: LocationDto;
+  venueId?: string;
   bookingId?: string;
   bookingReference?: string;
   roomLocation?: string; // max 200 chars
