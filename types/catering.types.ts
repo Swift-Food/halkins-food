@@ -393,6 +393,7 @@ export interface CateringPricingResult {
   totalDiscount?: number; // NEW: Combined discount
   promoDiscount?: number;
   venueHireFee?: number; // Venue hire fee (coworking orders only)
+  venueHireDiscount?: number; // Discount on venue hire fee from promo codes
   total: number;
   error?: string;
 
