@@ -7,16 +7,15 @@
   default: true;
   prefersdark: false;
 
-
   /* Primary colors - Hot Pink */
-  --color-primary: #fa43ad; /* Hot Pink */
+  --color-primary: #bd2429; /* #fa43ad; Hot Pink */
   --color-primary-content: #ffffff;
 
   /* Secondary colors */
   --color-secondary: hsl(340, 100%, 88%); /* Light Pink */
   --color-secondary-content: #282828;
 
-  --color-text-grey: #6A6A6A;
+  --color-text-grey: #6a6a6a;
 
   /* Accent colors */
   --color-accent: #ffdd83; /* Yellow/Gold */
@@ -32,7 +31,6 @@
   --color-base-300: #e5e7eb; /* Border color */
   --color-base-content: #282828; /* Dark text */
 
-
   /* Status colors */
   --color-info: #94daf0; /* Light blue */
   --color-success: #4ade80; /* Green */
@@ -42,9 +40,9 @@
 
 /* Additional custom color classes for direct use */
 :root {
-  --dark-pink: #FA43AD;
-  --hot-pink: #FFB3E6;
-  --beige: #EFEAE0;
+  --dark-pink: #fa43ad;
+  --hot-pink: #ffb3e6;
+  --beige: #efeae0;
   --swift-pink: #fa43ad;
 }
 
@@ -91,8 +89,12 @@
 }
 
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .marquee-content {
@@ -106,13 +108,23 @@
 
 /* Float animations for hero background blobs */
 @keyframes float {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(-20px, 20px); }
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-20px, 20px);
+  }
 }
 
 @keyframes float-alt {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(20px, -20px); }
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(20px, -20px);
+  }
 }
 
 .animate-float {
@@ -125,25 +137,51 @@
 
 /* Organic drifting animations for mesh gradient */
 @keyframes drift {
-  0% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(150px, -80px) scale(1.15); }
-  66% { transform: translate(80px, 60px) scale(0.9); }
-  100% { transform: translate(0, 0) scale(1); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(150px, -80px) scale(1.15);
+  }
+  66% {
+    transform: translate(80px, 60px) scale(0.9);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
 }
 
 @keyframes drift-alt {
-  0% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-120px, 60px) scale(0.95); }
-  66% { transform: translate(100px, -50px) scale(1.1); }
-  100% { transform: translate(0, 0) scale(1); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-120px, 60px) scale(0.95);
+  }
+  66% {
+    transform: translate(100px, -50px) scale(1.1);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
 }
 
 @keyframes drift-wide {
-  0% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(40vw, 40vh) scale(1.1); }
-  50% { transform: translate(50vw, 20vh) scale(0.95); }
-  75% { transform: translate(30vw, 50vh) scale(1.05); }
-  100% { transform: translate(0, 0) scale(1); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(40vw, 40vh) scale(1.1);
+  }
+  50% {
+    transform: translate(50vw, 20vh) scale(0.95);
+  }
+  75% {
+    transform: translate(30vw, 50vh) scale(1.05);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
 }
 
 .animate-drift {
@@ -202,7 +240,7 @@ html {
 }
 
 body {
-  font-family: 'Inter', Arial, Helvetica, sans-serif;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
   min-height: 100vh;
   background-color: #ffffff;
   color: #282828;
@@ -229,7 +267,7 @@ body {
   /* background-color: #141414; */
   border-radius: 999px;
   padding: 0.3rem 2.5rem;
-  color: white
+  color: white;
 }
 
 @keyframes marquee-move-text {
@@ -249,14 +287,14 @@ body {
   background-color: var(--color-primary);
 }
 @font-face {
-  font-family: 'Mont';
-  src: url('/fonts/Mont-HeavyDEMO.otf') format('opentype');
+  font-family: "Mont";
+  src: url("/fonts/Mont-HeavyDEMO.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
 }
 
 .montFont {
-  font-family: 'Mont', Arial, sans-serif;
+  font-family: "Mont", Arial, sans-serif;
 }
 
 /* html, body {
