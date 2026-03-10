@@ -298,7 +298,7 @@ export default function AllMealSessionsItems({
             </div>
           </div>
           <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
-            <p className="font-bold text-pink-600 text-sm sm:text-base whitespace-nowrap">
+            <p className="font-bold text-primary/70 text-sm sm:text-base whitespace-nowrap">
               £{subtotal.toFixed(2)}
             </p>
             {showActions && onEdit && onRemove && (
@@ -400,36 +400,36 @@ export default function AllMealSessionsItems({
     return (
       <div
         key={sessionIndex}
-        className="border-2 border-pink-200 rounded-xl overflow-hidden bg-white shadow-sm"
+        className="border-2 border-primary/20 rounded-xl overflow-hidden bg-white shadow-sm"
       >
         {/* Session Header */}
         <button
           onClick={() => toggleSession(sessionIndex)}
-          className="w-full flex items-center justify-between gap-3 p-4 sm:p-5 bg-gradient-to-r from-pink-50 to-pink-100 hover:from-pink-100 hover:to-pink-150 transition-colors"
+          className="w-full flex items-center justify-between gap-3 p-4 sm:p-5 bg-gradient-to-r from-primary/20 to-primary/15 hover:from-priamry/25 hover:to-primary/20 transition-colors"
         >
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-left">
-            <h3 className="text-lg sm:text-xl font-bold text-pink-700">
+            <h3 className="text-lg sm:text-xl font-bold text-primary">
               {session.sessionName || `Session ${sessionIndex + 1}`}
             </h3>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-gray-600">
               <span className="flex items-center gap-1">
-                <Calendar className="h-4 w-4 text-pink-500" />
+                <Calendar className="h-4 w-4 text-primary/80" />
                 {formatDate(session.sessionDate)}
               </span>
               <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4 text-pink-500" />
+                <Clock className="h-4 w-4 text-primary/80" />
                 {formatTime(session.eventTime)}
               </span>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm sm:text-base font-bold text-pink-600">
+            <span className="text-sm sm:text-base font-bold text-primary">
               £{sessionTotal.toFixed(2)}
             </span>
             {isExpanded ? (
-              <ChevronUp className="h-5 w-5 text-pink-400 flex-shrink-0" />
+              <ChevronUp className="h-5 w-5 text-primary/60 flex-shrink-0" />
             ) : (
-              <ChevronDown className="h-5 w-5 text-pink-400 flex-shrink-0" />
+              <ChevronDown className="h-5 w-5 text-primary/60 flex-shrink-0" />
             )}
           </div>
         </button>
@@ -475,9 +475,7 @@ export default function AllMealSessionsItems({
             <div className="border-t border-gray-200 pt-4 mt-4">
               <div className="flex justify-between text-gray-900 font-bold">
                 <span>Session Total:</span>
-                <span className="text-pink-600">
-                  £{sessionTotal.toFixed(2)}
-                </span>
+                <span className="text-primary">£{sessionTotal.toFixed(2)}</span>
               </div>
             </div>
           </div>
