@@ -15,12 +15,28 @@ import OrderDetailModal from "./OrderDetailModal";
 import VenuesModal from "./VenuesModal";
 import PaymentsTab from "./PaymentsTab";
 import { LogOut, Building2, MapPin, ShoppingBag, CreditCard } from "lucide-react";
+import StripeReturnPage from "./StripeReturnPage";
 
 interface CoworkingDashboardProps {
   spaceSlug: string;
 }
 
+function isStripeReturnTab() {
+  if (typeof window === "undefined") return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.get("stripe") === "complete" || params.get("stripe") === "refresh";
+}
+
 export default function CoworkingDashboard({ spaceSlug }: CoworkingDashboardProps) {
+  // If this tab was opened by Stripe redirect, show a "close this tab" screen
+  if (isStripeReturnTab()) {
+    return <StripeReturnPage spaceSlug={spaceSlug} />;
+  }
+
+  return <CoworkingDashboardInner spaceSlug={spaceSlug} />;
+}
+
+function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
   const [authenticated, setAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 

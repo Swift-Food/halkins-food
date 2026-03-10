@@ -37,17 +37,6 @@ export default function PaymentsTab({ spaceId }: PaymentsTabProps) {
     fetchStatus();
   }, [fetchStatus]);
 
-  // Handle return from Stripe onboarding
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("stripe") === "complete") {
-      fetchStatus();
-      const url = new URL(window.location.href);
-      url.searchParams.delete("stripe");
-      window.history.replaceState({}, "", url.toString());
-    }
-  }, [fetchStatus]);
-
   const handleWithdrawClick = async () => {
     try {
       const balance = await coworkingDashboardService.getBalance(spaceId);

@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { coworkingDashboardService } from "@/services/api/coworking-dashboard.api";
-import { CreditCard, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
+import { CreditCard, CheckCircle, AlertCircle, ExternalLink, RefreshCw, Clock } from "lucide-react";
 
 interface StripeSettingsProps {
   spaceId: string;
+  onOnboardingComplete?: () => void;
 }
 
-export default function StripeSettings({ spaceId }: StripeSettingsProps) {
+export default function StripeSettings({ spaceId, onOnboardingComplete }: StripeSettingsProps) {
   const [status, setStatus] = useState<{
     connected: boolean;
     onboardingComplete: boolean;
@@ -16,6 +17,8 @@ export default function StripeSettings({ spaceId }: StripeSettingsProps) {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [waitingForOnboarding, setWaitingForOnboarding] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(false);
   const [error, setError] = useState("");
 
   const fetchStatus = useCallback(async () => {
@@ -23,28 +26,20 @@ export default function StripeSettings({ spaceId }: StripeSettingsProps) {
       setError("");
       const data = await coworkingDashboardService.getStripeStatus(spaceId);
       setStatus(data);
+      if (data.connected && data.onboardingComplete) {
+        setWaitingForOnboarding(false);
+        onOnboardingComplete?.();
+      }
     } catch (err: any) {
       setError(err.message || "Failed to fetch Stripe status");
     } finally {
       setLoading(false);
+      setCheckingStatus(false);
     }
-  }, [spaceId]);
+  }, [spaceId, onOnboardingComplete]);
 
   useEffect(() => {
     fetchStatus();
-  }, [fetchStatus]);
-
-  // Handle return from Stripe onboarding
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("stripe") === "complete") {
-      // Re-check status after returning from Stripe
-      fetchStatus();
-      // Clean up URL
-      const url = new URL(window.location.href);
-      url.searchParams.delete("stripe");
-      window.history.replaceState({}, "", url.toString());
-    }
   }, [fetchStatus]);
 
   const handleSetup = async () => {
@@ -54,6 +49,7 @@ export default function StripeSettings({ spaceId }: StripeSettingsProps) {
       const { onboardingUrl } = await coworkingDashboardService.setupStripeAccount(spaceId);
       window.open(onboardingUrl, '_blank');
       setActionLoading(false);
+      setWaitingForOnboarding(true);
     } catch (err: any) {
       setError(err.message || "Failed to start Stripe setup");
       setActionLoading(false);
@@ -67,10 +63,16 @@ export default function StripeSettings({ spaceId }: StripeSettingsProps) {
       const { onboardingUrl } = await coworkingDashboardService.refreshStripeOnboardingLink(spaceId);
       window.open(onboardingUrl, '_blank');
       setActionLoading(false);
+      setWaitingForOnboarding(true);
     } catch (err: any) {
       setError(err.message || "Failed to refresh onboarding link");
       setActionLoading(false);
     }
+  };
+
+  const handleCheckStatus = () => {
+    setCheckingStatus(true);
+    fetchStatus();
   };
 
   if (loading) {
@@ -82,6 +84,39 @@ export default function StripeSettings({ spaceId }: StripeSettingsProps) {
         </div>
         <div className="flex items-center justify-center py-8">
           <span className="loading loading-spinner loading-md text-pink-500" />
+        </div>
+      </div>
+    );
+  }
+
+  // Waiting for user to complete onboarding in the other tab
+  if (waitingForOnboarding) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <CreditCard className="h-5 w-5 text-pink-500" />
+          <h3 className="text-lg font-semibold text-gray-900">Payment Settings</h3>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 text-center">
+          <Clock className="h-10 w-10 text-blue-500 mx-auto mb-3" />
+          <p className="text-sm font-medium text-blue-800 mb-1">
+            Complete Stripe setup in the other tab
+          </p>
+          <p className="text-sm text-blue-700 mb-4">
+            Once you&apos;ve finished the Stripe onboarding process, click below to check your status.
+          </p>
+          <button
+            onClick={handleCheckStatus}
+            disabled={checkingStatus}
+            className="btn bg-pink-500 hover:bg-pink-600 border-none text-white gap-2"
+          >
+            {checkingStatus ? (
+              <span className="loading loading-spinner loading-sm" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Check Status
+          </button>
         </div>
       </div>
     );
