@@ -10,7 +10,6 @@ import {
   Hash,
   MapPin,
   Clock,
-  Package,
   Receipt,
   Check,
   XCircle,
@@ -216,6 +215,12 @@ export default function OrderDetailModal({
                     <Hash className="h-4 w-4 text-gray-400" />
                     Ref: {order.booking.reference}
                   </p>
+                  {order.booking.venueName && (
+                    <p className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      Venue: {order.booking.venueName}
+                    </p>
+                  )}
                   {order.booking.room && (
                     <p className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-gray-400" />
@@ -243,52 +248,15 @@ export default function OrderDetailModal({
                 </div>
               )}
 
-              {/* Items */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  Items ({order.items.length})
-                </h3>
-                <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden">
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="flex items-start justify-between p-3 text-sm">
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">
-                          {item.quantity}x {item.name}
-                        </p>
-                        {item.notes && (
-                          <p className="text-xs text-gray-500 mt-0.5 italic">
-                            {item.notes}
-                          </p>
-                        )}
-                      </div>
-                      <span className="font-semibold text-gray-700 ml-3">
-                        £{(item.price * item.quantity).toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Totals */}
+              {/* Summary */}
               <div className="space-y-2 bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Receipt className="h-4 w-4 text-primary" />
                   <h3 className="text-sm font-semibold text-gray-700">Summary</h3>
                 </div>
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Subtotal</span>
-                  <span>£{order.total.subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Delivery Fee</span>
-                  <span>£{order.total.deliveryFee.toFixed(2)}</span>
-                </div>
                 <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-200">
-                  <span>Total</span>
-                  <span className="text-primary">
-                    £{order.total.total.toFixed(2)}
-                  </span>
+                  <span>Venue Hire</span>
+                  <span className="text-primary">£{order.total.venueHireFee.toFixed(2)}</span>
                 </div>
               </div>
 

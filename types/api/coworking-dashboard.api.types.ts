@@ -129,6 +129,7 @@ export interface DashboardOrderItem {
  */
 export interface DashboardOrderBooking {
   reference: string;
+  venueName: string | null;
   room: string | null;
   startTime: string | null;
   endTime: string | null;

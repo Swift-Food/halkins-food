@@ -56,6 +56,30 @@ type ApiErrorWithResponse = {
   };
 };
 
+function normalizeContactInfoDraft(contactInfo: ContactInfo | null | undefined) {
+  return {
+    organization: contactInfo?.organization || "",
+    fullName: contactInfo?.fullName || "",
+    email: contactInfo?.email || "",
+    phone: contactInfo?.phone || "",
+    addressLine1: contactInfo?.addressLine1 || "",
+    addressLine2: contactInfo?.addressLine2 || "",
+    city: contactInfo?.city || "",
+    zipcode: contactInfo?.zipcode || "",
+    billingAddress: contactInfo?.billingAddress
+      ? {
+          line1: contactInfo.billingAddress.line1 || "",
+          line2: contactInfo.billingAddress.line2 || "",
+          city: contactInfo.billingAddress.city || "",
+          postalCode: contactInfo.billingAddress.postalCode || "",
+          country: contactInfo.billingAddress.country || "GB",
+        }
+      : undefined,
+    ccEmails: contactInfo?.ccEmails || [],
+    specialInstructions: contactInfo?.specialInstructions || "",
+  };
+}
+
 export default function Step3ContactInfo() {
   const router = useRouter();
   const topSectionRef = useRef<HTMLDivElement | null>(null);
@@ -86,16 +110,25 @@ export default function Step3ContactInfo() {
 
   // Get all items from all sessions for pricing calculations
   const selectedItems = getAllItems();
+  const normalizedContactInfo = useMemo(
+    () => normalizeContactInfoDraft(contactInfo),
+    [contactInfo]
+  );
+  const normalizedContactInfoSnapshot = useMemo(
+    () => JSON.stringify(normalizedContactInfo),
+    [normalizedContactInfo]
+  );
 
   const [formData, setFormData] = useState<ContactInfo>({
-    organization: contactInfo?.organization || "",
-    fullName: contactInfo?.fullName || "",
-    email: contactInfo?.email || "",
-    phone: contactInfo?.phone || "",
-    addressLine1: "",
-    city: "",
-    zipcode: "",
-    billingAddress: contactInfo?.billingAddress,
+    organization: normalizedContactInfo.organization,
+    fullName: normalizedContactInfo.fullName,
+    email: normalizedContactInfo.email,
+    phone: normalizedContactInfo.phone,
+    addressLine1: normalizedContactInfo.addressLine1,
+    addressLine2: normalizedContactInfo.addressLine2,
+    city: normalizedContactInfo.city,
+    zipcode: normalizedContactInfo.zipcode,
+    billingAddress: normalizedContactInfo.billingAddress,
   });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -118,6 +151,8 @@ export default function Step3ContactInfo() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
   const hasRestoredDraft = useRef(false);
+  const lastSyncedContactInfoSnapshot = useRef<string | null>(null);
+  const lastDraftPushedSnapshot = useRef<string | null>(null);
 
   // Calculate estimated total without triggering state updates
   const estimatedTotal = useMemo(() => {
@@ -145,39 +180,54 @@ export default function Step3ContactInfo() {
       return;
     }
 
+    if (normalizedContactInfoSnapshot === lastDraftPushedSnapshot.current) {
+      lastSyncedContactInfoSnapshot.current = normalizedContactInfoSnapshot;
+      hasRestoredDraft.current = true;
+      return;
+    }
+
+    if (normalizedContactInfoSnapshot === lastSyncedContactInfoSnapshot.current) {
+      hasRestoredDraft.current = true;
+      return;
+    }
+
     setFormData({
-      organization: contactInfo.organization || "",
-      fullName: contactInfo.fullName || "",
-      email: contactInfo.email || "",
-      phone: contactInfo.phone || "",
-      addressLine1: contactInfo.addressLine1 || "",
-      addressLine2: contactInfo.addressLine2 || "",
-      city: contactInfo.city || "",
-      zipcode: contactInfo.zipcode || "",
-      billingAddress: contactInfo.billingAddress,
-      ccEmails: contactInfo.ccEmails || [],
-      specialInstructions: contactInfo.specialInstructions || "",
+      organization: normalizedContactInfo.organization,
+      fullName: normalizedContactInfo.fullName,
+      email: normalizedContactInfo.email,
+      phone: normalizedContactInfo.phone,
+      addressLine1: normalizedContactInfo.addressLine1,
+      addressLine2: normalizedContactInfo.addressLine2,
+      city: normalizedContactInfo.city,
+      zipcode: normalizedContactInfo.zipcode,
+      billingAddress: normalizedContactInfo.billingAddress,
     });
-    setCcEmails(contactInfo.ccEmails || []);
-    setSpecialInstructions(contactInfo.specialInstructions || "");
+    setCcEmails(normalizedContactInfo.ccEmails);
+    setSpecialInstructions(normalizedContactInfo.specialInstructions);
+    lastSyncedContactInfoSnapshot.current = normalizedContactInfoSnapshot;
     hasRestoredDraft.current = true;
-  }, [contactInfo]);
+  }, [contactInfo, normalizedContactInfo, normalizedContactInfoSnapshot]);
 
   useEffect(() => {
     if (!hasRestoredDraft.current) return;
 
-    const draftContactInfo: ContactInfo = {
+    const draftContactInfo = normalizeContactInfoDraft({
       ...formData,
       ccEmails,
       specialInstructions,
-    };
+    });
+    const draftSnapshot = JSON.stringify(draftContactInfo);
 
-    if (JSON.stringify(contactInfo) === JSON.stringify(draftContactInfo)) {
+    if (
+      draftSnapshot === normalizedContactInfoSnapshot ||
+      draftSnapshot === lastDraftPushedSnapshot.current
+    ) {
       return;
     }
 
+    lastDraftPushedSnapshot.current = draftSnapshot;
     setContactInfo(draftContactInfo);
-  }, [ccEmails, contactInfo, formData, setContactInfo, specialInstructions]);
+  }, [ccEmails, formData, normalizedContactInfoSnapshot, setContactInfo, specialInstructions]);
 
   const validateEmail = (email: string): string | undefined => {
     if (!email.trim()) {
