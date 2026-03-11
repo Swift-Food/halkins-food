@@ -180,17 +180,6 @@ export default function CustomCalendar({
         </button>
       </div>
 
-      {/* Today button */}
-      {(!isViewingCurrentMonth || !isSelectedToday) && (
-        <button
-          onClick={goToToday}
-          className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-        >
-          <RotateCcw size={12} />
-          Back to today
-        </button>
-      )}
-
       {/* Weekday headers */}
       <div className="grid grid-cols-7 gap-1">
         {WEEKDAYS.map((wd) => (
@@ -219,23 +208,23 @@ export default function CustomCalendar({
             <button
               key={cell.key}
               onClick={() => onDateSelect(cell.key)}
-              className={`relative flex flex-col items-center justify-center py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`relative flex flex-col items-center justify-start pt-1.5 h-12 rounded-xl text-xs font-bold transition-all ${
                 isSelected
                   ? "bg-primary text-white"
                   : isToday
                     ? "ring-1 ring-primary/40"
                     : ""
-              } ${hasEvents && !isSelected ? "hover:bg-primary/10" : "hover:bg-gray-50"}`}
+              } ${isSelected ? "hover:bg-primary/80" : hasEvents ? "hover:bg-primary/10" : "hover:bg-gray-50"}`}
             >
               {cell.day}
-              {hasEvents && (
+              {hasEvents ? (
                 <span className="flex gap-0.5 mt-0.5">
                   {indicators.map((ind, j) => (
                     <span
                       key={j}
                       className="flex items-center justify-center rounded-full min-w-[14px] h-[14px] px-0.5"
                       style={{
-                        backgroundColor: isSelected ? "rgba(255,255,255,0.3)" : ind.color,
+                        backgroundColor: ind.color,
                       }}
                     >
                       <span className="text-[8px] font-bold leading-none text-white">
@@ -244,10 +233,25 @@ export default function CustomCalendar({
                     </span>
                   ))}
                 </span>
+              ) : (
+                <span className="h-[14px] mt-0.5" />
               )}
             </button>
           );
         })}
+      </div>
+
+      {/* Today button - always rendered to avoid layout shift */}
+      <div className="h-6">
+        {(!isViewingCurrentMonth || !isSelectedToday) && (
+          <button
+            onClick={goToToday}
+            className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+          >
+            <RotateCcw size={12} />
+            Back to today
+          </button>
+        )}
       </div>
     </div>
   );
