@@ -17,6 +17,7 @@ import {
   CalendarDays,
   X,
   CheckCheck,
+  ShoppingBag,
 } from "lucide-react";
 
 interface CalendarTabProps {
@@ -48,9 +49,11 @@ const statusBadgeColor: Record<string, string> = {
   cancelled: "bg-red-100 text-red-800 border-red-300",
 };
 
-function formatTime(dateStr: string | null): string {
+function formatDateTime(dateStr: string | null): string {
   if (!dateStr) return "";
-  return new Date(dateStr).toLocaleTimeString("en-GB", {
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -69,14 +72,12 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
   const [selectedVenueIds, setSelectedVenueIds] = useState<Set<string>>(new Set());
   const [allVenueIds, setAllVenueIds] = useState<string[]>([]);
 
-  // Fetch calendar data
   const fetchCalendar = useCallback(async () => {
     setLoading(true);
     try {
       const data = await coworkingDashboardService.getCalendar(spaceId);
       setCalendarData(data);
 
-      // Initialize venue filter with all venues selected
       const ids = data.venues.map((v) => v.venueId ?? "no-venue");
       setAllVenueIds(ids);
       setSelectedVenueIds(new Set(ids));
@@ -91,7 +92,6 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
     fetchCalendar();
   }, [fetchCalendar]);
 
-  // Map venue IDs to colors
   const venueColorMap = useMemo(() => {
     const map: Record<string, string> = {};
     if (!calendarData) return map;
@@ -102,7 +102,6 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
     return map;
   }, [calendarData]);
 
-  // Build date indicators for the calendar (respecting venue filter)
   const dateIndicators = useMemo(() => {
     if (!calendarData) return {};
     const indicators: Record<string, { venueId: string | null; venueName: string | null; color: string; count: number }[]> = {};
@@ -127,7 +126,6 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
     return indicators;
   }, [calendarData, selectedVenueIds, venueColorMap]);
 
-  // Orders for the selected date (respecting venue filter)
   const selectedDayOrders = useMemo(() => {
     if (!calendarData) return [];
     const orders: { order: CalendarOrderItem; venueName: string | null; venueId: string | null; color: string }[] = [];
@@ -150,7 +148,6 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
       }
     }
 
-    // Sort by booking start time
     orders.sort((a, b) => {
       const aTime = a.order.bookingStartTime ?? "";
       const bTime = b.order.bookingStartTime ?? "";
@@ -160,7 +157,6 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
     return orders;
   }, [calendarData, selectedDate, selectedVenueIds, venueColorMap]);
 
-  // Venue filter helpers
   const toggleVenue = (venueKey: string) => {
     setSelectedVenueIds((prev) => {
       const next = new Set(prev);
@@ -195,87 +191,106 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
 
   return (
     <div className="space-y-4">
-      {/* Venue Filter Chips */}
-      {calendarData && calendarData.venues.length > 1 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Venues</h3>
-            <div className="flex gap-2">
-              <button
-                onClick={selectAll}
-                disabled={allSelected}
-                className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <CheckCheck size={12} />
-                All
-              </button>
-              <button
-                onClick={clearAll}
-                disabled={selectedVenueIds.size === 0}
-                className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <X size={12} />
-                Clear
-              </button>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {calendarData.venues.map((venue) => {
-              const venueKey = venue.venueId ?? "no-venue";
-              const color = venueColorMap[venueKey];
-              const isActive = selectedVenueIds.has(venueKey);
-
-              return (
-                <button
-                  key={venueKey}
-                  onClick={() => toggleVenue(venueKey)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                    isActive
-                      ? "border-transparent text-white"
-                      : "border-gray-200 text-gray-400 bg-gray-50"
-                  }`}
-                  style={isActive ? { backgroundColor: color } : undefined}
-                >
-                  <span
-                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: isActive ? "rgba(255,255,255,0.5)" : color }}
-                  />
-                  {venue.venueName ?? "No Venue"}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Main layout: calendar + orders */}
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Calendar */}
-        <div className="lg:basis-3/5 lg:flex-shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
-          <CustomCalendar
-            selectedDate={selectedDate}
-            onDateSelect={setSelectedDate}
-            dateIndicators={dateIndicators}
-          />
+        {/* Calendar card */}
+        <div className="lg:basis-3/5 lg:flex-shrink-0 bg-white rounded-xl shadow-sm border border-base-200">
+          {/* Venue filter integrated into calendar card */}
+          {calendarData && calendarData.venues.length > 1 && (
+            <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 border-b border-base-200">
+              <div className="flex items-center justify-between mb-2.5">
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Venues</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={selectAll}
+                    disabled={allSelected}
+                    className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <CheckCheck size={12} />
+                    All
+                  </button>
+                  <button
+                    onClick={clearAll}
+                    disabled={selectedVenueIds.size === 0}
+                    className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <X size={12} />
+                    Clear
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {calendarData.venues.map((venue) => {
+                  const venueKey = venue.venueId ?? "no-venue";
+                  const color = venueColorMap[venueKey];
+                  const isActive = selectedVenueIds.has(venueKey);
+
+                  return (
+                    <button
+                      key={venueKey}
+                      onClick={() => toggleVenue(venueKey)}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                        isActive
+                          ? "border-transparent text-white shadow-sm"
+                          : "border-base-200 text-gray-400 bg-base-200/50"
+                      }`}
+                      style={isActive ? { backgroundColor: color } : undefined}
+                    >
+                      <span
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: isActive ? "rgba(255,255,255,0.5)" : color }}
+                      />
+                      {venue.venueName ?? "No Venue"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Calendar grid */}
+          <div className="p-4 sm:p-6">
+            <CustomCalendar
+              selectedDate={selectedDate}
+              onDateSelect={setSelectedDate}
+              dateIndicators={dateIndicators}
+            />
+          </div>
         </div>
 
         {/* Orders for selected day */}
-        <div className="lg:basis-2/5 lg:max-h-[600px] lg:flex lg:flex-col bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="border-b border-gray-200 px-4 sm:px-6 py-4">
-            <h2 className="text-sm font-bold text-gray-900">
-              {formattedSelectedDate}
-            </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {selectedDayOrders.length} order{selectedDayOrders.length !== 1 ? "s" : ""}
-            </p>
+        <div className="lg:basis-2/5 lg:max-h-[700px] lg:flex lg:flex-col bg-white rounded-xl shadow-sm border border-base-200">
+          {/* Orders header */}
+          <div className="border-b border-base-200 px-4 sm:px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <CalendarDays className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-base font-bold text-gray-900">
+                  {formattedSelectedDate}
+                </h2>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                    <ShoppingBag className="h-3 w-3" />
+                    {selectedDayOrders.length} order{selectedDayOrders.length !== 1 ? "s" : ""}
+                  </span>
+                  {selectedDayOrders.length > 0 && (
+                    <span className="text-xs font-semibold text-primary">
+                      £{selectedDayOrders.reduce((sum, o) => sum + o.order.total, 0).toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="divide-y divide-gray-100 lg:overflow-y-auto lg:flex-1 lg:min-h-0">
+          <div className="divide-y divide-base-200 lg:overflow-y-auto lg:flex-1 lg:min-h-0">
             {selectedDayOrders.length === 0 ? (
               <div className="text-center py-16 text-gray-400">
-                <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p className="font-medium">No orders</p>
-                <p className="text-sm mt-1">No orders for this date.</p>
+                <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                <p className="font-medium text-gray-500">No orders</p>
+                <p className="text-sm mt-1 text-gray-400">No orders for this date.</p>
               </div>
             ) : (
               selectedDayOrders.map(({ order, venueName, color }) => (
@@ -290,11 +305,11 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
                       setSelectedOrderId(order.id);
                     }
                   }}
-                  className="w-full flex items-center gap-4 p-4 sm:px-6 sm:py-5 transition-colors text-left hover:bg-gray-50 cursor-pointer"
+                  className="w-full flex items-center gap-4 p-4 sm:px-6 sm:py-5 transition-colors text-left hover:bg-base-200/30 cursor-pointer"
                 >
                   {/* Venue color bar */}
                   <div
-                    className="w-1 self-stretch rounded-full flex-shrink-0"
+                    className="w-1.5 self-stretch rounded-full flex-shrink-0"
                     style={{ backgroundColor: color }}
                   />
 
@@ -308,41 +323,39 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
                         {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace(/_/g, " ")}
                       </span>
                       {venueName && (
-                        <span className="text-xs text-gray-400">{venueName}</span>
+                        <span className="text-xs font-medium text-gray-400">{venueName}</span>
                       )}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
                       <span className="flex items-center gap-1">
-                        <User className="h-3.5 w-3.5" />
+                        <User className="h-3.5 w-3.5 text-gray-400" />
                         {order.memberName || order.memberEmail}
                       </span>
                       {order.bookingReference && (
                         <span className="flex items-center gap-1">
-                          <Hash className="h-3.5 w-3.5" />
+                          <Hash className="h-3.5 w-3.5 text-gray-400" />
                           {order.bookingReference}
                         </span>
                       )}
                       {order.roomLocationDetails && (
                         <span className="flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5" />
+                          <MapPin className="h-3.5 w-3.5 text-gray-400" />
                           {order.roomLocationDetails}
                         </span>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-4 mt-1.5 text-sm">
-                      {(order.bookingStartTime || order.bookingEndTime) && (
-                        <span className="flex items-center gap-1 text-gray-500">
-                          <Clock className="h-3.5 w-3.5" />
-                          {formatTime(order.bookingStartTime)}
-                          {order.bookingEndTime && ` - ${formatTime(order.bookingEndTime)}`}
-                        </span>
-                      )}
-                      <span className="font-semibold text-gray-900">
-                        £{order.total.toFixed(2)}
-                      </span>
-                    </div>
+                    {(order.bookingStartTime || order.bookingEndTime) && (
+                      <p className="flex items-center gap-1 mt-1.5 text-sm text-gray-500">
+                        <Clock className="h-3.5 w-3.5" />
+                        {formatDateTime(order.bookingStartTime)}
+                        {order.bookingEndTime && ` - ${formatDateTime(order.bookingEndTime)}`}
+                      </p>
+                    )}
+                    <p className="mt-1 text-sm font-bold text-primary">
+                      £{order.total.toFixed(2)}
+                    </p>
                   </div>
 
                   <ChevronRight className="h-5 w-5 text-gray-300 flex-shrink-0" />

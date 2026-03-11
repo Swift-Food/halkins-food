@@ -108,35 +108,33 @@ export default function CustomCalendar({
     viewYear === today.getFullYear() && viewMonth === today.getMonth();
   const isSelectedToday = selectedDate === todayKey;
 
-  // Year range for picker
   const pickerYears = useMemo(() => {
     const current = today.getFullYear();
     return Array.from({ length: 5 }, (_, i) => current - 1 + i);
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Month navigation */}
       <div className="flex items-center justify-between">
         <button
           onClick={prevMonth}
-          className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center hover:text-primary transition-colors"
+          className="w-9 h-9 rounded-xl bg-base-200/50 flex items-center justify-center hover:bg-primary/10 hover:text-primary transition-colors"
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={18} />
         </button>
 
         <div className="relative">
           <button
             onClick={() => setShowPicker(!showPicker)}
-            className="flex items-center gap-1.5 text-sm font-bold hover:text-primary transition-colors"
+            className="flex items-center gap-2 text-lg font-bold text-gray-900 hover:text-primary transition-colors"
           >
             {monthLabel}
-            <ChevronDown size={14} className={`transition-transform ${showPicker ? "rotate-180" : ""}`} />
+            <ChevronDown size={16} className={`transition-transform ${showPicker ? "rotate-180" : ""}`} />
           </button>
 
           {showPicker && (
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-lg border border-gray-200 p-3 z-20 w-64">
-              {/* Year tabs */}
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-lg border border-base-200 p-3 z-20 w-64">
               <div className="flex gap-1 overflow-x-auto mb-2 pb-1">
                 {pickerYears.map((y) => (
                   <button
@@ -152,7 +150,6 @@ export default function CustomCalendar({
                   </button>
                 ))}
               </div>
-              {/* Month grid */}
               <div className="grid grid-cols-3 gap-1">
                 {MONTHS.map((m, i) => (
                   <button
@@ -174,9 +171,9 @@ export default function CustomCalendar({
 
         <button
           onClick={nextMonth}
-          className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center hover:text-primary transition-colors"
+          className="w-9 h-9 rounded-xl bg-base-200/50 flex items-center justify-center hover:bg-primary/10 hover:text-primary transition-colors"
         >
-          <ChevronRight size={16} />
+          <ChevronRight size={18} />
         </button>
       </div>
 
@@ -185,7 +182,7 @@ export default function CustomCalendar({
         {WEEKDAYS.map((wd) => (
           <div
             key={wd}
-            className="text-center text-[9px] font-bold uppercase tracking-widest text-gray-400 py-1"
+            className="text-center text-xs font-semibold uppercase tracking-wide text-gray-400 py-1"
           >
             {wd}
           </div>
@@ -208,13 +205,13 @@ export default function CustomCalendar({
             <button
               key={cell.key}
               onClick={() => onDateSelect(cell.key)}
-              className={`relative flex flex-col items-center justify-start pt-1.5 h-14 rounded-xl text-xs font-bold transition-all ${
+              className={`relative flex flex-col items-center justify-start pt-2 h-14 rounded-xl text-sm font-semibold transition-all ${
                 isSelected
-                  ? "bg-primary text-white"
+                  ? "bg-primary text-white shadow-md"
                   : isToday
-                    ? "ring-1 ring-primary/40"
-                    : ""
-              } ${isSelected ? "hover:bg-primary/80" : hasEvents ? "hover:bg-primary/10" : "hover:bg-gray-50"}`}
+                    ? "ring-2 ring-primary/30 text-gray-900"
+                    : "text-gray-700"
+              } ${isSelected ? "hover:bg-primary/80" : hasEvents ? "hover:bg-primary/10" : "hover:bg-base-200/50"}`}
             >
               {cell.day}
               {hasEvents ? (
@@ -241,8 +238,8 @@ export default function CustomCalendar({
         })}
       </div>
 
-      {/* Today button - always rendered to avoid layout shift */}
-      <div className="h-6">
+      {/* Today button */}
+      <div className="h-7">
         {(!isViewingCurrentMonth || !isSelectedToday) && (
           <button
             onClick={goToToday}
