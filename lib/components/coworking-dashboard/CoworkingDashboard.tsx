@@ -14,7 +14,8 @@ import OrdersList from "./OrdersList";
 import OrderDetailModal from "./OrderDetailModal";
 import VenuesModal from "./VenuesModal";
 import PaymentsTab from "./PaymentsTab";
-import { LogOut, Building2, MapPin, ShoppingBag, CreditCard, AlertTriangle } from "lucide-react";
+import CalendarTab from "./CalendarTab";
+import { LogOut, Building2, MapPin, ShoppingBag, CreditCard, AlertTriangle, CalendarDays } from "lucide-react";
 import StripeReturnPage from "./StripeReturnPage";
 
 interface CoworkingDashboardProps {
@@ -48,7 +49,7 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [showVenues, setShowVenues] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"orders" | "payments">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "calendar" | "payments">("orders");
   const [error, setError] = useState("");
 
   // The resolved space ID from the getMe response
@@ -225,6 +226,17 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
             Orders
           </button>
           <button
+            onClick={() => setActiveTab("calendar")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "calendar"
+                ? "border-primary text-primary"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <CalendarDays className="h-4 w-4" />
+            Calendar
+          </button>
+          <button
             onClick={() => setActiveTab("payments")}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               activeTab === "payments"
@@ -281,6 +293,11 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
             />
           )}
         </>
+      )}
+
+      {/* Calendar Tab */}
+      {activeTab === "calendar" && spaceId && (
+        <CalendarTab spaceId={spaceId} />
       )}
 
       {/* Payments Tab */}

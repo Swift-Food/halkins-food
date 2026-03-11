@@ -23,6 +23,7 @@ import {
   WithdrawResponse,
   TransactionsResponse,
   TransactionFilter,
+  CalendarResponse,
 } from '@/types/api';
 
 class CoworkingDashboardService {
@@ -383,6 +384,21 @@ class CoworkingDashboardService {
     const response = await fetchWithAuth(url);
     if (!response.ok) {
       throw new Error('Failed to fetch transactions');
+    }
+    return response.json();
+  }
+  /**
+   * Get calendar data for the coworking space
+   */
+  async getCalendar(spaceId: string): Promise<CalendarResponse> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_CALENDAR(spaceId)}`
+    );
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error('You do not have access to this coworking space');
+      }
+      throw new Error('Failed to fetch calendar data');
     }
     return response.json();
   }

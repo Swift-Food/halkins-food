@@ -261,3 +261,37 @@ export interface TransactionsResponse {
 }
 
 export type TransactionFilter = 'all' | 'transfers' | 'withdrawals';
+
+// ============================================================================
+// CALENDAR TYPES
+// ============================================================================
+
+export interface CalendarOrderItem {
+  id: string;
+  memberEmail: string;
+  memberName: string | null;
+  bookingStartTime: string | null;
+  bookingEndTime: string | null;
+  status: string;
+  adminReviewStatus: string;
+  bookingReference: string | null;
+  roomLocationDetails: string | null;
+  subtotal: number;
+  venueHireFee: number;
+  total: number;
+}
+
+export interface CalendarDateGroup {
+  date: string;
+  orders: CalendarOrderItem[];
+}
+
+export interface CalendarVenueGroup {
+  venueId: string | null;
+  venueName: string | null;
+  dates: CalendarDateGroup[];
+}
+
+export interface CalendarResponse {
+  venues: CalendarVenueGroup[];
+}
