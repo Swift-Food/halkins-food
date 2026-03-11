@@ -6,6 +6,7 @@ import {
   CalendarResponse,
   CalendarOrderItem,
 } from "@/types/api";
+import { CoworkingVenueAdmin } from "@/types/api/coworking-admin.api.types";
 import CustomCalendar from "./CustomCalendar";
 import OrderDetailModal from "./OrderDetailModal";
 import {
@@ -64,21 +65,22 @@ function getTodayKey(): string {
 
 export default function CalendarTab({ spaceId }: CalendarTabProps) {
   const [calendarData, setCalendarData] = useState<CalendarResponse | null>(null);
+  const [venues, setVenues] = useState<CoworkingVenueAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(getTodayKey());
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedVenueIds, setSelectedVenueIds] = useState<Set<string>>(new Set());
-  const [allVenueIds, setAllVenueIds] = useState<string[]>([]);
 
   const fetchCalendar = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await coworkingDashboardService.getCalendar(spaceId);
-      setCalendarData(data);
-
-      const ids = data.venues.map((v) => v.venueId ?? "no-venue");
-      setAllVenueIds(ids);
-      setSelectedVenueIds(new Set(ids));
+      const [calData, venueList] = await Promise.all([
+        coworkingDashboardService.getCalendar(spaceId),
+        coworkingDashboardService.listVenues(spaceId),
+      ]);
+      setCalendarData(calData);
+      setVenues(venueList);
+      setSelectedVenueIds(new Set(venueList.map((v) => v.id)));
     } catch (err) {
       console.error("Failed to fetch calendar:", err);
     } finally {
@@ -92,13 +94,11 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
 
   const venueColorMap = useMemo(() => {
     const map: Record<string, string> = {};
-    if (!calendarData) return map;
-    calendarData.venues.forEach((v, i) => {
-      const key = v.venueId ?? "no-venue";
-      map[key] = VENUE_COLORS[i % VENUE_COLORS.length];
+    venues.forEach((v, i) => {
+      map[v.id] = VENUE_COLORS[i % VENUE_COLORS.length];
     });
     return map;
-  }, [calendarData]);
+  }, [venues]);
 
   const dateIndicators = useMemo(() => {
     if (!calendarData) return {};
@@ -167,6 +167,7 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
     });
   };
 
+  const allVenueIds = venues.map((v) => v.id);
   const selectAll = () => setSelectedVenueIds(new Set(allVenueIds));
   const clearAll = () => setSelectedVenueIds(new Set());
 
@@ -203,7 +204,7 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
           </div>
 
           {/* Venue filter card */}
-          {calendarData && calendarData.venues.length > 0 && (
+          {venues.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm border border-base-200 px-4 sm:px-6 py-4">
               <div className="flex items-center justify-between mb-2.5">
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Venues</h3>
@@ -227,15 +228,14 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {calendarData.venues.map((venue) => {
-                  const venueKey = venue.venueId ?? "no-venue";
-                  const color = venueColorMap[venueKey];
-                  const isActive = selectedVenueIds.has(venueKey);
+                {venues.map((venue) => {
+                  const color = venueColorMap[venue.id];
+                  const isActive = selectedVenueIds.has(venue.id);
 
                   return (
                     <button
-                      key={venueKey}
-                      onClick={() => toggleVenue(venueKey)}
+                      key={venue.id}
+                      onClick={() => toggleVenue(venue.id)}
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                         isActive
                           ? "border-transparent text-white shadow-sm"
@@ -247,7 +247,7 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
                         className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                         style={{ backgroundColor: isActive ? "rgba(255,255,255,0.5)" : color }}
                       />
-                      {venue.venueName ?? "No Venue"}
+                      {venue.name}
                     </button>
                   );
                 })}
