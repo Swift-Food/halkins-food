@@ -498,6 +498,7 @@ export default function Step3ContactInfo() {
         venueId: selectedVenue?.id,
         customerPhone: formData.phone,
         mealSessions: builtMealSessions,
+        promoCodes: promoCodes.length > 0 ? promoCodes : undefined,
         specialInstructions: specialInstructions || undefined,
         scheduledFor: sessionDate,
         scheduledTime: sessionTime,
