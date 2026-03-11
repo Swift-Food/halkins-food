@@ -100,6 +100,7 @@ export default function Step3ContactInfo() {
     isAuthenticated,
     isLoading: authLoading,
     selectedVenue,
+    eventEndDate,
     eventEndTime,
     spaceSlug: coworkingSpaceSlug,
   } = useCoworking();
@@ -507,8 +508,8 @@ export default function Step3ContactInfo() {
           deliveryDate: sessionDate,
           deliveryTime: sessionTime,
         }),
-        ...(sessionDate && eventEndTime && {
-          eventEndDateTime: `${sessionDate}T${eventEndTime}:00`,
+        ...(eventEndDate && eventEndTime && {
+          eventEndDateTime: `${eventEndDate}T${eventEndTime}:00`,
         }),
       },
     };
