@@ -6,6 +6,7 @@ import { CoworkingVenueAdmin, CreateCoworkingVenueRequest, UpdateCoworkingVenueR
 import { coworkingDashboardService } from "@/services/api/coworking-dashboard.api";
 import { fetchWithAuth, API_BASE_URL } from "@/lib/api-client/auth-client";
 import { API_ENDPOINTS } from "@/lib/constants";
+import AddressAutocomplete from "@/lib/components/catering/contact/AddressAutocomplete";
 import {
   X,
   Plus,
@@ -49,6 +50,8 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
   const [form, setForm] = useState<CreateCoworkingVenueRequest>(emptyForm);
   const [imageUploading, setImageUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
+  const [addressSearchError, setAddressSearchError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchVenues = useCallback(async () => {
@@ -72,6 +75,8 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
     setForm(emptyForm);
     setEditingVenue(null);
     setImagePreview(null);
+    setHasSelectedAddress(false);
+    setAddressSearchError("");
     setError("");
     setMode("create");
   };
@@ -87,6 +92,8 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
       image: venue.image ?? "",
       description: venue.description ?? "",
     });
+    setHasSelectedAddress(false);
+    setAddressSearchError("");
     setError("");
     setMode("edit");
   };
@@ -138,6 +145,29 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
   ) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
   };
+
+  const handlePlaceSelect = useCallback((place: google.maps.places.PlaceResult) => {
+    const location = place.geometry?.location;
+
+    if (!location) {
+      setHasSelectedAddress(false);
+      setAddressSearchError("Selected address does not include coordinates.");
+      return;
+    }
+
+    setForm((currentForm) => ({
+      ...currentForm,
+      latitude: Number(location.lat().toFixed(6)),
+      longitude: Number(location.lng().toFixed(6)),
+    }));
+    setHasSelectedAddress(true);
+    setAddressSearchError("");
+  }, []);
+
+  const handleClearAddress = useCallback(() => {
+    setHasSelectedAddress(false);
+    setAddressSearchError("");
+  }, []);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -386,6 +416,13 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
                         Use precise coordinates so bookings, venue matching, and internal operations stay accurate.
                       </p>
                     </div>
+
+                    <AddressAutocomplete
+                      onPlaceSelect={handlePlaceSelect}
+                      onClearAddress={handleClearAddress}
+                      error={addressSearchError}
+                      hasValidAddress={hasSelectedAddress}
+                    />
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
