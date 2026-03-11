@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { coworkingDashboardService } from "@/services/api/coworking-dashboard.api";
 import {
@@ -14,12 +15,16 @@ import OrdersList from "./OrdersList";
 import OrderDetailModal from "./OrderDetailModal";
 import VenuesModal from "./VenuesModal";
 import PaymentsTab from "./PaymentsTab";
-import { LogOut, Building2, MapPin, ShoppingBag, CreditCard, AlertTriangle } from "lucide-react";
+import CalendarTab from "./CalendarTab";
+import { LogOut, Building2, MapPin, ShoppingBag, CreditCard, AlertTriangle, CalendarDays } from "lucide-react";
 import StripeReturnPage from "./StripeReturnPage";
 
 interface CoworkingDashboardProps {
   spaceSlug: string;
+  activeTab?: DashboardTab;
 }
+
+type DashboardTab = "orders" | "calendar" | "payment";
 
 function isStripeReturnTab() {
   if (typeof window === "undefined") return false;
@@ -27,16 +32,26 @@ function isStripeReturnTab() {
   return params.get("stripe") === "complete" || params.get("stripe") === "refresh";
 }
 
-export default function CoworkingDashboard({ spaceSlug }: CoworkingDashboardProps) {
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+export default function CoworkingDashboard({
+  spaceSlug,
+  activeTab = "orders",
+}: CoworkingDashboardProps) {
   // If this tab was opened by Stripe redirect, show a "close this tab" screen
   if (isStripeReturnTab()) {
     return <StripeReturnPage spaceSlug={spaceSlug} />;
   }
 
-  return <CoworkingDashboardInner spaceSlug={spaceSlug} />;
+  return <CoworkingDashboardInner spaceSlug={spaceSlug} activeTab={activeTab} />;
 }
 
-function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
+function CoworkingDashboardInner({
+  spaceSlug,
+  activeTab,
+}: Required<CoworkingDashboardProps>) {
   const [authenticated, setAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
@@ -47,9 +62,32 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [showVenues, setShowVenues] = useState(false);
-
-  const [activeTab, setActiveTab] = useState<"orders" | "payments">("orders");
   const [error, setError] = useState("");
+  const tabs: Array<{
+    id: DashboardTab;
+    href: string;
+    label: string;
+    icon: typeof ShoppingBag;
+  }> = [
+    {
+      id: "orders",
+      href: `/coworking-dashboard/${spaceSlug}/orders`,
+      label: "Orders",
+      icon: ShoppingBag,
+    },
+    {
+      id: "calendar",
+      href: `/coworking-dashboard/${spaceSlug}/calendar`,
+      label: "Calendar",
+      icon: CalendarDays,
+    },
+    {
+      id: "payment",
+      href: `/coworking-dashboard/${spaceSlug}/payment`,
+      label: "Payment",
+      icon: CreditCard,
+    },
+  ];
 
   // The resolved space ID from the getMe response
   const spaceId = me?.space.id ?? null;
@@ -69,13 +107,14 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
       setError("");
       const meData = await coworkingDashboardService.getMeBySlug(spaceSlug);
       setMe(meData);
-    } catch (err: any) {
-      if (err.message?.includes("access")) {
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, "Failed to load dashboard");
+      if (message.includes("access")) {
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         setAuthenticated(false);
       }
-      setError(err.message || "Failed to load dashboard");
+      setError(message);
     }
   }, [spaceSlug]);
 
@@ -92,7 +131,7 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
       try {
         const statsData = await coworkingDashboardService.getStats(spaceId);
         setStats(statsData);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch stats:", err);
       }
     };
@@ -115,7 +154,7 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
           ? data.orders.filter((o) => o.adminReviewStatus === "pending" && o.status == "pending_review")
           : data.orders;
       setOrders(filtered);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch orders:", err);
     } finally {
       setOrdersLoading(false);
@@ -213,28 +252,25 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
       {/* Tab Bar */}
       {spaceId && (
         <div className="flex gap-1 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab("orders")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "orders"
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <ShoppingBag className="h-4 w-4" />
-            Orders
-          </button>
-          <button
-            onClick={() => setActiveTab("payments")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "payments"
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <CreditCard className="h-4 w-4" />
-            Payments
-          </button>
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+
+            return (
+              <Link
+                key={tab.id}
+                href={tab.href}
+                aria-current={activeTab === tab.id ? "page" : undefined}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {tab.label}
+              </Link>
+            );
+          })}
         </div>
       )}
 
@@ -283,8 +319,13 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
         </>
       )}
 
+      {/* Calendar Tab */}
+      {activeTab === "calendar" && spaceId && (
+        <CalendarTab spaceId={spaceId} />
+      )}
+
       {/* Payments Tab */}
-      {activeTab === "payments" && spaceId && (
+      {activeTab === "payment" && spaceId && (
         <PaymentsTab spaceId={spaceId} />
       )}
 
