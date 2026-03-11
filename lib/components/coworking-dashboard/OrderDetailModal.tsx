@@ -235,9 +235,9 @@ export default function OrderDetailModal({
                     Ref: {order.booking.reference}
                   </p>
                   {order.booking.venueName && (
-                    <p className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                      Venue: {order.booking.venueName}
+                    <p className="flex items-center gap-2 font-semibold text-primary">
+                      <MapPin className="h-4 w-4" />
+                      {order.booking.venueName}
                     </p>
                   )}
                   {order.booking.room && (
