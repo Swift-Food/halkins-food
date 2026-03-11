@@ -25,16 +25,16 @@ interface CalendarTabProps {
 
 // Predefined venue color palette - distinct, accessible colors
 const VENUE_COLORS = [
-  "#6366f1", // indigo
-  "#0891b2", // cyan
-  "#059669", // emerald
-  "#d97706", // amber
-  "#dc2626", // red
-  "#7c3aed", // violet
-  "#0284c7", // sky
-  "#c026d3", // fuchsia
-  "#65a30d", // lime
-  "#ea580c", // orange
+  "#818cf8", // indigo-400
+  "#22d3ee", // cyan-400
+  "#34d399", // emerald-400
+  "#fbbf24", // amber-400
+  "#f87171", // red-400
+  "#a78bfa", // violet-400
+  "#38bdf8", // sky-400
+  "#e879f9", // fuchsia-400
+  "#a3e635", // lime-400
+  "#fb923c", // orange-400
 ];
 
 const statusBadgeColor: Record<string, string> = {
@@ -251,7 +251,7 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
       {/* Main layout: calendar + orders */}
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Calendar */}
-        <div className="lg:w-[400px] lg:flex-shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+        <div className="lg:basis-3/5 lg:flex-shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
           <CustomCalendar
             selectedDate={selectedDate}
             onDateSelect={setSelectedDate}
@@ -260,7 +260,7 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
         </div>
 
         {/* Orders for selected day */}
-        <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="lg:basis-2/5 lg:max-h-[600px] lg:flex lg:flex-col bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="border-b border-gray-200 px-4 sm:px-6 py-4">
             <h2 className="text-sm font-bold text-gray-900">
               {formattedSelectedDate}
@@ -270,7 +270,7 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
             </p>
           </div>
 
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 lg:overflow-y-auto lg:flex-1 lg:min-h-0">
             {selectedDayOrders.length === 0 ? (
               <div className="text-center py-16 text-gray-400">
                 <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-50" />

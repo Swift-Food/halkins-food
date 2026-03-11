@@ -208,7 +208,7 @@ export default function CustomCalendar({
             <button
               key={cell.key}
               onClick={() => onDateSelect(cell.key)}
-              className={`relative flex flex-col items-center justify-start pt-1.5 h-12 rounded-xl text-xs font-bold transition-all ${
+              className={`relative flex flex-col items-center justify-start pt-1.5 h-14 rounded-xl text-xs font-bold transition-all ${
                 isSelected
                   ? "bg-primary text-white"
                   : isToday
@@ -222,19 +222,19 @@ export default function CustomCalendar({
                   {indicators.map((ind, j) => (
                     <span
                       key={j}
-                      className="flex items-center justify-center rounded-full min-w-[14px] h-[14px] px-0.5"
+                      className="flex items-center justify-center rounded-full min-w-[18px] h-[18px] px-0.5"
                       style={{
                         backgroundColor: ind.color,
                       }}
                     >
-                      <span className="text-[8px] font-bold leading-none text-white">
+                      <span className="text-[10px] font-bold leading-none text-white">
                         {ind.count}
                       </span>
                     </span>
                   ))}
                 </span>
               ) : (
-                <span className="h-[14px] mt-0.5" />
+                <span className="h-[18px] mt-0.5" />
               )}
             </button>
           );
