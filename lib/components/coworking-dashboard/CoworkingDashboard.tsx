@@ -104,8 +104,8 @@ function CoworkingDashboardInner({ spaceSlug }: CoworkingDashboardProps) {
     if (!spaceId) return;
     setOrdersLoading(true);
     try {
-      // "needs_review" is a frontend pseudo-filter: fetch upcoming, filter client-side
-      const apiStatus = activeStatus === "needs_review" ? "upcoming" : activeStatus;
+      // "needs_review" is a frontend pseudo-filter: fetch all, then filter client-side
+      const apiStatus = activeStatus === "needs_review" ? "all" : activeStatus;
       const data = await coworkingDashboardService.getOrders(spaceId, {
         status: apiStatus,
         limit: 50,
