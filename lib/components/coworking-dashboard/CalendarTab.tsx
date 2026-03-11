@@ -9,8 +9,6 @@ import {
 import CustomCalendar from "./CustomCalendar";
 import OrderDetailModal from "./OrderDetailModal";
 import {
-  User,
-  Hash,
   MapPin,
   Clock,
   ChevronRight,
@@ -39,14 +37,14 @@ const VENUE_COLORS = [
 ];
 
 const statusBadgeColor: Record<string, string> = {
-  pending_review: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  confirmed: "bg-blue-100 text-blue-800 border-blue-300",
-  preparing: "bg-indigo-100 text-indigo-800 border-indigo-300",
-  ready: "bg-purple-100 text-purple-800 border-purple-300",
-  delivered: "bg-green-100 text-green-800 border-green-300",
-  completed: "bg-gray-100 text-gray-800 border-gray-300",
-  cancelled: "bg-red-100 text-red-800 border-red-300",
+  pending_review: "bg-yellow-100 text-yellow-800",
+  pending: "bg-yellow-100 text-yellow-800",
+  confirmed: "bg-blue-100 text-blue-800",
+  preparing: "bg-indigo-100 text-indigo-800",
+  ready: "bg-purple-100 text-purple-800",
+  delivered: "bg-green-100 text-green-800",
+  completed: "bg-gray-100 text-gray-800",
+  cancelled: "bg-red-100 text-red-800",
 };
 
 function formatDateTime(dateStr: string | null): string {
@@ -194,10 +192,19 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
       {/* Main layout: calendar + orders */}
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Calendar card */}
-        <div className="lg:basis-3/5 lg:flex-shrink-0 bg-white rounded-xl shadow-sm border border-base-200">
-          {/* Venue filter integrated into calendar card */}
-          {calendarData && calendarData.venues.length > 1 && (
-            <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 border-b border-base-200">
+        <div className="lg:basis-3/5 lg:flex-shrink-0 space-y-4">
+          {/* Calendar card */}
+          <div className="bg-white rounded-xl shadow-sm border border-base-200 p-4 sm:p-6">
+            <CustomCalendar
+              selectedDate={selectedDate}
+              onDateSelect={setSelectedDate}
+              dateIndicators={dateIndicators}
+            />
+          </div>
+
+          {/* Venue filter card */}
+          {calendarData && calendarData.venues.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-base-200 px-4 sm:px-6 py-4">
               <div className="flex items-center justify-between mb-2.5">
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Venues</h3>
                 <div className="flex gap-2">
@@ -247,15 +254,6 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
               </div>
             </div>
           )}
-
-          {/* Calendar grid */}
-          <div className="p-4 sm:p-6">
-            <CustomCalendar
-              selectedDate={selectedDate}
-              onDateSelect={setSelectedDate}
-              dateIndicators={dateIndicators}
-            />
-          </div>
         </div>
 
         {/* Orders for selected day */}
@@ -305,60 +303,61 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
                       setSelectedOrderId(order.id);
                     }
                   }}
-                  className="w-full flex items-center gap-4 p-4 sm:px-6 sm:py-5 transition-colors text-left hover:bg-base-200/30 cursor-pointer"
+                  className="w-full flex items-start gap-3 px-4 py-3.5 sm:px-5 sm:py-4 transition-colors text-left hover:bg-base-200/30 cursor-pointer"
                 >
                   {/* Venue color bar */}
                   <div
-                    className="w-1.5 self-stretch rounded-full flex-shrink-0"
+                    className="w-1 self-stretch rounded-full flex-shrink-0 mt-0.5"
                     style={{ backgroundColor: color }}
                   />
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                    {/* Top row: member name + price */}
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {order.memberName || order.memberEmail}
+                      </p>
+                      <span className="text-sm font-bold text-primary flex-shrink-0">
+                        £{order.total.toFixed(2)}
+                      </span>
+                    </div>
+
+                    {/* Meta row: venue, status, ref */}
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
                           statusBadgeColor[order.status] || "bg-gray-100 text-gray-700 border-gray-300"
                         }`}
                       >
                         {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace(/_/g, " ")}
                       </span>
                       {venueName && (
-                        <span className="text-xs font-medium text-gray-400">{venueName}</span>
+                        <span className="text-xs text-gray-400 font-medium">{venueName}</span>
+                      )}
+                      {order.bookingReference && (
+                        <span className="text-xs text-gray-400">#{order.bookingReference}</span>
                       )}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <User className="h-3.5 w-3.5 text-gray-400" />
-                        {order.memberName || order.memberEmail}
-                      </span>
-                      {order.bookingReference && (
+                    {/* Bottom row: time + location */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5 text-xs text-gray-500">
+                      {(order.bookingStartTime || order.bookingEndTime) && (
                         <span className="flex items-center gap-1">
-                          <Hash className="h-3.5 w-3.5 text-gray-400" />
-                          {order.bookingReference}
+                          <Clock className="h-3 w-3" />
+                          {formatDateTime(order.bookingStartTime)}
+                          {order.bookingEndTime && ` – ${formatDateTime(order.bookingEndTime)}`}
                         </span>
                       )}
                       {order.roomLocationDetails && (
                         <span className="flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                          <MapPin className="h-3 w-3" />
                           {order.roomLocationDetails}
                         </span>
                       )}
                     </div>
-
-                    {(order.bookingStartTime || order.bookingEndTime) && (
-                      <p className="flex items-center gap-1 mt-1.5 text-sm text-gray-500">
-                        <Clock className="h-3.5 w-3.5" />
-                        {formatDateTime(order.bookingStartTime)}
-                        {order.bookingEndTime && ` - ${formatDateTime(order.bookingEndTime)}`}
-                      </p>
-                    )}
-                    <p className="mt-1 text-sm font-bold text-primary">
-                      £{order.total.toFixed(2)}
-                    </p>
                   </div>
 
-                  <ChevronRight className="h-5 w-5 text-gray-300 flex-shrink-0" />
+                  <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0 mt-0.5" />
                 </div>
               ))
             )}
