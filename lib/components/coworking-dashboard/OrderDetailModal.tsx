@@ -34,9 +34,7 @@ const statusBadgeColor: Record<string, string> = {
 };
 
 function formatStatus(status: string) {
-  return status
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function formatDate(dateStr: string) {
@@ -50,6 +48,15 @@ function formatDate(dateStr: string) {
   });
 }
 
+function formatSessionDate(dateStr: string) {
+  return new Date(`${dateStr}T00:00:00`).toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 export default function OrderDetailModal({
   spaceId,
   orderId,
@@ -60,7 +67,9 @@ export default function OrderDetailModal({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [actionLoading, setActionLoading] = useState<"approve" | "reject" | null>(null);
+  const [actionLoading, setActionLoading] = useState<
+    "approve" | "reject" | null
+  >(null);
   const [actionError, setActionError] = useState("");
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
@@ -92,7 +101,10 @@ export default function OrderDetailModal({
     setActionLoading("approve");
     setActionError("");
     try {
-      const updated = await coworkingDashboardService.approveOrder(spaceId, orderId);
+      const updated = await coworkingDashboardService.approveOrder(
+        spaceId,
+        orderId,
+      );
       setOrder(updated);
       onOrderUpdated?.();
     } catch (err: any) {
@@ -109,7 +121,7 @@ export default function OrderDetailModal({
       const updated = await coworkingDashboardService.rejectOrder(
         spaceId,
         orderId,
-        rejectReason || undefined
+        rejectReason || undefined,
       );
       setOrder(updated);
       setShowRejectInput(false);
@@ -123,6 +135,13 @@ export default function OrderDetailModal({
   };
 
   const isPending = order?.adminReviewStatus === "pending";
+  const sortedMealSessions = Array.isArray(order?.mealSessions)
+    ? [...order.mealSessions].sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date);
+        if (dateCompare !== 0) return dateCompare;
+        return (a.deliveryTime || "").localeCompare(b.deliveryTime || "");
+      })
+    : [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -238,6 +257,32 @@ export default function OrderDetailModal({
                 </div>
               </div>
 
+              {sortedMealSessions.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+                    Catering Sessions Ordered
+                  </h3>
+                  <div className="space-y-2">
+                    {sortedMealSessions.map((session, index) => (
+                      <div
+                        key={`${session.name}-${session.date}-${session.deliveryTime ?? "no-time"}-${index}`}
+                        className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3"
+                      >
+                        <p className="text-sm font-semibold text-gray-900">
+                          {session.name}
+                        </p>
+                        <p className="mt-1 text-sm text-gray-600">
+                          {formatSessionDate(session.date)}
+                          {session.deliveryTime
+                            ? ` at ${session.deliveryTime}`
+                            : ""}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Estimated Delivery */}
               {order.estimatedDelivery && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -252,11 +297,15 @@ export default function OrderDetailModal({
               <div className="space-y-2 bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Receipt className="h-4 w-4 text-primary" />
-                  <h3 className="text-sm font-semibold text-gray-700">Summary</h3>
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    Summary
+                  </h3>
                 </div>
                 <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-200">
                   <span>Venue Hire</span>
-                  <span className="text-primary">£{order.total.venueHireFee.toFixed(2)}</span>
+                  <span className="text-primary">
+                    £{order.total.venueHireFee.toFixed(2)}
+                  </span>
                 </div>
               </div>
 

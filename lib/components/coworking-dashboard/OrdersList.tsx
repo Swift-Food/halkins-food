@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  DashboardOrderSummary,
-  DashboardOrderStatusFilter,
-} from "@/types/api";
+import { DashboardOrderSummary, DashboardOrderStatusFilter } from "@/types/api";
 import {
   AlertTriangle,
   Check,
@@ -34,11 +31,36 @@ const statusTabs: {
   icon: typeof Clock;
   color: string;
 }[] = [
-  { value: "all", label: "All", icon: List, color: "bg-gray-100 text-gray-700" },
-  { value: "needs_review", label: "Needs Review", icon: AlertTriangle, color: "bg-amber-100 text-amber-700" },
-  { value: "upcoming", label: "Upcoming", icon: Clock, color: "bg-yellow-100 text-yellow-700" },
-  { value: "active", label: "Active", icon: PlayCircle, color: "bg-blue-100 text-blue-700" },
-  { value: "completed", label: "Completed", icon: CheckCircle, color: "bg-green-100 text-green-700" },
+  {
+    value: "all",
+    label: "All",
+    icon: List,
+    color: "bg-gray-100 text-gray-700",
+  },
+  {
+    value: "needs_review",
+    label: "Needs Review",
+    icon: AlertTriangle,
+    color: "bg-amber-100 text-amber-700",
+  },
+  {
+    value: "upcoming",
+    label: "Upcoming",
+    icon: Clock,
+    color: "bg-yellow-100 text-yellow-700",
+  },
+  {
+    value: "active",
+    label: "Active",
+    icon: PlayCircle,
+    color: "bg-blue-100 text-blue-700",
+  },
+  {
+    value: "completed",
+    label: "Completed",
+    icon: CheckCircle,
+    color: "bg-green-100 text-green-700",
+  },
 ];
 
 const statusBadgeColor: Record<string, string> = {
@@ -83,11 +105,23 @@ export default function OrdersList({
     }
   };
 
+  const handleRowKeyDown = (
+    e: React.KeyboardEvent<HTMLDivElement>,
+    orderId: string,
+  ) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onOrderClick(orderId);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
       {/* Status Tabs */}
       <div className="border-b border-gray-200 px-4 sm:px-6 pt-4 sm:pt-6">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Orders</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
+          Orders
+        </h2>
         <div className="flex gap-2 overflow-x-auto pb-3 -mb-px">
           {statusTabs.map((tab) => {
             const Icon = tab.icon;
@@ -136,14 +170,18 @@ export default function OrdersList({
           </div>
         ) : (
           orders.map((order) => {
-            console.log("order data", JSON.stringify(order))
-            const needsReview = order.adminReviewStatus === "pending" && order.status == "pending_review";
+            const needsReview =
+              order.adminReviewStatus === "pending" &&
+              order.status == "pending_review";
             const isApproving = approvingId === order.id;
 
             return (
-              <button
+              <div
                 key={order.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => onOrderClick(order.id)}
+                onKeyDown={(e) => handleRowKeyDown(e, order.id)}
                 className={`w-full flex items-center gap-4 p-4 sm:px-6 sm:py-5 transition-colors text-left ${
                   needsReview
                     ? "border-l-4 border-amber-400 bg-amber-50/40 hover:bg-amber-50"
@@ -154,10 +192,12 @@ export default function OrdersList({
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
-                        statusBadgeColor[order.status] || "bg-gray-100 text-gray-700 border-gray-300"
+                        statusBadgeColor[order.status] ||
+                        "bg-gray-100 text-gray-700 border-gray-300"
                       }`}
                     >
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                      {order.status.charAt(0).toUpperCase() +
+                        order.status.slice(1)}
                     </span>
                     {needsReview && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-amber-100 text-amber-800 border-amber-300">
@@ -213,7 +253,7 @@ export default function OrdersList({
                 ) : (
                   <ChevronRight className="h-5 w-5 text-gray-300 flex-shrink-0" />
                 )}
-              </button>
+              </div>
             );
           })
         )}

@@ -153,6 +153,12 @@ export interface DashboardOrderTotal {
   total: number;
 }
 
+export interface DashboardOrderMealSession {
+  name: string;
+  date: string;
+  deliveryTime: string | null;
+}
+
 /**
  * Response for GET /coworking-dashboard/:spaceId/orders/:orderId
  * Backend: DashboardOrderDetailResponse
@@ -164,6 +170,7 @@ export interface DashboardOrderDetailResponse {
   adminReviewedAt: string | null;
   member: DashboardOrderMember;
   booking: DashboardOrderBooking;
+  mealSessions: DashboardOrderMealSession[];
   items: DashboardOrderItem[];
   total: DashboardOrderTotal;
   eventDate: string | null;
