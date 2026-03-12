@@ -277,7 +277,7 @@ export default function OrderDetailModal({
                         className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3"
                       >
                         <p className="text-sm font-semibold text-gray-900">
-                          {session.name}
+                          {index + 1}. {session.name}
                         </p>
                         <p className="mt-1 text-sm text-gray-600">
                           {formatSessionDate(session.date)}
@@ -288,16 +288,6 @@ export default function OrderDetailModal({
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {/* Estimated Delivery */}
-              {order.estimatedDelivery && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="flex items-center gap-2 text-sm font-medium text-blue-800">
-                    <Clock className="h-4 w-4" />
-                    Est. Delivery: {formatDate(order.estimatedDelivery)}
-                  </p>
                 </div>
               )}
 
