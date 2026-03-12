@@ -66,6 +66,8 @@ export default function BundleDetailModal({
     }
     return total;
   }, [bundle.items, menuItemLookup, quantity]);
+  const estimatedPricePerPerson =
+    peopleServed > 0 ? estimatedTotal / peopleServed : 0;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60]">
@@ -232,7 +234,12 @@ export default function BundleDetailModal({
                 {bundle.items.length} items • Serves ~{peopleServed} people
               </p>
             </div>
-            <p className="text-xl font-bold text-primary">£{estimatedTotal.toFixed(2)}</p>
+            <div className="text-right">
+              <p className="text-xl font-bold text-primary">£{estimatedTotal.toFixed(2)}</p>
+              <p className="text-xs text-gray-500">
+                £{estimatedPricePerPerson.toFixed(2)}/person
+              </p>
+            </div>
           </div>
 
           {/* Add button */}
