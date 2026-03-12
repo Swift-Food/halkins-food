@@ -468,7 +468,8 @@ class CoworkingService {
     spaceSlug: string,
     mealSessions: MealSessionState[],
     deliveryLocation?: { latitude: number; longitude: number },
-    promoCodes?: string[]
+    promoCodes?: string[],
+    venueId?: string,
   ): Promise<CateringPricingResult> {
     // Flatten all sessions into a single restaurant-grouped orderItems list
     // matching CoworkingCartPricingDto
@@ -500,6 +501,7 @@ class CoworkingService {
       orderItems,
       promoCodes,
       ...(deliveryLocation && { deliveryLocation }),
+      ...(venueId && { venueId }),
     };
 
     try {

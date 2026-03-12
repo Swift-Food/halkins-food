@@ -13,6 +13,8 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-react";
 
 interface PromoCodesTabProps {
@@ -77,6 +79,7 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
   const [form, setForm] = useState<CreateForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
   const [venuesExpanded, setVenuesExpanded] = useState(false);
 
   const fetchPromoCodes = useCallback(async () => {
@@ -116,6 +119,16 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
     e.preventDefault();
     setSaving(true);
     setError("");
+
+    if (
+      form.discountType === "percentage" &&
+      Number(form.discountAmount) > 100
+    ) {
+      setError("Percentage discount cannot exceed 100%.");
+      setSaving(false);
+      return;
+    }
+
     try {
       const dto: Record<string, unknown> = {
         code: form.code.toUpperCase().trim(),
@@ -155,6 +168,19 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
       setError(getErrorMessage(err, "Failed to delete promo code"));
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleToggle = async (code: string) => {
+    setToggling(code);
+    setError("");
+    try {
+      await coworkingDashboardService.togglePromoCode(spaceId, code);
+      await fetchPromoCodes();
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to toggle promo code"));
+    } finally {
+      setToggling(null);
     }
   };
 
@@ -277,12 +303,17 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
                 </label>
                 <select
                   value={form.discountType}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const next = e.target.value as "fixed" | "percentage";
                     setForm((f) => ({
                       ...f,
-                      discountType: e.target.value as "fixed" | "percentage",
-                    }))
-                  }
+                      discountType: next,
+                      discountAmount:
+                        next === "percentage" && Number(f.discountAmount) > 100
+                          ? "100"
+                          : f.discountAmount,
+                    }));
+                  }}
                   className="select h-11 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
                 >
                   <option value="fixed">Fixed (£)</option>
@@ -303,6 +334,7 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
                     type="number"
                     required
                     min="0"
+                    {...(form.discountType === "percentage" ? { max: 100 } : {})}
                     step="0.01"
                     value={form.discountAmount}
                     onChange={(e) =>
@@ -625,19 +657,39 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
                       )}
                     </div>
 
-                    {/* Right: delete */}
-                    <button
-                      onClick={() => handleDelete(promo.code)}
-                      disabled={deleting === promo.code}
-                      className="btn btn-sm rounded-full border-red-200 bg-red-50 text-red-600 shadow-none hover:border-red-300 hover:bg-red-100 gap-1.5 shrink-0"
-                    >
-                      {deleting === promo.code ? (
-                        <span className="loading loading-spinner loading-xs" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                      Delete
-                    </button>
+                    {/* Right: toggle + delete */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => handleToggle(promo.code)}
+                        disabled={toggling === promo.code}
+                        className={`btn btn-sm rounded-full shadow-none gap-1.5 ${
+                          promo.active === false
+                            ? "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
+                            : "border-green-200 bg-green-50 text-green-700 hover:border-green-300 hover:bg-green-100"
+                        }`}
+                      >
+                        {toggling === promo.code ? (
+                          <span className="loading loading-spinner loading-xs" />
+                        ) : promo.active === false ? (
+                          <ToggleLeft className="h-4 w-4" />
+                        ) : (
+                          <ToggleRight className="h-4 w-4" />
+                        )}
+                        {promo.active === false ? "Enable" : "Disable"}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(promo.code)}
+                        disabled={deleting === promo.code}
+                        className="btn btn-sm rounded-full border-red-200 bg-red-50 text-red-600 shadow-none hover:border-red-300 hover:bg-red-100 gap-1.5"
+                      >
+                        {deleting === promo.code ? (
+                          <span className="loading loading-spinner loading-xs" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

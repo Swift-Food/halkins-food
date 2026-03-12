@@ -629,6 +629,7 @@ export default function Step3ContactInfo() {
         mealSessions,
         { latitude: deliveryLat, longitude: deliveryLng },
         promoCodes,
+        selectedVenue?.id,
       );
 
       if (!pricingResult.isValid) {
@@ -637,6 +638,18 @@ export default function Step3ContactInfo() {
       }
 
       setPricing(pricingResult);
+
+      // If promo codes are applied but resulted in no discount, warn the user
+      if (promoCodes.length > 0) {
+        const hasDiscount = (pricingResult.promoDiscount ?? 0) > 0 || (pricingResult.venueHireDiscount ?? 0) > 0;
+        if (!hasDiscount) {
+          setPromoSuccess("");
+          setPromoError("Promo code may not apply to current items");
+        } else {
+          // Clear stale error if discount is now valid
+          setPromoError((prev) => prev === "Promo code may not apply to current items" ? "" : prev);
+        }
+      }
     } catch (error: unknown) {
       console.error("Error calculating pricing:", error);
       setPricing(null);

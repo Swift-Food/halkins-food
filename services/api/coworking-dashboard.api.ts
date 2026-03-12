@@ -432,6 +432,18 @@ class CoworkingDashboardService {
     if (!response.ok) throw new Error('Failed to delete promo code');
   }
 
+  async togglePromoCode(spaceId: string, code: string): Promise<any> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_PROMO_CODE(spaceId, code)}/toggle`,
+      { method: 'PATCH' }
+    );
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to toggle promo code');
+    }
+    return response.json();
+  }
+
   /**
    * Get calendar data for the coworking space
    */
