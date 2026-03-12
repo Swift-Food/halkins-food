@@ -94,6 +94,7 @@ export default function CateringOrderBuilder({
     getSessionTotal,
     getTotalPrice,
     setCurrentStep,
+    eventDetails,
   } = useCatering();
 
   // Session editing state
@@ -1010,6 +1011,7 @@ export default function CateringOrderBuilder({
           allMenuItems={allMenuItems}
           fetchAllMenuItems={fetchAllMenuItems}
           onBack={() => setShowBundleBrowser(false)}
+          defaultGuestCount={eventDetails?.guestCount || 1}
         />
       ) : (
         <RestaurantMenuBrowser

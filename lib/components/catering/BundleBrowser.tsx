@@ -6,6 +6,7 @@ import { CateringBundleResponse, CateringBundleItem } from "@/types/api/catering
 import { MenuItem } from "@/types/restaurant.types";
 import { useCatering } from "@/context/CateringContext";
 import BundleCard from "./BundleCard";
+import BundleDetailModal from "./modals/BundleDetailModal";
 import { mapToMenuItem } from "./catering-order-helpers";
 import { ArrowLeft, Package } from "lucide-react";
 
@@ -14,6 +15,7 @@ interface BundleBrowserProps {
   allMenuItems: MenuItem[] | null;
   fetchAllMenuItems: () => void;
   onBack: () => void;
+  defaultGuestCount?: number;
 }
 
 function enrichBundleItemAddons(
@@ -43,6 +45,7 @@ export default function BundleBrowser({
   allMenuItems,
   fetchAllMenuItems,
   onBack,
+  defaultGuestCount = 1,
 }: BundleBrowserProps) {
   const { addMenuItem } = useCatering();
   const [bundles, setBundles] = useState<CateringBundleResponse[]>([]);
@@ -50,6 +53,7 @@ export default function BundleBrowser({
   const [error, setError] = useState<string | null>(null);
   const [addingBundleId, setAddingBundleId] = useState<string | null>(null);
   const [menuItemsCache, setMenuItemsCache] = useState<MenuItem[] | null>(null);
+  const [selectedBundle, setSelectedBundle] = useState<CateringBundleResponse | null>(null);
 
   useEffect(() => {
     const fetchBundles = async () => {
@@ -87,7 +91,7 @@ export default function BundleBrowser({
     return items;
   }, [menuItemsCache, allMenuItems, fetchAllMenuItems]);
 
-  const handleAddBundle = async (bundle: CateringBundleResponse) => {
+  const handleAddBundle = async (bundle: CateringBundleResponse, guestQuantity: number) => {
     setAddingBundleId(bundle.id);
     try {
       const items = await ensureMenuItems();
@@ -102,17 +106,20 @@ export default function BundleBrowser({
         }
 
         const enrichedAddons = enrichBundleItemAddons(bundleItem, menuItem);
+        const scaledQuantity = bundleItem.quantity * guestQuantity;
 
         addMenuItem(sessionIndex, {
           item: {
             ...menuItem,
             selectedAddons: enrichedAddons,
           },
-          quantity: bundleItem.quantity,
+          quantity: scaledQuantity,
           bundleId: bundle.id,
           bundleName: bundle.name,
         });
       }
+
+      setSelectedBundle(null);
     } catch (err) {
       console.error("Failed to add bundle:", err);
       alert("Failed to add bundle. Please try again.");
@@ -174,16 +181,26 @@ export default function BundleBrowser({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {bundles.map((bundle) => (
           <BundleCard
             key={bundle.id}
             bundle={bundle}
-            onAdd={handleAddBundle}
-            isAdding={addingBundleId === bundle.id}
+            onClick={setSelectedBundle}
           />
         ))}
       </div>
+
+      {/* Bundle Detail Modal */}
+      {selectedBundle && (
+        <BundleDetailModal
+          bundle={selectedBundle}
+          defaultQuantity={defaultGuestCount}
+          isAdding={addingBundleId === selectedBundle.id}
+          onAdd={handleAddBundle}
+          onClose={() => setSelectedBundle(null)}
+        />
+      )}
     </div>
   );
 }
