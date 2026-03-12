@@ -48,7 +48,7 @@ interface QuestionsConfig {
 interface ResponseEntry {
   key: string;
   value: string;
-  metadata?: QuestionSchema & { sectionTitle: string };
+  metadata: QuestionSchema & { sectionTitle: string };
 }
 
 interface ResponseSection {
