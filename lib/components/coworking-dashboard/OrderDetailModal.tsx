@@ -209,7 +209,7 @@ export default function OrderDetailModal({
                   </span>
                 )}
                 <span className="text-sm text-gray-500">
-                  {formatDate(order.createdAt)}
+                  Ordered: {formatDate(order.createdAt)}
                 </span>
               </div>
 

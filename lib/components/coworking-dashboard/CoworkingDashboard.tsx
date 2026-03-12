@@ -20,6 +20,10 @@ import PromoCodesTab from "./PromoCodesTab";
 import { LogOut, Building2, MapPin, ShoppingBag, CreditCard, AlertTriangle, CalendarDays, Tag } from "lucide-react";
 import StripeReturnPage from "./StripeReturnPage";
 
+const dashboardFontStyle = {
+  fontFamily: "Tahoma, Geneva, Verdana, sans-serif",
+};
+
 interface CoworkingDashboardProps {
   spaceSlug: string;
   activeTab?: DashboardTab;
@@ -43,7 +47,11 @@ export default function CoworkingDashboard({
 }: CoworkingDashboardProps) {
   // If this tab was opened by Stripe redirect, show a "close this tab" screen
   if (isStripeReturnTab()) {
-    return <StripeReturnPage spaceSlug={spaceSlug} />;
+    return (
+      <div style={dashboardFontStyle}>
+        <StripeReturnPage spaceSlug={spaceSlug} />
+      </div>
+    );
   }
 
   return <CoworkingDashboardInner spaceSlug={spaceSlug} activeTab={activeTab} />;
@@ -198,7 +206,10 @@ function CoworkingDashboardInner({
   // Checking auth state
   if (checkingAuth) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div
+        className="flex items-center justify-center min-h-[60vh]"
+        style={dashboardFontStyle}
+      >
         <span className="loading loading-spinner loading-lg text-primary" />
       </div>
     );
@@ -206,11 +217,18 @@ function CoworkingDashboardInner({
 
   // Not authenticated — show login
   if (!authenticated) {
-    return <DashboardLogin onLoginSuccess={() => setAuthenticated(true)} />;
+    return (
+      <div style={dashboardFontStyle}>
+        <DashboardLogin onLoginSuccess={() => setAuthenticated(true)} />
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6">
+    <div
+      className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6"
+      style={dashboardFontStyle}
+    >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
