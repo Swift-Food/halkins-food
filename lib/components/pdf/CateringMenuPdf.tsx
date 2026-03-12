@@ -129,6 +129,7 @@ export interface CateringMenuPdfProps {
   showPrices: boolean;
   deliveryCharge?: number;
   venueHireCharge?: number;
+  promoDiscount?: number;
   totalPrice?: number;
   logoUrl?: string;
 }
@@ -692,6 +693,7 @@ const SessionPage: React.FC<{
   isLastSession: boolean;
   deliveryCharge?: number;
   venueHireCharge?: number;
+  promoDiscount?: number;
   totalPrice?: number;
 }> = ({
   session,
@@ -702,6 +704,7 @@ const SessionPage: React.FC<{
   isLastSession,
   deliveryCharge,
   venueHireCharge,
+  promoDiscount,
   totalPrice,
 }) => {
   const totalCatering = allSessions.reduce((sum, s) => sum + (s.subtotal || 0), 0);
@@ -766,6 +769,14 @@ const SessionPage: React.FC<{
               </Text>
             </View>
           )}
+          {(promoDiscount ?? 0) > 0 && (
+            <View style={styles.totalsBreakdownRow}>
+              <Text style={{...styles.totalsBreakdownLabel, color: '#16a34a'}}>Promo Discount</Text>
+              <Text style={{...styles.totalsBreakdownValue, color: '#16a34a'}}>
+                -£{promoDiscount!.toFixed(2)}
+              </Text>
+            </View>
+          )}
           <View style={styles.totalsBreakdownRow}>
             <Text style={styles.totalsBreakdownLabel}>Logistics / Delivery</Text>
             <Text style={styles.totalsBreakdownValueItalic}>
@@ -820,6 +831,7 @@ export const CateringMenuPdf: React.FC<CateringMenuPdfProps> = ({
   showPrices,
   deliveryCharge,
   venueHireCharge,
+  promoDiscount,
   totalPrice,
 }) => {
   const groupedByDay = groupSessionsByDate(sessions);
@@ -849,6 +861,7 @@ export const CateringMenuPdf: React.FC<CateringMenuPdfProps> = ({
           isLastSession={index === allSessionsFlat.length - 1}
           deliveryCharge={deliveryCharge}
           venueHireCharge={venueHireCharge}
+          promoDiscount={promoDiscount}
           totalPrice={totalPrice}
         />
       ))}

@@ -767,6 +767,7 @@ export default function Step3ContactInfo() {
           showPrices={pdfData.showPrices}
           deliveryCharge={pdfData.deliveryCharge}
           venueHireCharge={pricing?.venueHireFee}
+          promoDiscount={pricing?.promoDiscount}
           totalPrice={pricing?.total ?? pdfData.totalPrice}
           logoUrl={pdfData.logoUrl}
         />

@@ -19,6 +19,7 @@ export const PdfDownloadButton: React.FC<PdfDownloadButtonProps> = ({
   sessions,
   showPrices = true,
   deliveryCharge,
+  promoDiscount,
   totalPrice,
   logoUrl,
   filename = "catering-menu.pdf",
@@ -37,6 +38,7 @@ export const PdfDownloadButton: React.FC<PdfDownloadButtonProps> = ({
           sessions={sessions}
           showPrices={withPrices}
           deliveryCharge={deliveryCharge}
+          promoDiscount={promoDiscount}
           totalPrice={totalPrice}
           logoUrl={logoUrl}
         />

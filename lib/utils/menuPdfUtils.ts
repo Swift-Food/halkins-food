@@ -1035,10 +1035,15 @@ export async function transformOrderToPdfData(
     ? parseFloat(finalTotalValue)
     : finalTotalValue;
 
+  const promoDiscount = typeof order.promoDiscount === 'string'
+    ? parseFloat(order.promoDiscount)
+    : order.promoDiscount;
+
   return {
     sessions,
     showPrices,
     deliveryCharge: deliveryFee,
+    promoDiscount: promoDiscount || undefined,
     totalPrice: totalPrice,
     logoUrl: "/Logo_Circle.png",
   };
