@@ -16,7 +16,8 @@ import OrderDetailModal from "./OrderDetailModal";
 import VenuesModal from "./VenuesModal";
 import PaymentsTab from "./PaymentsTab";
 import CalendarTab from "./CalendarTab";
-import { LogOut, Building2, MapPin, ShoppingBag, CreditCard, AlertTriangle, CalendarDays } from "lucide-react";
+import PromoCodesTab from "./PromoCodesTab";
+import { LogOut, Building2, MapPin, ShoppingBag, CreditCard, AlertTriangle, CalendarDays, Tag } from "lucide-react";
 import StripeReturnPage from "./StripeReturnPage";
 
 interface CoworkingDashboardProps {
@@ -24,7 +25,7 @@ interface CoworkingDashboardProps {
   activeTab?: DashboardTab;
 }
 
-type DashboardTab = "orders" | "calendar" | "payment";
+type DashboardTab = "orders" | "calendar" | "payment" | "promos";
 
 function isStripeReturnTab() {
   if (typeof window === "undefined") return false;
@@ -86,6 +87,12 @@ function CoworkingDashboardInner({
       href: `/coworking-dashboard/${spaceSlug}/payment`,
       label: "Payment",
       icon: CreditCard,
+    },
+    {
+      id: "promos",
+      href: `/coworking-dashboard/${spaceSlug}/promos`,
+      label: "Promo Codes",
+      icon: Tag,
     },
   ];
 
@@ -327,6 +334,11 @@ function CoworkingDashboardInner({
       {/* Payments Tab */}
       {activeTab === "payment" && spaceId && (
         <PaymentsTab spaceId={spaceId} />
+      )}
+
+      {/* Promo Codes Tab */}
+      {activeTab === "promos" && spaceId && (
+        <PromoCodesTab spaceId={spaceId} />
       )}
 
       {/* Venues Modal */}

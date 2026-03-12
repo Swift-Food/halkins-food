@@ -414,6 +414,7 @@ export interface PromoCodeValidation {
   valid: boolean;
   reason?: string;
   discount?: number;
+  discountTarget?: string;
 }
 
 // NEW TYPES FOR DASHBOARD

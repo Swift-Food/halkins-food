@@ -387,6 +387,51 @@ class CoworkingDashboardService {
     }
     return response.json();
   }
+  // =========================================================================
+  // PROMO CODES
+  // =========================================================================
+
+  /**
+   * List all promo codes for the coworking space
+   */
+  async listPromoCodes(spaceId: string): Promise<any[]> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_PROMO_CODES(spaceId)}`
+    );
+    if (!response.ok) throw new Error('Failed to fetch promo codes');
+    return response.json();
+  }
+
+  /**
+   * Create a new promo code for the coworking space
+   */
+  async createPromoCode(spaceId: string, dto: any): Promise<any> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_PROMO_CODES(spaceId)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dto),
+      }
+    );
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to create promo code');
+    }
+    return response.json();
+  }
+
+  /**
+   * Delete a promo code
+   */
+  async deletePromoCode(spaceId: string, code: string): Promise<void> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_PROMO_CODE(spaceId, code)}`,
+      { method: 'DELETE' }
+    );
+    if (!response.ok) throw new Error('Failed to delete promo code');
+  }
+
   /**
    * Get calendar data for the coworking space
    */

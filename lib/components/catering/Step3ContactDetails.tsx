@@ -685,16 +685,20 @@ export default function Step3ContactInfo() {
     setPromoSuccess("");
 
     try {
-      // Use meal sessions format for promo validation
-      const validation = await cateringService.validatePromoCodeWithMealSessions(
-        code,
-        mealSessions
-      );
+      // Use coworking validation endpoint for coworking orders,
+      // otherwise use the standard catering validation endpoint
+      const validation = coworkingSpaceSlug
+        ? await coworkingService.validatePromoCodeWithMealSessions(code, mealSessions)
+        : await cateringService.validatePromoCodeWithMealSessions(code, mealSessions);
 
       if (validation.valid) {
         if (!promoCodes.includes(code)) {
           setPromoCodes([...promoCodes, code]);
-          setPromoSuccess(`Promo code "${code}" applied!`);
+          if (validation.discountTarget === 'VENUE_HIRE_FEE') {
+            setPromoSuccess(`Promo code "${code}" applied! Venue hire fee discount will be shown in pricing.`);
+          } else {
+            setPromoSuccess(`Promo code "${code}" applied!`);
+          }
         } else {
           setPromoError("This promo code has already been applied");
         }
@@ -1153,6 +1157,7 @@ export default function Step3ContactInfo() {
                   promoError={promoError}
                   promoSuccess={promoSuccess}
                   promoDiscount={pricing?.promoDiscount}
+                  venueHireDiscount={pricing?.venueHireDiscount}
                 />
 
                 {/* Special Instructions */}

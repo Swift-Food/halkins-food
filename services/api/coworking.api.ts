@@ -27,7 +27,7 @@ import {
   RefreshTokenResponse,
   CateringMenuItemRequest,
 } from '@/types/api';
-import { MealSessionState, CateringPricingResult } from '@/types/catering.types';
+import { MealSessionState, CateringPricingResult, PromoCodeValidation } from '@/types/catering.types';
 
 const ACCESS_TOKEN_KEY = 'coworking_access_token';
 const REFRESH_TOKEN_KEY = 'coworking_refresh_token';
@@ -534,6 +534,75 @@ class CoworkingService {
         error: error.message || 'Failed to calculate pricing',
       } as CateringPricingResult;
     }
+  }
+
+  /**
+   * Validate a promo code for a coworking order.
+   * Uses the public promotions/validate-coworking endpoint (no session auth required).
+   */
+  async validatePromoCode(
+    code: string,
+    orderItems: { restaurantId: string; menuItems: CateringMenuItemRequest[] }[]
+  ): Promise<PromoCodeValidation> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/promotions/validate-coworking`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, orderItems }),
+        }
+      );
+
+      if (!response.ok) {
+        return { valid: false, reason: 'Failed to validate promo code' };
+      }
+
+      return response.json();
+    } catch (err) {
+      console.error('Coworking promo validation error:', err);
+      return {
+        valid: false,
+        reason: 'Network error while validating promo code',
+      };
+    }
+  }
+
+  /**
+   * Validate a promo code using meal sessions format.
+   * Converts meal sessions to orderItems (same as calculateCartPricing) and
+   * calls the coworking promo validation endpoint.
+   */
+  async validatePromoCodeWithMealSessions(
+    code: string,
+    mealSessions: MealSessionState[]
+  ): Promise<PromoCodeValidation> {
+    // Build orderItems from mealSessions the same way calculateCartPricing does
+    const itemsByRestaurant = new Map<string, CateringMenuItemRequest[]>();
+    mealSessions
+      .filter((s) => s.orderItems.length > 0)
+      .forEach((s) => {
+        s.orderItems.forEach(({ item, quantity }) => {
+          const restaurantId = item.restaurantId || 'unknown';
+          if (!itemsByRestaurant.has(restaurantId)) {
+            itemsByRestaurant.set(restaurantId, []);
+          }
+          itemsByRestaurant.get(restaurantId)!.push({
+            menuItemId: item.id,
+            quantity,
+            selectedAddons: (item.selectedAddons || []) as any,
+          } as CateringMenuItemRequest);
+        });
+      });
+
+    const orderItems = Array.from(itemsByRestaurant.entries()).map(
+      ([restaurantId, menuItems]) => ({
+        restaurantId,
+        menuItems,
+      })
+    );
+
+    return this.validatePromoCode(code, orderItems);
   }
 }
 

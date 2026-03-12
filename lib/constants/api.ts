@@ -57,6 +57,10 @@ export const API_ENDPOINTS = {
     `/coworking-dashboard/${spaceId}/stripe/transactions`,
   COWORKING_DASHBOARD_CALENDAR: (spaceId: string) =>
     `/coworking-dashboard/${spaceId}/calendar`,
+  COWORKING_DASHBOARD_PROMO_CODES: (spaceId: string) =>
+    `/coworking-dashboard/${spaceId}/promo-codes`,
+  COWORKING_DASHBOARD_PROMO_CODE: (spaceId: string, code: string) =>
+    `/coworking-dashboard/${spaceId}/promo-codes/${code}`,
 
   // Coworking Public (Member Flow)
   COWORKING_SPACE: (spaceSlug: string) => `/coworking/${spaceSlug}`,

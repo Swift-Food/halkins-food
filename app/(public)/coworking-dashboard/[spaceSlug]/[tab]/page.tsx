@@ -1,7 +1,7 @@
 import CoworkingDashboard from "@/lib/components/coworking-dashboard/CoworkingDashboard";
 import { notFound } from "next/navigation";
 
-const DASHBOARD_TABS = ["orders", "calendar", "payment"] as const;
+const DASHBOARD_TABS = ["orders", "calendar", "payment", "promos"] as const;
 
 type DashboardTab = (typeof DASHBOARD_TABS)[number];
 

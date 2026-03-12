@@ -9,6 +9,7 @@ interface PromoCodeSectionProps {
   promoError: string;
   promoSuccess: string;
   promoDiscount?: number;
+  venueHireDiscount?: number;
 }
 
 export default function PromoCodeSection({
@@ -19,6 +20,7 @@ export default function PromoCodeSection({
   promoError,
   promoSuccess,
   promoDiscount,
+  venueHireDiscount,
 }: PromoCodeSectionProps) {
   const [promoInput, setPromoInput] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
@@ -103,9 +105,11 @@ export default function PromoCodeSection({
             <div className="mb-3 p-2 bg-success/10 border border-success/30 rounded-lg">
               <p className="text-xs text-success">
                 ✓ {promoSuccess}
-                {promoDiscount && promoDiscount > 0 && (
+                {venueHireDiscount && venueHireDiscount > 0 ? (
+                  <> You saved £{venueHireDiscount.toFixed(2)} on venue hire</>
+                ) : promoDiscount && promoDiscount > 0 ? (
                   <> You saved £{promoDiscount.toFixed(2)}</>
-                )}
+                ) : null}
               </p>
             </div>
           )}
