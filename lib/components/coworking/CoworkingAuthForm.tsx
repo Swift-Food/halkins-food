@@ -10,10 +10,14 @@ import CoworkingBookingDetailsForm, {
 
 interface CoworkingAuthFormProps {
   spaceSlug: string;
+  submitLabel?: string;
+  onSuccess?: () => void;
 }
 
 export default function CoworkingAuthForm({
   spaceSlug,
+  submitLabel,
+  onSuccess,
 }: CoworkingAuthFormProps) {
   const {
     isAuthenticated,
@@ -152,6 +156,7 @@ export default function CoworkingAuthForm({
 
       setVenueSelection(selectedVenue, startDate, startTime, endDate, endTime);
       setSession({ member: sessionMember });
+      onSuccess?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start session.");
     } finally {
@@ -200,7 +205,9 @@ export default function CoworkingAuthForm({
             isSubmitting={isSubmitting}
             error={error}
             submitLabel={
-              isSubmitting ? "Setting up your order..." : "Continue to Menu"
+              isSubmitting
+                ? "Setting up your order..."
+                : (submitLabel ?? "Continue to Menu")
             }
             submitDisabled={!isFormValid}
             onNameChange={setName}

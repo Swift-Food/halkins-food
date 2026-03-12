@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
 import { useCatering } from "@/context/CateringContext";
 import { useCoworking } from "@/context/CoworkingContext";
 import { MealSessionState } from "@/types/catering.types";
@@ -69,8 +68,13 @@ type PopulatedCateringHourSlot = CateringHourSlot & {
 };
 type PdfPreviewItem = LocalMealSession["orderItems"][number]["item"];
 
-export default function CateringOrderBuilder() {
-  const searchParams = useSearchParams();
+interface CateringOrderBuilderProps {
+  nextStep?: number;
+}
+
+export default function CateringOrderBuilder({
+  nextStep = 2,
+}: CateringOrderBuilderProps) {
   const { eventStartTime } = useCoworking();
   const {
     mealSessions,
@@ -734,7 +738,7 @@ export default function CateringOrderBuilder() {
     }
 
     setSessionValidationErrors({});
-    setCurrentStep(2);
+    setCurrentStep(nextStep);
   };
 
   // Handle empty session actions

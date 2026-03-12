@@ -177,7 +177,14 @@ export default function CoworkingOrderFlow() {
     setSession,
     logout,
   } = useCoworking();
-  const { currentStep, contactInfo, setContactInfo, updateMealSession, resetOrder } = useCatering();
+  const {
+    currentStep,
+    contactInfo,
+    setContactInfo,
+    setCurrentStep,
+    updateMealSession,
+    resetOrder,
+  } = useCatering();
 
   const [spaceError, setSpaceError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -299,12 +306,15 @@ export default function CoworkingOrderFlow() {
     );
   }
 
-  // Booking setup screen
-  if (!isAuthenticated || !hasBookingDetails) {
+  if (currentStep !== 1 && (!isAuthenticated || !hasBookingDetails)) {
     return (
       <div className="min-h-screen">
         <div className="py-2 max-w mx-auto bg-base-100">
-          <CoworkingAuthForm spaceSlug={spaceSlug} />
+          <CoworkingAuthForm
+            spaceSlug={spaceSlug}
+            submitLabel="Continue to questions"
+            onSuccess={() => setCurrentStep(2)}
+          />
         </div>
       </div>
     );
@@ -341,8 +351,8 @@ export default function CoworkingOrderFlow() {
           </div>
         )} */}
 
-        {/* Event summary bar — only on step 1 */}
-        {currentStep === 1 && selectedVenue && (
+        {/* Event summary bar */}
+        {currentStep > 1 && selectedVenue && (
           <div className="mx-4 md:mx-10 mb-4">
             <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-4">
@@ -388,9 +398,16 @@ export default function CoworkingOrderFlow() {
 
         {/* Step content */}
         <div className="bg-base-100 rounded-lg max-w-none">
-          {currentStep === 1 && <CateringOrderBuilder />}
+          {currentStep === 1 && (
+            <CoworkingAuthForm
+              spaceSlug={spaceSlug}
+              submitLabel="Continue to questions"
+              onSuccess={() => setCurrentStep(2)}
+            />
+          )}
           {currentStep === 2 && <CoworkingBookingQuestionsStep />}
-          {currentStep === 3 && <Step3ContactInfo />}
+          {currentStep === 3 && <CateringOrderBuilder nextStep={4} />}
+          {currentStep === 4 && <Step3ContactInfo />}
         </div>
       </div>
 

@@ -713,14 +713,14 @@ export default function CoworkingBookingQuestionsStep() {
               onClick={() => setCurrentStep(1)}
               className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
             >
-              Back to catering
+              Back to booking details
             </button>
             <button
               type="button"
               onClick={handleContinue}
               className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
             >
-              Continue to contact details
+              Continue to catering
             </button>
           </div>
         </div>

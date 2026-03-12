@@ -1105,7 +1105,7 @@ export default function Step3ContactInfo() {
                   ccEmails,
                   specialInstructions,
                 });
-                setCurrentStep(2);
+                setCurrentStep(3);
               }}
               className="text-primary hover:opacity-80 font-medium flex items-center gap-1"
             >
