@@ -1,9 +1,19 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Image from "next/image";
 import { CateringBundleResponse } from "@/types/api/catering.api.types";
 import { MenuItem } from "@/types/restaurant.types";
 import { Package, Minus, Plus } from "lucide-react";
+
+const DIETARY_ICON_MAP: Record<string, { file: string; label: string }> = {
+  vegetarian: { file: "vegetarian.png", label: "Vegetarian" },
+  vegan: { file: "vegan.png", label: "Vegan" },
+  halal: { file: "halal.png", label: "Halal" },
+  pescatarian: { file: "pescatarian.png", label: "Pescatarian" },
+  no_nut: { file: "no_nut.png", label: "Nut-Free" },
+  no_dairy: { file: "no_dairy.png", label: "Dairy-Free" },
+};
 
 interface BundleDetailModalProps {
   bundle: CateringBundleResponse;
@@ -151,6 +161,35 @@ export default function BundleDetailModal({
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 text-sm">{item.menuItemName}</p>
+                    {mi?.dietaryFilters && mi.dietaryFilters.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1 items-center">
+                        {mi.dietaryFilters.slice(0, 4).map((filter) => {
+                          const icon = DIETARY_ICON_MAP[filter.toLowerCase()];
+
+                          if (!icon) return null;
+
+                          return (
+                            <div
+                              key={`${item.id}-${filter}`}
+                              className="relative w-4 h-4"
+                              title={icon.label}
+                            >
+                              <Image
+                                src={`/dietary-icons/unfilled/${icon.file}`}
+                                alt={icon.label}
+                                fill
+                                className="object-contain"
+                              />
+                            </div>
+                          );
+                        })}
+                        {mi.dietaryFilters.length > 4 && (
+                          <span className="text-[10px] text-gray-500">
+                            +{mi.dietaryFilters.length - 4}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     {showDescriptions && menuItemLookup.get(item.menuItemId)?.description && (
                       <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
                         {menuItemLookup.get(item.menuItemId)!.description}
