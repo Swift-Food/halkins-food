@@ -48,7 +48,7 @@ export default function SwapItemModal({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[100]">
       <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[80vh] flex flex-col">
         <div className="p-4 border-b border-base-200 flex items-center justify-between">
           <div>
