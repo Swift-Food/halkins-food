@@ -16,7 +16,20 @@ import {
   ToggleLeft,
   ToggleRight,
   Pencil,
+  HelpCircle,
 } from "lucide-react";
+
+function Hint({ text }: { text: string }) {
+  return (
+    <span className="relative inline-flex ml-1 group/hint">
+      <HelpCircle className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 rounded-lg bg-gray-900 px-3 py-2 text-xs font-normal normal-case tracking-normal text-white shadow-lg opacity-0 transition-opacity group-hover/hint:opacity-100 z-50">
+        {text}
+        <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-gray-900" />
+      </span>
+    </span>
+  );
+}
 
 interface PromoCodesTabProps {
   spaceId: string;
@@ -335,8 +348,9 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
 
               {/* Discount Type */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
+                <label className="flex items-center text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
                   Discount Type
+                  <Hint text="Fixed gives a set £ amount off. Percentage takes a % off the venue hire fee." />
                 </label>
                 <select
                   value={form.discountType}
@@ -386,9 +400,10 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
               {/* Max Discount (percentage only) */}
               {form.discountType === "PERCENT" && (
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
+                  <label className="flex items-center text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
                     Max Discount Cap{" "}
                     <span className="text-gray-400 font-normal">(optional)</span>
+                    <Hint text="Caps the maximum £ amount off. E.g. 20% with a £50 cap means a £400 order gets £50 off, not £80." />
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
@@ -411,9 +426,10 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
 
               {/* Min Order Value */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
+                <label className="flex items-center text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
                   Min Order Value{" "}
                   <span className="text-gray-400 font-normal">(optional)</span>
+                  <Hint text="The food subtotal must be at least this amount for the code to work." />
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
@@ -435,9 +451,10 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
 
               {/* Max Uses */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
+                <label className="flex items-center text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
                   Max Uses{" "}
                   <span className="text-gray-400 font-normal">(optional)</span>
+                  <Hint text="Total number of times this code can be redeemed across all members. Leave empty for unlimited." />
                 </label>
                 <input
                   type="number"
@@ -453,9 +470,10 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
 
               {/* Max Uses Per User */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
+                <label className="flex items-center text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
                   Max Uses Per User{" "}
                   <span className="text-gray-400 font-normal">(optional)</span>
+                  <Hint text="How many times a single member can use this code. Leave empty for unlimited." />
                 </label>
                 <input
                   type="number"
@@ -471,9 +489,10 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
 
               {/* Valid From */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
+                <label className="flex items-center text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
                   Valid From{" "}
                   <span className="text-gray-400 font-normal">(optional)</span>
+                  <Hint text="Code won't work before this date. Leave empty to activate immediately." />
                 </label>
                 <input
                   type="date"
@@ -487,9 +506,10 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
 
               {/* Expires At */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
+                <label className="flex items-center text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
                   Expires At{" "}
                   <span className="text-gray-400 font-normal">(optional)</span>
+                  <Hint text="Code stops working after this date. Leave empty for no expiry." />
                 </label>
                 <input
                   type="date"
@@ -512,6 +532,7 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
                 >
                   Venues{" "}
                   <span className="text-gray-400 font-normal">(optional)</span>
+                  <Hint text="Restrict this code to specific venues. Leave empty to apply to all venues." />
                   {venuesExpanded ? (
                     <ChevronUp className="h-3.5 w-3.5" />
                   ) : (
