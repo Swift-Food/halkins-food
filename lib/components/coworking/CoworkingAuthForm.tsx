@@ -4,9 +4,7 @@ import { useState, useEffect } from "react";
 import { useCoworking } from "@/context/CoworkingContext";
 import { coworkingService } from "@/services/api/coworking.api";
 import { CoworkingVenue } from "@/types/api";
-import CoworkingBookingDetailsForm, {
-  isCoworkingBookingWindowValid,
-} from "./CoworkingBookingDetailsForm";
+import CoworkingBookingDetailsForm from "./CoworkingBookingDetailsForm";
 
 interface CoworkingAuthFormProps {
   spaceSlug: string;
@@ -83,16 +81,27 @@ export default function CoworkingAuthForm({
     persistedEndTime,
   ]);
 
-  const isFormValid =
-    name.trim().length >= 2 &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
-    isCoworkingBookingWindowValid({
-      startDate,
-      startTime,
-      endDate,
-      endTime,
-    }) &&
-    selectedVenue !== null;
+  const showValidationError = (
+    message: string,
+    targetId?: string,
+    scrollTargetId?: string
+  ) => {
+    setError(message);
+    window.alert(message);
+
+    const target =
+      (targetId ? document.getElementById(targetId) : null) ??
+      (scrollTargetId ? document.getElementById(scrollTargetId) : null);
+
+    if (target instanceof HTMLElement) {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      window.requestAnimationFrame(() => {
+        if ("focus" in target) {
+          target.focus();
+        }
+      });
+    }
+  };
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
@@ -102,33 +111,55 @@ export default function CoworkingAuthForm({
     const trimmedName = name.trim();
 
     if (!trimmedName || trimmedName.length < 2 || trimmedName.length > 100) {
-      setError("Company name must be between 2 and 100 characters.");
+      showValidationError(
+        "Company name must be between 2 and 100 characters.",
+        "coworking-name"
+      );
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
-      setError("Please enter a valid email address.");
+      showValidationError(
+        "Please enter a valid email address.",
+        "coworking-email"
+      );
       return;
     }
 
     if (!startDate || !endDate) {
-      setError("Please select a start and end date.");
+      showValidationError(
+        "Please select a start and end date.",
+        undefined,
+        "coworking-event-window"
+      );
       return;
     }
 
     if (!startTime || !endTime) {
-      setError("Please select both a start and end time.");
+      showValidationError(
+        "Please select both a start and end time.",
+        undefined,
+        "coworking-event-window"
+      );
       return;
     }
 
     if (endDate < startDate || (endDate === startDate && endTime <= startTime)) {
-      setError("End must be after start.");
+      showValidationError(
+        "End must be after start.",
+        undefined,
+        "coworking-event-window"
+      );
       return;
     }
 
     if (!selectedVenue) {
-      setError("Please select a venue.");
+      showValidationError(
+        "Please select a venue.",
+        undefined,
+        "coworking-venue-section"
+      );
       return;
     }
 
@@ -209,7 +240,7 @@ export default function CoworkingAuthForm({
                 ? "Setting up your order..."
                 : (submitLabel ?? "Continue to Menu")
             }
-            submitDisabled={!isFormValid}
+            submitDisabled={false}
             onNameChange={setName}
             onEmailChange={setEmail}
             onVenueChange={setSelectedVenue}

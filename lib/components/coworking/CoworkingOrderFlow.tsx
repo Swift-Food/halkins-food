@@ -16,6 +16,13 @@ import Step3ContactInfo from "@/lib/components/catering/Step3ContactDetails";
 import { CoworkingVenue } from "@/types/api";
 import { Calendar, Clock, MapPin, Pencil, X } from "lucide-react";
 
+const coworkingSteps = [
+  { step: 1, label: "Booking details" },
+  { step: 2, label: "Questions form" },
+  { step: 3, label: "Catering" },
+  { step: 4, label: "Contact details" },
+] as const;
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatTime(value: string): string {
@@ -179,6 +186,7 @@ export default function CoworkingOrderFlow() {
   } = useCoworking();
   const {
     currentStep,
+    highestVisitedStep,
     contactInfo,
     setContactInfo,
     setCurrentStep,
@@ -198,6 +206,8 @@ export default function CoworkingOrderFlow() {
       eventEndDate &&
       eventEndTime
   );
+  const canNavigateToStep = (step: number) =>
+    step === 1 || step <= highestVisitedStep;
 
   // Fetch space info on mount
   useEffect(() => {
@@ -324,32 +334,62 @@ export default function CoworkingOrderFlow() {
     <div className="min-h-screen">
       <div className="py-2 max-w mx-auto bg-base-100">
 
-        {/* Progress bar (step 2+) */}
-        {/* {currentStep !== 1 && (
-          <div className="mx-8 my-4 max-w mx-auto md:mx-10 md:my-10">
-            <div className="mb-1 text-sm text-gray-500 md:mb-2">
-              Step {currentStep} of 2
-            </div>
-            <div className="h-2 bg-gray-200 rounded-full">
-              <div
-                className="h-full bg-primary rounded-full transition-all duration-500"
-                style={{ width: `${(currentStep / 2) * 100}%` }}
-              />
-            </div>
-            <div className="mt-1.5 flex items-center gap-2 text-sm font-medium text-gray-600 md:mt-2">
-              {steps.map((s, idx) => (
-                <div key={s.step} className="flex items-center gap-2">
-                  <span className={currentStep === s.step ? "text-primary" : "text-gray-600"}>
-                    {s.label}
-                  </span>
-                  {idx < steps.length - 1 && (
-                    <span className="text-gray-400">&rarr;</span>
-                  )}
-                </div>
-              ))}
+        {currentStep > 1 && (
+          <div className="mx-4 mb-4 mt-6 overflow-x-auto md:mx-10 md:mb-6 md:mt-8">
+            <div className="mx-auto min-w-[720px] max-w-6xl">
+              <div className="flex w-full items-center">
+                {coworkingSteps.map((item, index) => {
+                  const isActive = currentStep === item.step;
+                  const isCompleted = item.step < currentStep;
+                  const isClickable = canNavigateToStep(item.step);
+
+                  return (
+                    <div key={item.step} className="flex min-w-0 flex-1 items-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!isClickable || item.step === currentStep) return;
+                          setCurrentStep(item.step);
+                        }}
+                        disabled={!isClickable}
+                        className={`flex min-w-0 items-center gap-3 text-left transition-colors ${
+                          isClickable
+                            ? "cursor-pointer"
+                            : "cursor-not-allowed opacity-55"
+                        }`}
+                      >
+                        <span
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-colors ${
+                            isActive || isCompleted
+                              ? "border-primary bg-primary text-white"
+                              : "border-slate-300 bg-white text-slate-500"
+                          }`}
+                        >
+                          {item.step}
+                        </span>
+                        <span
+                          className={`whitespace-nowrap text-sm font-semibold ${
+                            isActive
+                              ? "text-primary"
+                              : isCompleted
+                                ? "text-slate-800"
+                                : "text-slate-500"
+                          }`}
+                        >
+                          {item.label}
+                        </span>
+                      </button>
+
+                      {index < coworkingSteps.length - 1 && (
+                        <span className="mx-4 h-px flex-1 bg-slate-300/80" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        )} */}
+        )}
 
         {/* Event summary bar */}
         {currentStep > 1 && selectedVenue && (

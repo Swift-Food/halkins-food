@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useCatering } from "@/context/CateringContext";
 import { useCoworking } from "@/context/CoworkingContext";
 import { MealSessionState } from "@/types/catering.types";
@@ -75,6 +76,7 @@ interface CateringOrderBuilderProps {
 export default function CateringOrderBuilder({
   nextStep = 2,
 }: CateringOrderBuilderProps) {
+  const searchParams = useSearchParams();
   const { eventStartTime } = useCoworking();
   const {
     mealSessions,

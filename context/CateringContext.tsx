@@ -27,6 +27,7 @@ const createDefaultSession = (): MealSessionState => ({
 
 interface CateringContextType {
   currentStep: number;
+  highestVisitedStep: number;
   eventDetails: EventDetails | null;
   contactInfo: ContactInfo | null;
   bookingQuestionnaire: CoworkingBookingQuestionnaire | null;
@@ -78,6 +79,7 @@ const CateringContext = createContext<CateringContextType | undefined>(
 // LocalStorage keys
 const STORAGE_KEYS = {
   CURRENT_STEP: "catering_current_step",
+  HIGHEST_VISITED_STEP: "catering_highest_visited_step",
   EVENT_DETAILS: "catering_event_details",
   MEAL_SESSIONS: "catering_meal_sessions",
   ACTIVE_SESSION_INDEX: "catering_active_session_index",
@@ -94,6 +96,7 @@ const STORAGE_KEYS = {
 export function CateringProvider({ children }: { children: ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [currentStep, setCurrentStepState] = useState(1);
+  const [highestVisitedStep, setHighestVisitedStepState] = useState(1);
   const [eventDetails, setEventDetailsState] = useState<EventDetails | null>(null);
   const [contactInfo, setContactInfoState] = useState<ContactInfo | null>(null);
   const [bookingQuestionnaire, setBookingQuestionnaireState] =
@@ -353,6 +356,9 @@ export function CateringProvider({ children }: { children: ReactNode }) {
       }
 
       const savedStep = localStorage.getItem(STORAGE_KEYS.CURRENT_STEP);
+      const savedHighestVisitedStep = localStorage.getItem(
+        STORAGE_KEYS.HIGHEST_VISITED_STEP
+      );
       const savedEventDetails = localStorage.getItem(STORAGE_KEYS.EVENT_DETAILS);
       const savedMealSessions = localStorage.getItem(STORAGE_KEYS.MEAL_SESSIONS);
       const savedActiveSessionIndex = localStorage.getItem(STORAGE_KEYS.ACTIVE_SESSION_INDEX);
@@ -368,6 +374,11 @@ export function CateringProvider({ children }: { children: ReactNode }) {
       const legacySelectedItems = localStorage.getItem(STORAGE_KEYS.SELECTED_ITEMS);
 
       if (savedStep) setCurrentStepState(JSON.parse(savedStep));
+      if (savedHighestVisitedStep) {
+        setHighestVisitedStepState(JSON.parse(savedHighestVisitedStep));
+      } else if (savedStep) {
+        setHighestVisitedStepState(JSON.parse(savedStep));
+      }
       if (savedEventDetails) setEventDetailsState(JSON.parse(savedEventDetails));
       if (savedContactInfo) setContactInfoState(JSON.parse(savedContactInfo));
       if (savedBookingQuestionnaire) {
@@ -590,6 +601,14 @@ export function CateringProvider({ children }: { children: ReactNode }) {
   const setCurrentStep = useCallback((step: number) => {
     setCurrentStepState(step);
     localStorage.setItem(STORAGE_KEYS.CURRENT_STEP, JSON.stringify(step));
+    setHighestVisitedStepState((prev) => {
+      const next = Math.max(prev, step);
+      localStorage.setItem(
+        STORAGE_KEYS.HIGHEST_VISITED_STEP,
+        JSON.stringify(next)
+      );
+      return next;
+    });
   }, []);
 
   const setSelectedRestaurants = (restaurants: Restaurant[]) => {
@@ -631,6 +650,7 @@ export function CateringProvider({ children }: { children: ReactNode }) {
 
   const clearOrderState = () => {
     setCurrentStepState(1);
+    setHighestVisitedStepState(1);
     setEventDetailsState(null);
     setMealSessionsState([]);
     setActiveSessionIndexState(0);
@@ -665,6 +685,7 @@ export function CateringProvider({ children }: { children: ReactNode }) {
     <CateringContext.Provider
       value={{
         currentStep,
+        highestVisitedStep,
         eventDetails,
         contactInfo,
         bookingQuestionnaire,

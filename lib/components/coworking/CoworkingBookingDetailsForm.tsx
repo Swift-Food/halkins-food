@@ -199,7 +199,10 @@ export default function CoworkingBookingDetailsForm({
                 <span className="h-px flex-1 bg-primary/20" />
               </div>
 
-              <div className="rounded-[1.75rem] border border-slate-200/80 bg-slate-50/70 p-5">
+              <div
+                id="coworking-event-window"
+                className="rounded-[1.75rem] border border-slate-200/80 bg-slate-50/70 p-5"
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/75">
@@ -244,7 +247,10 @@ export default function CoworkingBookingDetailsForm({
           </div>
         </div>
 
-        <div className="sm:rounded-[2rem] sm:border sm:border-white/70 sm:bg-white/75 sm:p-8 sm:backdrop-blur">
+        <div
+          id="coworking-venue-section"
+          className="sm:rounded-[2rem] sm:border sm:border-white/70 sm:bg-white/75 sm:p-8 sm:backdrop-blur"
+        >
           <div className="mb-5">
             <div className="flex items-center gap-3">
               <span className="h-px flex-1 bg-primary/20" />
