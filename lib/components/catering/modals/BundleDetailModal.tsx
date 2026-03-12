@@ -70,14 +70,24 @@ export default function BundleDetailModal({
     peopleServed > 0 ? estimatedTotal / peopleServed : 0;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60]">
-      <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[85vh] flex flex-col">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60] sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full h-[100dvh] max-h-[100dvh] sm:h-auto sm:max-h-[85vh] sm:max-w-lg rounded-none sm:rounded-2xl flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="p-4 border-b border-base-200 flex items-start justify-between gap-3">
+        <div className="p-4 flex items-start justify-between gap-3">
           <div>
             <h3 className="font-bold text-lg text-gray-900">{bundle.name}</h3>
             {bundle.description && (
-              <p className="text-sm text-gray-500 mt-1">{bundle.description}</p>
+              <div className="mt-1 max-h-[4.5rem] overflow-y-auto pr-1">
+                <p className="text-sm leading-6 text-gray-500">
+                  {bundle.description}
+                </p>
+              </div>
             )}
           </div>
           <button
@@ -225,7 +235,7 @@ export default function BundleDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-base-200 space-y-3">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-base-200 space-y-3">
           {/* Note */}
           <p className="text-xs text-gray-500 text-center">
             You can change individual item amounts after adding to your session.
