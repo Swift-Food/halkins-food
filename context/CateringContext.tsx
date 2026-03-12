@@ -629,7 +629,7 @@ export function CateringProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEYS.RESTAURANT_PROMOTIONS, JSON.stringify(promotions));
   };
 
-  const resetOrder = () => {
+  const clearOrderState = () => {
     setCurrentStepState(1);
     setEventDetailsState(null);
     setMealSessionsState([]);
@@ -639,12 +639,22 @@ export function CateringProvider({ children }: { children: ReactNode }) {
     setPromoCodesState([]);
     setSelectedRestaurantsState([]);
     setRestaurantPromotionsState({});
+    setRestaurantDiscounts({});
+  };
 
+  const clearOrderStorage = () => {
     Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
   };
 
+  const resetOrder = () => {
+    clearOrderState();
+    clearOrderStorage();
+  };
+
   const markOrderAsSubmitted = () => {
-    Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+    clearOrderState();
+    clearOrderStorage();
+    localStorage.setItem(STORAGE_KEYS.ORDER_SUBMITTED, "true");
   };
 
   if (!isHydrated) {

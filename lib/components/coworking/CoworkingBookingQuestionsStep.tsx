@@ -10,6 +10,15 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  AlertTriangle,
+  Building2,
+  Check,
+  FileSignature,
+  Globe,
+  ListChecks,
+  ShieldCheck,
+} from "lucide-react";
 import questionsConfigJson from "@/lib/data/coworking-booking-questions.json";
 import { useCatering } from "@/context/CateringContext";
 import { useCoworking } from "@/context/CoworkingContext";
@@ -77,10 +86,41 @@ const questionsConfig = questionsConfigJson as QuestionsConfig;
 
 type ValidationErrors = Record<string, string>;
 
-const fieldLabelClass = "mb-2 block text-sm font-semibold text-slate-900";
+const fieldLabelClass =
+  "mb-2 block text-sm font-semibold text-slate-900";
 const fieldClass =
-  "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10";
-const errorClass = "mt-1 text-xs text-red-600";
+  "w-full rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3.5 text-sm text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10";
+const errorClass =
+  "mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700";
+
+const sectionTheme: Record<
+  string,
+  {
+    eyebrow: string;
+    icon: typeof ListChecks;
+  }
+> = {
+  your_details: {
+    eyebrow: "Lead organiser",
+    icon: Building2,
+  },
+  about_event: {
+    eyebrow: "Event profile",
+    icon: Globe,
+  },
+  sponsors: {
+    eyebrow: "Support network",
+    icon: ListChecks,
+  },
+  billing: {
+    eyebrow: "Finance",
+    icon: ShieldCheck,
+  },
+  damage_waiver: {
+    eyebrow: "Confirmation",
+    icon: FileSignature,
+  },
+};
 
 interface SignaturePadProps {
   value: string;
@@ -200,7 +240,7 @@ function SignaturePad({ value, onChange }: SignaturePadProps) {
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-white">
+      <div className="overflow-hidden rounded-[1.5rem] border border-dashed border-slate-300 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <canvas
           ref={canvasRef}
           className="block h-40 w-full touch-none bg-white"
@@ -210,12 +250,12 @@ function SignaturePad({ value, onChange }: SignaturePadProps) {
           onPointerLeave={finishDrawing}
         />
       </div>
-      <div className="flex items-center justify-between text-xs text-slate-500">
-        <span>Draw your signature using your finger, mouse, or trackpad.</span>
+      <div className="flex items-center justify-between gap-3 text-xs text-slate-500">
+        <span>Draw your signature with your finger, mouse, or trackpad.</span>
         <button
           type="button"
           onClick={clearSignature}
-          className="font-semibold text-primary hover:opacity-80"
+          className="shrink-0 font-semibold text-primary hover:opacity-80"
         >
           Clear
         </button>
@@ -355,17 +395,26 @@ export default function CoworkingBookingQuestionsStep() {
     setCurrentStep(3);
   };
 
+  const introChecks = [
+    "This short form is required before Halkin can confirm the booking.",
+    "Do not publish a Halkin venue on Luma or another platform until approval is complete.",
+    "Add oliver@halkin.com as an organiser on your Luma event.",
+  ];
+
   const renderQuestion = (question: QuestionSchema) => {
     const value = getQuestionValue(question);
 
     return (
-      <div key={question.key}>
+      <div
+        key={question.key}
+        className="rounded-[1.5rem] border border-slate-200/80 bg-slate-50/70 p-4 sm:p-5"
+      >
         <label className={fieldLabelClass}>
           {question.title}
           {question.required && <span className="text-slate-400"> *</span>}
         </label>
         {question.description && (
-          <p className="mb-3 text-base text-slate-700">
+          <p className="mb-3 text-sm leading-6 text-slate-600">
             {interpolateText(question.description, replacements)}
           </p>
         )}
@@ -396,20 +445,33 @@ export default function CoworkingBookingQuestionsStep() {
 
         {question.type === "single_choice" && (
           <div className="space-y-3">
-            {question.options?.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => updateQuestionValue(question, option)}
-                className={`flex w-full items-center rounded-2xl border px-4 py-3 text-left text-lg transition-colors ${
-                  value === option
-                    ? "border-primary bg-primary/10 text-slate-900"
-                    : "border-slate-300 bg-white text-slate-800 hover:border-slate-400"
-                }`}
-              >
-                {option}
-              </button>
-            ))}
+            {question.options?.map((option, index) => {
+              const isSelected = value === option;
+
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => updateQuestionValue(question, option)}
+                  className={`flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left transition-colors ${
+                    isSelected
+                      ? "border-primary bg-primary/10 text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+                      : "border-slate-200 bg-white text-slate-800 hover:border-slate-400"
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${
+                      isSelected
+                        ? "border-primary bg-primary text-white"
+                        : "border-slate-300 text-slate-500"
+                    }`}
+                  >
+                    {String.fromCharCode(65 + index)}
+                  </span>
+                  <span className="text-base leading-6">{option}</span>
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -421,9 +483,12 @@ export default function CoworkingBookingQuestionsStep() {
         )}
 
         {question.notes && (
-          <div className="mt-4 space-y-2 text-base font-semibold text-slate-800">
+          <div className="mt-4 space-y-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
             {question.notes.map((note) => (
-              <p key={note}>{interpolateText(note, replacements)}</p>
+              <p key={note} className="flex gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{interpolateText(note, replacements)}</span>
+              </p>
             ))}
           </div>
         )}
@@ -446,7 +511,7 @@ export default function CoworkingBookingQuestionsStep() {
       );
     }
 
-    if (sectionId === "damage_waiver" && index > 0) {
+    if (sectionId === "damage_waiver") {
       return (
         <p key={line} className="font-semibold">
           {line}
@@ -458,46 +523,135 @@ export default function CoworkingBookingQuestionsStep() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
-      <div className="rounded-[32px] border border-slate-200 bg-white px-5 py-6 shadow-sm sm:px-8 sm:py-8">
-        <div className="space-y-6">
-          <div className="space-y-5 text-slate-900">
-            <p className="text-2xl font-semibold leading-tight">
-              You must complete this form to confirm your booking.
-            </p>
-            <p className="text-2xl font-semibold leading-tight">
-              Do not list a Halkin venue on Luma or any other platform until
-              your booking is confirmed by Halkin staff.
-            </p>
-            <p className="text-2xl font-semibold leading-tight">
-              You must add{" "}
-              <a
-                href="mailto:oliver@halkin.com"
-                className="text-blue-600 underline underline-offset-2"
-              >
-                oliver@halkin.com
-              </a>{" "}
-              as an organiser to your Luma event.
-            </p>
-          </div>
-
-          {questionsConfig.sections.map((section) => (
-            <div key={section.id} className="border-t border-slate-200 pt-8">
-              <h2 className="text-3xl font-semibold text-slate-900">
-                {section.title}
-              </h2>
-
-              {section.description && (
-                <p className="mt-3 text-lg text-slate-700">
-                  {interpolateText(section.description, replacements)}
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+      <div className="space-y-6">
+        <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-[linear-gradient(180deg,#f8fafc_0%,#f3f4f6_48%,#eef2f7_100%)] shadow-[0_12px_30px_rgba(15,23,42,0.08)]">
+          <div className="grid gap-6 px-5 py-6 sm:px-8 sm:py-8 lg:grid-cols-[1.2fr_0.8fr]">
+            <div>
+              <div className="mb-5 flex items-center gap-3">
+                <span className="h-px flex-1 bg-primary/20" />
+                <p className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/75">
+                  Booking Confirmation
                 </p>
-              )}
+                <span className="h-px flex-1 bg-primary/20" />
+              </div>
+
+              <h1 className="max-w-2xl text-3xl font-semibold leading-tight text-slate-950 sm:text-[2.4rem]">
+                Final booking questions before Halkin reviews your event.
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
+                Complete the organiser, billing, and event information below so the team can review your request without follow-up emails.
+              </p>
+
+              <div className="mt-6 grid gap-3">
+                {introChecks.map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-start gap-3 rounded-2xl border border-white/80 bg-white/75 px-4 py-3 backdrop-blur"
+                  >
+                    <Check className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                    <p className="text-sm leading-6 text-slate-700 sm:text-[15px]">
+                      {item.includes("oliver@halkin.com") ? (
+                        <>
+                          Add{" "}
+                          <a
+                            href="mailto:oliver@halkin.com"
+                            className="font-semibold text-primary underline underline-offset-2"
+                          >
+                            oliver@halkin.com
+                          </a>{" "}
+                          as an organiser on your Luma event.
+                        </>
+                      ) : (
+                        item
+                      )}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-5 backdrop-blur sm:p-6">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/75">
+                Review Snapshot
+              </p>
+              <div className="mt-5 space-y-4">
+                <div className="flex items-start gap-3">
+                  <Building2 className="mt-0.5 h-4 w-4 text-primary" />
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      Venue
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-slate-900">
+                      {selectedVenue?.name || "Selected venue"}
+                    </p>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-primary/15 bg-primary/[0.04] px-4 py-3">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck className="mt-0.5 h-4 w-4 text-primary" />
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">
+                        What this step covers
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">
+                        Organiser details, event context, invoicing information, and a signed confirmation for the booking request.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Before you continue
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    The quicker this is completed, the faster the Halkin team can review and approve the event.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {questionsConfig.sections.map((section) => {
+          const theme = sectionTheme[section.id] ?? {
+            eyebrow: "Section",
+            icon: ListChecks,
+          };
+          const SectionIcon = theme.icon;
+
+          return (
+            <section
+              key={section.id}
+              className="sm:rounded-[2rem] sm:border sm:border-slate-200/80 sm:bg-white/85 p-0 shadow-none backdrop-blur sm:p-8 sm:shadow-[0_10px_24px_rgba(15,23,42,0.05)]"
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/[0.08] text-primary">
+                  <SectionIcon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/75">
+                    {theme.eyebrow}
+                  </p>
+                  <h2 className="mt-2 text-2xl font-semibold text-slate-900 sm:text-[2rem]">
+                    {section.title}
+                  </h2>
+
+                  {section.description && (
+                    <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
+                      {interpolateText(section.description, replacements)}
+                    </p>
+                  )}
+                </div>
+              </div>
 
               {section.body && (
-                <div className="mt-4 space-y-4 text-lg text-slate-700">
-                  {section.body.map((line, index) =>
-                    renderSectionBodyLine(section.id, line, index)
-                  )}
+                <div className="mt-6 rounded-[1.5rem] border border-slate-200/80 bg-slate-50/70 p-5 text-base leading-7 text-slate-700">
+                  <div className="space-y-3">
+                    {section.body.map((line, index) =>
+                      renderSectionBodyLine(section.id, line, index)
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -505,7 +659,7 @@ export default function CoworkingBookingQuestionsStep() {
                 <Link
                   href={section.link.href}
                   target="_blank"
-                  className="mt-4 inline-block text-blue-600 underline underline-offset-2"
+                  className="mt-5 inline-flex items-center rounded-full border border-primary/20 bg-primary/[0.05] px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/[0.08]"
                 >
                   {section.link.label}
                 </Link>
@@ -514,16 +668,18 @@ export default function CoworkingBookingQuestionsStep() {
               <div
                 className={
                   section.layout === "grid"
-                    ? "mt-8 grid gap-6 md:grid-cols-2"
-                    : "mt-8 space-y-8"
+                    ? "mt-6 grid gap-4 md:grid-cols-2 md:gap-5"
+                    : "mt-6 space-y-4"
                 }
               >
                 {section.questions.map((question) => renderQuestion(question))}
               </div>
-            </div>
-          ))}
+            </section>
+          );
+        })}
 
-          <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-8 sm:flex-row sm:justify-between">
+        <div className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)] backdrop-blur sm:p-6">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
             <button
               type="button"
               onClick={() => setCurrentStep(1)}
