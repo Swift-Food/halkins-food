@@ -57,6 +57,14 @@ function formatSessionDate(dateStr: string) {
   });
 }
 
+function formatCurrency(value: number) {
+  return `£${value.toFixed(2)}`;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function OrderDetailModal({
   spaceId,
   orderId,
@@ -79,8 +87,8 @@ export default function OrderDetailModal({
       try {
         const data = await coworkingDashboardService.getOrder(spaceId, orderId);
         setOrder(data);
-      } catch (err: any) {
-        setError(err.message || "Failed to load order details");
+      } catch (error: unknown) {
+        setError(getErrorMessage(error, "Failed to load order details"));
       } finally {
         setLoading(false);
       }
@@ -107,8 +115,8 @@ export default function OrderDetailModal({
       );
       setOrder(updated);
       onOrderUpdated?.();
-    } catch (err: any) {
-      setActionError(err.message || "Failed to approve order");
+    } catch (error: unknown) {
+      setActionError(getErrorMessage(error, "Failed to approve order"));
     } finally {
       setActionLoading(null);
     }
@@ -127,8 +135,8 @@ export default function OrderDetailModal({
       setShowRejectInput(false);
       setRejectReason("");
       onOrderUpdated?.();
-    } catch (err: any) {
-      setActionError(err.message || "Failed to reject order");
+    } catch (error: unknown) {
+      setActionError(getErrorMessage(error, "Failed to reject order"));
     } finally {
       setActionLoading(null);
     }
@@ -301,11 +309,31 @@ export default function OrderDetailModal({
                     Summary
                   </h3>
                 </div>
-                <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-200">
-                  <span>Venue Hire</span>
-                  <span className="text-primary">
-                    £{order.total.venueHireFee.toFixed(2)}
-                  </span>
+                <div className="space-y-2 pt-2 border-t border-gray-200">
+                  <div className="flex justify-between text-sm text-gray-700">
+                    <span>Catering Price</span>
+                    <span className="font-semibold">
+                      {formatCurrency(order.total.subtotal)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-700">
+                    <span>Delivery Price</span>
+                    <span className="font-semibold">
+                      {formatCurrency(order.total.deliveryFee)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-700">
+                    <span>Venue Hire</span>
+                    <span className="font-semibold">
+                      {formatCurrency(order.total.venueHireFee)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-200">
+                    <span>Total</span>
+                    <span className="text-primary">
+                      {formatCurrency(order.total.total)}
+                    </span>
+                  </div>
                 </div>
               </div>
 
