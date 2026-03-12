@@ -8,7 +8,7 @@ import {
   Trash2,
   Tag,
   Percent,
-  Hash,
+
   Calendar,
   Users,
   ChevronDown,
@@ -313,23 +313,20 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
                 <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
                   Code
                 </label>
-                <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    required
-                    disabled={!!editingCode}
-                    value={form.code}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        code: e.target.value.toUpperCase(),
-                      }))
-                    }
-                    placeholder="SUMMER20"
-                    className={`input h-11 w-full rounded-lg border border-gray-300 pl-10 pr-3 text-sm uppercase focus:border-primary focus:ring-1 focus:ring-primary ${editingCode ? "bg-gray-100 text-gray-500" : ""}`}
-                  />
-                </div>
+                <input
+                  type="text"
+                  required
+                  disabled={!!editingCode}
+                  value={form.code}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      code: e.target.value.toUpperCase(),
+                    }))
+                  }
+                  placeholder="SUMMER20"
+                  className={`input h-11 w-full rounded-lg border border-gray-300 px-3 text-sm uppercase focus:border-primary focus:ring-1 focus:ring-primary ${editingCode ? "bg-gray-100 text-gray-500" : ""}`}
+                />
               </div>
 
               {/* Name */}
@@ -375,78 +372,63 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
               {/* Discount Amount */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
-                  Discount Amount
+                  Discount Amount {form.discountType === "FIXED" ? "(£)" : "(%)"}
                 </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                    {form.discountType === "FIXED" ? "£" : "%"}
-                  </span>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    {...(form.discountType === "PERCENT" ? { max: 100 } : {})}
-                    step="0.01"
-                    value={form.discountAmount}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, discountAmount: e.target.value }))
-                    }
-                    placeholder="10"
-                    className="input h-11 w-full rounded-lg border border-gray-300 pl-8 pr-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
-                  />
-                </div>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  {...(form.discountType === "PERCENT" ? { max: 100 } : {})}
+                  step="0.01"
+                  value={form.discountAmount}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, discountAmount: e.target.value }))
+                  }
+                  placeholder="10"
+                  className="input h-11 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                />
               </div>
 
               {/* Max Discount (percentage only) */}
               {form.discountType === "PERCENT" && (
                 <div>
                   <label className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
-                    Max Discount Cap{" "}
+                    Max Discount Cap (£){" "}
                     <span className="text-gray-400 font-normal">(optional)</span>
                     <Hint text="Caps the maximum £ amount off. E.g. 20% with a £50 cap means a £400 order gets £50 off, not £80." />
                   </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                      £
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={form.maxDiscount}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, maxDiscount: e.target.value }))
-                      }
-                      placeholder="50"
-                      className="input h-11 w-full rounded-lg border border-gray-300 pl-8 pr-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.maxDiscount}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, maxDiscount: e.target.value }))
+                    }
+                    placeholder="50"
+                    className="input h-11 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                  />
                 </div>
               )}
 
               {/* Min Order Value */}
               <div>
                 <label className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
-                  Min Order Value{" "}
+                  Min Order Value (£){" "}
                   <span className="text-gray-400 font-normal">(optional)</span>
                   <Hint text="The food subtotal must be at least this amount for the code to work." />
                 </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                    £
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.minOrderValue}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, minOrderValue: e.target.value }))
-                    }
-                    placeholder="20"
-                    className="input h-11 w-full rounded-lg border border-gray-300 pl-8 pr-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
-                  />
-                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.minOrderValue}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, minOrderValue: e.target.value }))
+                  }
+                  placeholder="20"
+                  className="input h-11 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                />
               </div>
 
               {/* Max Uses */}
