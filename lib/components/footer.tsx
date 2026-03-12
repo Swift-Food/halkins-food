@@ -8,7 +8,7 @@ export default function Footer() {
           &copy; {new Date().getFullYear()} Halkin.
         </p>
         <a
-          href="/coworking-dashboard/testi"
+          href="/coworking-dashboard/halkins"
           className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
         >
           Admin Dashboard
