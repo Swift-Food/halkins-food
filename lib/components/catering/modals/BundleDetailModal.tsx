@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { CateringBundleResponse } from "@/types/api/catering.api.types";
+import { MenuItem } from "@/types/restaurant.types";
 import { Package, Minus, Plus } from "lucide-react";
 
 interface BundleDetailModalProps {
@@ -10,6 +11,7 @@ interface BundleDetailModalProps {
   isAdding: boolean;
   onAdd: (bundle: CateringBundleResponse, quantity: number) => void;
   onClose: () => void;
+  allMenuItems?: MenuItem[] | null;
 }
 
 export default function BundleDetailModal({
@@ -18,11 +20,41 @@ export default function BundleDetailModal({
   isAdding,
   onAdd,
   onClose,
+  allMenuItems,
 }: BundleDetailModalProps) {
   const [quantity, setQuantity] = useState(Math.max(1, defaultQuantity));
+  const [showDescriptions, setShowDescriptions] = useState(false);
 
   const sortedItems = [...bundle.items].sort((a, b) => a.sortOrder - b.sortOrder);
-  const estimatedTotal = Number(bundle.pricePerPerson) * quantity;
+
+  // Build lookup maps for item details (descriptions + prices)
+  const menuItemLookup = useMemo(() => {
+    if (!allMenuItems) return new Map<string, MenuItem>();
+    const map = new Map<string, MenuItem>();
+    for (const mi of allMenuItems) {
+      map.set(mi.id, mi);
+    }
+    return map;
+  }, [allMenuItems]);
+
+  // Calculate real total from actual menu item prices
+  const estimatedTotal = useMemo(() => {
+    let total = 0;
+    for (const item of bundle.items) {
+      const mi = menuItemLookup.get(item.menuItemId);
+      if (!mi) continue;
+      const price = mi.isDiscount && mi.discountPrice
+        ? parseFloat(mi.discountPrice.toString())
+        : parseFloat(mi.price?.toString() || "0");
+      const addonTotal = (item.selectedAddons || []).reduce(
+        (sum, a) => sum + (a.price || 0) * (a.quantity || 0),
+        0
+      );
+      const scaledQty = item.quantity * quantity;
+      total += price * scaledQty + addonTotal * quantity;
+    }
+    return total;
+  }, [bundle.items, menuItemLookup, quantity]);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
@@ -42,6 +74,20 @@ export default function BundleDetailModal({
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
+          </button>
+        </div>
+
+        {/* Show descriptions toggle */}
+        <div className="px-4 py-2 border-b border-base-200">
+          <button
+            onClick={() => setShowDescriptions((v) => !v)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+              showDescriptions
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-base-300 text-gray-600 hover:bg-base-100"
+            }`}
+          >
+            {showDescriptions ? "Hide" : "Show"} item descriptions
           </button>
         </div>
 
@@ -80,19 +126,32 @@ export default function BundleDetailModal({
         <div className="overflow-y-auto flex-1 divide-y divide-base-200">
           {sortedItems.map((item) => {
             const scaledQty = item.quantity * quantity;
+            const mi = menuItemLookup.get(item.menuItemId);
+            const unitPrice = mi
+              ? (mi.isDiscount && mi.discountPrice
+                  ? parseFloat(mi.discountPrice.toString())
+                  : parseFloat(mi.price?.toString() || "0"))
+              : 0;
+            const addonTotal = (item.selectedAddons || []).reduce(
+              (sum, a) => sum + (a.price || 0) * (a.quantity || 0),
+              0
+            );
+            const lineTotal = unitPrice * scaledQty + addonTotal * quantity;
             return (
               <div key={item.id} className="px-4 py-3">
-                <div className="flex items-start gap-3">
-                  <span className="text-sm font-bold text-gray-800 mt-0.5 w-8 flex-shrink-0">
-                    {scaledQty}
+                <div className="flex items-center gap-3">
+                  <span className="flex-shrink-0 w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center">
+                    ×{scaledQty}
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 text-sm">{item.menuItemName}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      from {item.restaurantName}
-                    </p>
+                    {showDescriptions && menuItemLookup.get(item.menuItemId)?.description && (
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                        {menuItemLookup.get(item.menuItemId)!.description}
+                      </p>
+                    )}
                     {item.selectedAddons && item.selectedAddons.length > 0 && (
-                      <div className="mt-1.5 space-y-0.5">
+                      <div className="mt-1 space-y-0.5">
                         {item.selectedAddons.map((addon, i) => (
                           <p key={i} className="text-xs text-gray-500">
                             • {addon.groupTitle}: {addon.name}
@@ -102,6 +161,11 @@ export default function BundleDetailModal({
                       </div>
                     )}
                   </div>
+                  {mi && (
+                    <span className="text-sm font-bold text-gray-800 flex-shrink-0">
+                      £{lineTotal.toFixed(2)}
+                    </span>
+                  )}
                 </div>
               </div>
             );
@@ -120,7 +184,7 @@ export default function BundleDetailModal({
             <div>
               <p className="font-bold text-gray-900">Estimated total</p>
               <p className="text-xs text-gray-500">
-                £{Number(bundle.pricePerPerson).toFixed(2)}/person × {quantity} guests
+                {bundle.items.length} items × {quantity} guests
               </p>
             </div>
             <p className="text-xl font-bold text-primary">£{estimatedTotal.toFixed(2)}</p>
