@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Readex_Pro } from "next/font/google";
 import { useCallback, useEffect, useState } from "react";
 import { coworkingDashboardService } from "@/services/api/coworking-dashboard.api";
 import {
@@ -20,9 +21,10 @@ import PromoCodesTab from "./PromoCodesTab";
 import { LogOut, Building2, MapPin, ShoppingBag, CreditCard, AlertTriangle, CalendarDays, Tag } from "lucide-react";
 import StripeReturnPage from "./StripeReturnPage";
 
-const dashboardFontStyle = {
-  fontFamily: "Tahoma, Geneva, Verdana, sans-serif",
-};
+const readexPro = Readex_Pro({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 interface CoworkingDashboardProps {
   spaceSlug: string;
@@ -48,7 +50,7 @@ export default function CoworkingDashboard({
   // If this tab was opened by Stripe redirect, show a "close this tab" screen
   if (isStripeReturnTab()) {
     return (
-      <div style={dashboardFontStyle}>
+      <div className={readexPro.className}>
         <StripeReturnPage spaceSlug={spaceSlug} />
       </div>
     );
@@ -207,8 +209,7 @@ function CoworkingDashboardInner({
   if (checkingAuth) {
     return (
       <div
-        className="flex items-center justify-center min-h-[60vh]"
-        style={dashboardFontStyle}
+        className={`${readexPro.className} flex items-center justify-center min-h-[60vh]`}
       >
         <span className="loading loading-spinner loading-lg text-primary" />
       </div>
@@ -218,7 +219,7 @@ function CoworkingDashboardInner({
   // Not authenticated — show login
   if (!authenticated) {
     return (
-      <div style={dashboardFontStyle}>
+      <div className={readexPro.className}>
         <DashboardLogin onLoginSuccess={() => setAuthenticated(true)} />
       </div>
     );
@@ -226,8 +227,7 @@ function CoworkingDashboardInner({
 
   return (
     <div
-      className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6"
-      style={dashboardFontStyle}
+      className={`${readexPro.className} max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6`}
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

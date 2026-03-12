@@ -489,17 +489,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
                             <span className="loading loading-spinner loading-md text-white" />
                           </div>
                         )}
-                        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent p-4">
-                          <div>
-                            <p className="text-sm font-semibold text-white">
-                              {form.name || "Venue preview"}
-                            </p>
-                            <p className="text-xs text-white/80">
-                              {Number(form.capacity) > 0
-                                ? `Capacity ${Number(form.capacity)}`
-                                : "Add capacity details"}
-                            </p>
-                          </div>
+                        <div className="absolute inset-x-0 bottom-0 flex items-center justify-end gap-3 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent p-4">
                           <div className="flex gap-2">
                             <button
                               type="button"
