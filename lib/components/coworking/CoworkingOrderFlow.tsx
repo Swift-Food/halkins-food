@@ -168,6 +168,8 @@ function EventEditModal({
 export default function CoworkingOrderFlow() {
   const params = useParams();
   const spaceSlug = params.spaceSlug as string;
+  const stepperScrollRef = useRef<HTMLDivElement | null>(null);
+  const stepButtonRefs = useRef<Record<number, HTMLButtonElement | null>>({});
 
   const {
     isAuthenticated,
@@ -209,6 +211,29 @@ export default function CoworkingOrderFlow() {
   const canNavigateToStep = (step: number) =>
     step === 1 || step <= highestVisitedStep;
 
+  useEffect(() => {
+    if (currentStep <= 1) return;
+
+    const container = stepperScrollRef.current;
+    const activeButton = stepButtonRefs.current[currentStep];
+
+    if (!container || !activeButton) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeButton.getBoundingClientRect();
+    const currentScrollLeft = container.scrollLeft;
+    const targetScrollLeft =
+      currentScrollLeft +
+      (buttonRect.left - containerRect.left) -
+      containerRect.width / 2 +
+      buttonRect.width / 2;
+
+    container.scrollTo({
+      left: Math.max(0, targetScrollLeft),
+      behavior: "smooth",
+    });
+  }, [currentStep]);
+
   // Fetch space info on mount
   useEffect(() => {
     if (!spaceSlug || spaceInfo) return;
@@ -235,17 +260,20 @@ export default function CoworkingOrderFlow() {
     if (isAuthenticated && member && !hasPrefilledContact.current) {
       hasPrefilledContact.current = true;
       setContactInfo({
-        organization: member.name || "",
-        fullName: "",
-        email: member.email,
-        phone: "",
-        addressLine1: "",
-        addressLine2: "",
-        city: "",
-        zipcode: "",
+        organization: contactInfo?.organization || member.name || "",
+        fullName: contactInfo?.fullName || "",
+        email: contactInfo?.email || member.email,
+        phone: contactInfo?.phone || "",
+        addressLine1: contactInfo?.addressLine1 || "",
+        addressLine2: contactInfo?.addressLine2 || "",
+        city: contactInfo?.city || "",
+        zipcode: contactInfo?.zipcode || "",
+        billingAddress: contactInfo?.billingAddress,
+        ccEmails: contactInfo?.ccEmails || [],
+        specialInstructions: contactInfo?.specialInstructions || "",
       });
     }
-  }, [isAuthenticated, member, setContactInfo]);
+  }, [contactInfo, isAuthenticated, member, setContactInfo]);
 
   // Pre-fill meal session date/time from venue selection once when authenticated
   useEffect(() => {
@@ -335,7 +363,10 @@ export default function CoworkingOrderFlow() {
       <div className="py-2 max-w mx-auto bg-base-100">
 
         {currentStep > 1 && (
-          <div className="mx-4 mb-4 mt-6 overflow-x-auto md:mx-10 md:mb-6 md:mt-8">
+          <div
+            ref={stepperScrollRef}
+            className="mx-4 mb-4 mt-6 overflow-x-auto md:mx-10 md:mb-6 md:mt-8"
+          >
             <div className="mx-auto min-w-[720px] max-w-6xl">
               <div className="flex w-full items-center">
                 {coworkingSteps.map((item, index) => {
@@ -346,6 +377,9 @@ export default function CoworkingOrderFlow() {
                   return (
                     <div key={item.step} className="flex min-w-0 flex-1 items-center">
                       <button
+                        ref={(element) => {
+                          stepButtonRefs.current[item.step] = element;
+                        }}
                         type="button"
                         onClick={() => {
                           if (!isClickable || item.step === currentStep) return;
