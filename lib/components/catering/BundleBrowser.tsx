@@ -8,7 +8,7 @@ import { useCatering } from "@/context/CateringContext";
 import BundleCard from "./BundleCard";
 import BundleDetailModal from "./modals/BundleDetailModal";
 import { mapToMenuItem } from "./catering-order-helpers";
-import { ArrowLeft, Package } from "lucide-react";
+import { Package } from "lucide-react";
 
 interface BundleBrowserProps {
   sessionIndex: number;
@@ -167,20 +167,6 @@ export default function BundleBrowser({
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-4">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors font-medium"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Menu
-        </button>
-        <div className="flex-1" />
-        <span className="text-sm text-gray-500">
-          {bundles.length} bundle{bundles.length !== 1 ? "s" : ""} available
-        </span>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {bundles.map((bundle) => (
           <BundleCard

@@ -145,6 +145,8 @@ export default function BundleDetailModal({
           {sortedItems.map((item) => {
             const scaledQty = item.quantity * quantity;
             const mi = menuItemLookup.get(item.menuItemId);
+            const dietaryFilters = mi?.dietaryFilters || [];
+            const servesCount = scaledQty * (mi?.feedsPerUnit || 1);
             const unitPrice = mi
               ? (mi.isDiscount && mi.discountPrice
                   ? parseFloat(mi.discountPrice.toString())
@@ -163,9 +165,12 @@ export default function BundleDetailModal({
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 text-sm">{item.menuItemName}</p>
-                    {mi?.dietaryFilters && mi.dietaryFilters.length > 0 && (
-                      <div className="mt-1 flex flex-wrap gap-1 items-center">
-                        {mi.dietaryFilters.slice(0, 4).map((filter) => {
+                    {(dietaryFilters.length > 0) || servesCount > 0 ? (
+                      <div className="mt-1 flex flex-wrap gap-1.5 items-center">
+                        <span className="text-[11px] text-gray-500">
+                          Serves ~{servesCount}
+                        </span>
+                        {dietaryFilters.slice(0, 4).map((filter) => {
                           const icon = DIETARY_ICON_MAP[filter.toLowerCase()];
 
                           if (!icon) return null;
@@ -185,13 +190,13 @@ export default function BundleDetailModal({
                             </div>
                           );
                         })}
-                        {mi.dietaryFilters.length > 4 && (
+                        {dietaryFilters.length > 4 && (
                           <span className="text-[10px] text-gray-500">
-                            +{mi.dietaryFilters.length - 4}
+                            +{dietaryFilters.length - 4}
                           </span>
                         )}
                       </div>
-                    )}
+                    ) : null}
                     {showDescriptions && menuItemLookup.get(item.menuItemId)?.description && (
                       <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
                         {menuItemLookup.get(item.menuItemId)!.description}
