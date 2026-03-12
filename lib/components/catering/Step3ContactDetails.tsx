@@ -14,7 +14,7 @@ import {
   transformLocalSessionsToPdfData,
 } from "@/lib/utils/menuPdfUtils";  
 import { pdf } from "@react-pdf/renderer";
-import { ArrowDown, FileText } from "lucide-react";
+import { ArrowDown, Calendar, Clock, FileText, MapPin } from "lucide-react";
 import { CateringMenuPdf } from "@/lib/components/pdf/CateringMenuPdf";
 import PdfDownloadModal from "./modals/PdfDownloadModal";
 import ContactInfoForm from "./contact/ContactInfoForm";
@@ -80,6 +80,23 @@ function normalizeContactInfoDraft(contactInfo: ContactInfo | null | undefined) 
   };
 }
 
+function formatEventDate(date: string) {
+  return new Date(`${date}T00:00:00`).toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function formatEventTime(time: string) {
+  const [hours, minutes] = time.split(":");
+  const hour = Number(hours);
+  const period = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minutes} ${period}`;
+}
+
 export default function Step3ContactInfo() {
   const router = useRouter();
   const topSectionRef = useRef<HTMLDivElement | null>(null);
@@ -100,6 +117,8 @@ export default function Step3ContactInfo() {
     isAuthenticated,
     isLoading: authLoading,
     selectedVenue,
+    eventStartDate,
+    eventStartTime,
     eventEndDate,
     eventEndTime,
     spaceSlug: coworkingSpaceSlug,
@@ -1140,11 +1159,36 @@ export default function Step3ContactInfo() {
                 <div>
                   <div className="rounded-2xl border border-base-300 bg-base-100/80 px-4 py-4">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-base-content/45 mb-2">
-                      Delivering to
+                      Event Details
                     </p>
-                    <p className="text-sm font-semibold text-base-content">
-                      {deliveryAddress}
-                    </p>
+                    <div className="space-y-2 text-sm text-base-content">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <p className="font-semibold">{deliveryAddress}</p>
+                      </div>
+                      {eventStartDate && (
+                        <div className="flex items-start gap-2 text-base-content/75">
+                          <Calendar className="mt-0.5 h-4 w-4 shrink-0" />
+                          <p>
+                            {formatEventDate(eventStartDate)}
+                            {eventEndDate && eventEndDate !== eventStartDate
+                              ? ` - ${formatEventDate(eventEndDate)}`
+                              : ""}
+                          </p>
+                        </div>
+                      )}
+                      {eventStartTime && (
+                        <div className="flex items-start gap-2 text-base-content/75">
+                          <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+                          <p>
+                            {formatEventTime(eventStartTime)}
+                            {eventEndTime
+                              ? ` - ${formatEventTime(eventEndTime)}`
+                              : ""}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
      
