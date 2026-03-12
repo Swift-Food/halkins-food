@@ -173,6 +173,7 @@ export interface DashboardOrderDetailResponse {
   mealSessions: DashboardOrderMealSession[];
   items: DashboardOrderItem[];
   total: DashboardOrderTotal;
+  additionalAnswers: Record<string, string> | null;
   eventDate: string | null;
   createdAt: string;
   estimatedDelivery: string | null;

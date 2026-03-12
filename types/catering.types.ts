@@ -170,7 +170,6 @@ export interface CoworkingBookingQuestionnaire {
   eventInformation: string;
   invitedGuestCount: string;
   runsOvernight: string;
-  hasCatering: string;
   specialEquipment: string;
   sponsors: string;
   outcomes: string;

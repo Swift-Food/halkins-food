@@ -514,7 +514,6 @@ export default function Step3ContactInfo() {
           eventInformation: bookingQuestionnaire.eventInformation,
           invitedGuestCount: bookingQuestionnaire.invitedGuestCount,
           runsOvernight: bookingQuestionnaire.runsOvernight,
-          hasCatering: bookingQuestionnaire.hasCatering,
           specialEquipment: bookingQuestionnaire.specialEquipment,
           sponsors: bookingQuestionnaire.sponsors,
           outcomes: bookingQuestionnaire.outcomes,

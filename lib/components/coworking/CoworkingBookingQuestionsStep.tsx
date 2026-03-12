@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ChangeEvent, useMemo, useState } from "react";
+import {
+  useCallback,
+  ChangeEvent,
+  PointerEvent as ReactPointerEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useCatering } from "@/context/CateringContext";
 import { useCoworking } from "@/context/CoworkingContext";
 import { ContactInfo, CoworkingBookingQuestionnaire } from "@/types/catering.types";
@@ -22,7 +30,6 @@ const emptyQuestionnaire: CoworkingBookingQuestionnaire = {
   eventInformation: "",
   invitedGuestCount: "",
   runsOvernight: "",
-  hasCatering: "",
   specialEquipment: "",
   sponsors: "",
   outcomes: "",
@@ -37,6 +44,148 @@ const fieldLabelClass = "mb-2 block text-sm font-semibold text-slate-900";
 const fieldClass =
   "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10";
 const errorClass = "mt-1 text-xs text-red-600";
+
+interface SignaturePadProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+function SignaturePad({ value, onChange }: SignaturePadProps) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isDrawingRef = useRef(false);
+
+  const drawImageFromValue = useCallback((dataUrl: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    const ratio = window.devicePixelRatio || 1;
+    const width = canvas.width / ratio;
+    const height = canvas.height / ratio;
+
+    context.clearRect(0, 0, width, height);
+
+    if (!dataUrl) return;
+
+    const image = new Image();
+    image.onload = () => {
+      context.drawImage(image, 0, 0, width, height);
+    };
+    image.src = dataUrl;
+  }, []);
+
+  const resizeCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ratio = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * ratio;
+    canvas.height = rect.height * ratio;
+
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.scale(ratio, ratio);
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.strokeStyle = "#111827";
+    context.lineWidth = 2;
+    drawImageFromValue(value);
+  }, [drawImageFromValue, value]);
+
+  useEffect(() => {
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    return () => window.removeEventListener("resize", resizeCanvas);
+  }, [resizeCanvas]);
+
+  useEffect(() => {
+    if (!isDrawingRef.current) {
+      drawImageFromValue(value);
+    }
+  }, [drawImageFromValue, value]);
+
+  const getPoint = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+  };
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+
+    const point = getPoint(event);
+    isDrawingRef.current = true;
+    canvas.setPointerCapture(event.pointerId);
+    context.beginPath();
+    context.moveTo(point.x, point.y);
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current) return;
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+
+    const point = getPoint(event);
+    context.lineTo(point.x, point.y);
+    context.stroke();
+  };
+
+  const finishDrawing = () => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context || !isDrawingRef.current) return;
+
+    isDrawingRef.current = false;
+    context.closePath();
+    onChange(canvas.toDataURL("image/png"));
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+
+    const ratio = window.devicePixelRatio || 1;
+    context.clearRect(0, 0, canvas.width / ratio, canvas.height / ratio);
+    onChange("");
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-white">
+        <canvas
+          ref={canvasRef}
+          className="block h-40 w-full touch-none bg-white"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={finishDrawing}
+          onPointerLeave={finishDrawing}
+        />
+      </div>
+      <div className="flex items-center justify-between text-xs text-slate-500">
+        <span>Draw your signature using your finger, mouse, or trackpad.</span>
+        <button
+          type="button"
+          onClick={clearSignature}
+          className="font-semibold text-primary hover:opacity-80"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function CoworkingBookingQuestionsStep() {
   const { contactInfo, bookingQuestionnaire, setContactInfo, setBookingQuestionnaire, setCurrentStep } =
@@ -124,9 +273,6 @@ export default function CoworkingBookingQuestionsStep() {
     }
     if (!currentQuestionnaire.runsOvernight) {
       nextErrors.runsOvernight = "Please select an option";
-    }
-    if (!currentQuestionnaire.hasCatering) {
-      nextErrors.hasCatering = "Please select an option";
     }
     if (!currentQuestionnaire.specialEquipment.trim()) {
       nextErrors.specialEquipment = "Please enter a value";
@@ -349,43 +495,6 @@ export default function CoworkingBookingQuestionsStep() {
 
               <div>
                 <label className={fieldLabelClass}>
-                  Will your event have catering? <span className="text-slate-400">*</span>
-                </label>
-                <p className="mb-4 text-base text-slate-700">
-                  Halkin exclusively uses{" "}
-                  <Link
-                    href="https://swiftfood.uk"
-                    target="_blank"
-                    className="text-blue-600 underline underline-offset-2"
-                  >
-                    https://swiftfood.uk
-                  </Link>{" "}
-                  for catering.
-                </p>
-                <div className="space-y-3">
-                  {[
-                    "Yes - we will use Swift Food to arrange food and drink",
-                    "No - food and catering will not be provided",
-                  ].map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => updateQuestionnaireField("hasCatering", option)}
-                      className={`flex w-full items-center rounded-2xl border px-4 py-3 text-left text-lg transition-colors ${
-                        currentQuestionnaire.hasCatering === option
-                          ? "border-primary bg-primary/10 text-slate-900"
-                          : "border-slate-300 bg-white text-slate-800 hover:border-slate-400"
-                      }`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-                {errors.hasCatering && <p className={errorClass}>{errors.hasCatering}</p>}
-              </div>
-
-              <div>
-                <label className={fieldLabelClass}>
                   Do you require any special equipment?{" "}
                   <span className="text-slate-400">*</span>
                 </label>
@@ -521,12 +630,9 @@ export default function CoworkingBookingQuestionsStep() {
               <label className={fieldLabelClass}>
                 Signature <span className="text-slate-400">*</span>
               </label>
-              <input
-                type="text"
+              <SignaturePad
                 value={currentQuestionnaire.signature}
-                onChange={handleTextField("signature")}
-                placeholder="Type your full name as signature"
-                className={fieldClass}
+                onChange={(value) => updateQuestionnaireField("signature", value)}
               />
               {errors.signature && <p className={errorClass}>{errors.signature}</p>}
             </div>
