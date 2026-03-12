@@ -18,6 +18,8 @@ import MenuItemCard from "./MenuItemCard";
 interface RestaurantMenuBrowserProps {
   restaurants: Restaurant[];
   restaurantsLoading: boolean;
+  sessionDate?: string;
+  eventTime?: string;
   allMenuItems: MenuItem[] | null;
   fetchAllMenuItems: () => void;
   onAddItem: (item: MenuItem) => void;
@@ -40,6 +42,8 @@ interface RestaurantMenuBrowserProps {
 export default function RestaurantMenuBrowser({
   restaurants,
   restaurantsLoading,
+  sessionDate,
+  eventTime,
   allMenuItems,
   fetchAllMenuItems,
   onAddItem,
@@ -77,6 +81,37 @@ export default function RestaurantMenuBrowser({
   const groupButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const isProgrammaticScroll = useRef(false);
 
+  const isRestaurantAvailableForSession = (restaurant: Restaurant) => {
+    if (!sessionDate || !eventTime) return true;
+
+    const cateringHours = restaurant.cateringOperatingHours;
+    if (!cateringHours || cateringHours.length === 0) return true;
+
+    const dayOfWeek = new Date(`${sessionDate}T00:00:00`)
+      .toLocaleDateString("en-US", { weekday: "long" })
+      .toLowerCase();
+
+    const daySlots = cateringHours.filter(
+      (slot) => slot.day.toLowerCase() === dayOfWeek && slot.enabled
+    );
+
+    if (daySlots.length === 0) return false;
+
+    const eventMinutes = (() => {
+      const [hours, minutes] = eventTime.split(":").map(Number);
+      return hours * 60 + minutes;
+    })();
+
+    return daySlots.some((slot) => {
+      if (!slot.open || !slot.close) return false;
+      const [openHours, openMinutes] = slot.open.split(":").map(Number);
+      const [closeHours, closeMinutes] = slot.close.split(":").map(Number);
+      const openTotal = openHours * 60 + openMinutes;
+      const closeTotal = closeHours * 60 + closeMinutes;
+      return eventMinutes >= openTotal && eventMinutes <= closeTotal;
+    });
+  };
+
   useEffect(() => {
     fetchAllMenuItems();
   }, [fetchAllMenuItems]);
@@ -109,8 +144,11 @@ export default function RestaurantMenuBrowser({
   const isRestaurantSearchActive = restaurantSearchQuery.trim().length > 0;
 
   const availableRestaurants = useMemo(
-    () => restaurants.filter((r) => r.status !== "coming_soon"),
-    [restaurants]
+    () =>
+      restaurants.filter(
+        (r) => r.status !== "coming_soon" && isRestaurantAvailableForSession(r)
+      ),
+    [restaurants, sessionDate, eventTime]
   );
 
   const dietaryFilteredItems = useMemo(() => {
@@ -314,6 +352,18 @@ export default function RestaurantMenuBrowser({
     isSearchActive,
     selectedRestaurantId,
   ]);
+
+  useEffect(() => {
+    if (!selectedRestaurantId) return;
+    if (availableRestaurants.some((restaurant) => restaurant.id === selectedRestaurantId)) {
+      return;
+    }
+
+    setSelectedRestaurantId(null);
+    setRestaurantSearchQuery("");
+    setCollapsedGroups(new Set());
+    setActiveGroupName(null);
+  }, [availableRestaurants, selectedRestaurantId]);
 
   useEffect(() => {
     const navElement = document.querySelector<HTMLElement>(

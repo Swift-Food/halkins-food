@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from "lucide-react";
 
-type ModalStep = "dates" | "start-time" | "end-time" | "confirm";
 type EditTarget = "start" | "end";
 
 interface TimeSlot {
@@ -149,19 +148,12 @@ export default function CoworkingEventWindowModal({
   onClose,
   onApply,
 }: CoworkingEventWindowModalProps) {
-  const hasCompleteInitialValues =
-    Boolean(startDate) &&
-    Boolean(endDate) &&
-    Boolean(startTime) &&
-    Boolean(endTime) &&
-    (endDate > startDate ||
-      (endDate === startDate && toMinutes(endTime) > toMinutes(startTime)));
   const initialDisplayDate = startDate || minDate;
   const initialDate = toDate(initialDisplayDate);
 
   const [draftStartDate, setDraftStartDate] = useState(startDate);
   const [draftStartTime, setDraftStartTime] = useState(startTime);
-  const [draftEndDate, setDraftEndDate] = useState(endDate);
+  const [draftEndDate, setDraftEndDate] = useState(endDate || startDate);
   const [draftEndTime, setDraftEndTime] = useState(endTime);
   const [draftStartTimeParts, setDraftStartTimeParts] = useState(() =>
     parseTimeParts(startTime)
@@ -169,12 +161,7 @@ export default function CoworkingEventWindowModal({
   const [draftEndTimeParts, setDraftEndTimeParts] = useState(() =>
     parseTimeParts(endTime)
   );
-  const [step, setStep] = useState<ModalStep>(
-    hasCompleteInitialValues ? "confirm" : "dates"
-  );
-  const [editTarget, setEditTarget] = useState<EditTarget>(
-    hasCompleteInitialValues ? "end" : "start"
-  );
+  const [editTarget, setEditTarget] = useState<EditTarget>("start");
   const [displayMonth, setDisplayMonth] = useState(initialDate.getMonth());
   const [displayYear, setDisplayYear] = useState(initialDate.getFullYear());
   const timeEntryRef = useRef<HTMLDivElement>(null);
@@ -216,7 +203,7 @@ export default function CoworkingEventWindowModal({
     return timeSlots.filter((slot) => toMinutes(slot.value) > toMinutes(draftStartTime));
   }, [draftEndDate, draftStartDate, draftStartTime, timeSlots]);
 
-  const isEditingEndTime = step === "end-time" || (step === "confirm" && editTarget === "end");
+  const isEditingEndTime = editTarget === "end";
   const activeTimeOptions = isEditingEndTime ? allowedEndTimes : timeSlots;
   const activeTimeValues = activeTimeOptions.map((slot) => slot.value);
 
@@ -239,7 +226,7 @@ export default function CoworkingEventWindowModal({
         : "End time must be between 7:00 AM and 10:00 PM.";
 
   useEffect(() => {
-    if (step === "dates" || step === "confirm" || typeof window === "undefined" || window.innerWidth >= 1024) {
+    if (typeof window === "undefined" || window.innerWidth >= 1024) {
       return;
     }
 
@@ -249,7 +236,7 @@ export default function CoworkingEventWindowModal({
         block: "start",
       });
     }, 120);
-  }, [step]);
+  }, [editTarget]);
 
   const canApply =
     Boolean(draftStartDate) &&
@@ -270,40 +257,26 @@ export default function CoworkingEventWindowModal({
   };
 
   const handleDateClick = (value: string) => {
-    if (!draftStartDate) {
+    if (editTarget === "start" || !draftStartDate) {
       setDraftStartDate(value);
-      setDraftStartTime("");
-      setDraftEndDate("");
-      setDraftEndTime("");
-      setDraftStartTimeParts(parseTimeParts(""));
-      setDraftEndTimeParts(parseTimeParts(""));
-      setEditTarget("end");
-      return;
-    }
-
-    if (!draftEndDate && editTarget === "end") {
-      if (value < draftStartDate) {
-        setDraftStartDate(value);
-        setDraftStartTime("");
-        setDraftStartTimeParts(parseTimeParts(""));
-        return;
+      if (!draftEndDate) {
+        setDraftEndDate(value);
       }
-
-      setDraftEndDate(value);
-      setDraftEndTime("");
-      setDraftEndTimeParts(parseTimeParts(""));
-      setStep(draftStartTime ? "end-time" : "start-time");
-      return;
-    }
-
-    if (editTarget === "start") {
-      setDraftStartDate(value);
       if (draftEndDate && draftEndDate < value) {
         setDraftEndDate(value);
         setDraftEndTime("");
         setDraftEndTimeParts(parseTimeParts(""));
       }
-      setStep("dates");
+      if (
+        draftEndDate &&
+        draftEndTime &&
+        draftStartTime &&
+        value === draftEndDate &&
+        toMinutes(draftEndTime) <= toMinutes(draftStartTime)
+      ) {
+        setDraftEndTime("");
+        setDraftEndTimeParts(parseTimeParts(""));
+      }
       return;
     }
 
@@ -321,7 +294,6 @@ export default function CoworkingEventWindowModal({
       setDraftEndTime("");
       setDraftEndTimeParts(parseTimeParts(""));
     }
-    setStep(draftStartTime ? "end-time" : "start-time");
   };
 
   const handleManualTimeChange = ({
@@ -362,7 +334,6 @@ export default function CoworkingEventWindowModal({
 
     if (isEditingEndTime) {
       setDraftEndTime(nextTime);
-      setStep("confirm");
       return;
     }
 
@@ -376,119 +347,76 @@ export default function CoworkingEventWindowModal({
       setDraftEndTimeParts(parseTimeParts(""));
     }
     setDraftStartTime(nextTime);
-    if (draftEndTime) {
-      setStep("confirm");
-    }
   };
 
-  const stepLabel =
-    step === "dates"
-      ? "Step 1"
-      : step === "start-time"
-        ? "Step 2"
-        : step === "end-time"
-          ? "Step 3"
-          : "Step 4";
-
-  const stepTitle =
-    step === "dates"
-      ? `Choose your ${editTarget} date`
-      : step === "start-time"
-        ? "Choose a start time"
-        : step === "end-time"
-          ? "Choose an end time"
-          : "Confirm details";
-
   const stepDescription =
-    step === "dates"
-      ? editTarget === "start"
-        ? "Pick the event start date."
-        : "Pick the event end date. It must be on or after the start date."
-      : step === "confirm"
-        ? "Review your event window, or tap Start or End below to adjust it."
-        : "Use the controls below to set the exact time.";
+    editTarget === "start"
+      ? "Pick the event start date and time."
+      : "Pick the event end date and time.";
 
   const renderTimeEditor = () => (
-    <>
-      {step !== "dates" && (
-        <div
-          ref={timeEntryRef}
-          className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
-        >
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">
-              Exact time
-            </label>
-            <div className="grid grid-cols-[1fr_1fr_auto] gap-2 sm:gap-3">
-              <select
-                value={manualTimeParts.hour}
-                onChange={(e) => handleManualTimeChange({ hour: e.target.value })}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
-              >
-                <option value="">Hour</option>
-                {Array.from({ length: 12 }, (_, index) => String(index + 1)).map((hour) => (
-                  <option key={hour} value={hour}>
-                    {hour}
-                  </option>
-                ))}
-              </select>
+    <div
+      ref={timeEntryRef}
+      className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
+    >
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-700">
+          Exact time
+        </label>
+        <div className="grid grid-cols-[1fr_1fr_auto] gap-2 sm:gap-3">
+          <select
+            value={manualTimeParts.hour}
+            onChange={(e) => handleManualTimeChange({ hour: e.target.value })}
+            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
+          >
+            <option value="">Hour</option>
+            {Array.from({ length: 12 }, (_, index) => String(index + 1)).map((hour) => (
+              <option key={hour} value={hour}>
+                {hour}
+              </option>
+            ))}
+          </select>
 
-              <select
-                value={manualTimeParts.minute}
-                onChange={(e) => handleManualTimeChange({ minute: e.target.value })}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
-              >
-                {["00", "15", "30", "45"].map((minute) => (
-                  <option key={minute} value={minute}>
-                    {minute}
-                  </option>
-                ))}
-              </select>
+          <select
+            value={manualTimeParts.minute}
+            onChange={(e) => handleManualTimeChange({ minute: e.target.value })}
+            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
+          >
+            {["00", "15", "30", "45"].map((minute) => (
+              <option key={minute} value={minute}>
+                {minute}
+              </option>
+            ))}
+          </select>
 
-              <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-1">
-                {(["AM", "PM"] as const).map((period) => {
-                  const isActive = manualTimeParts.period === period;
-                  return (
-                    <button
-                      key={period}
-                      type="button"
-                      onClick={() => handleManualTimeChange({ period })}
-                      className={`rounded-[0.9rem] px-3 py-2 text-sm font-semibold transition-all ${
-                        isActive
-                          ? "bg-primary text-white"
-                          : "text-slate-500 hover:text-slate-700"
-                      }`}
-                    >
-                      {period}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            {isManualTimeComplete && !isManualTimeAllowed && (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                <p className="font-semibold">Invalid time</p>
-                <p className="mt-1">{invalidTimeMessage}</p>
-              </div>
-            )}
+          <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-1">
+            {(["AM", "PM"] as const).map((period) => {
+              const isActive = manualTimeParts.period === period;
+              return (
+                <button
+                  key={period}
+                  type="button"
+                  onClick={() => handleManualTimeChange({ period })}
+                  className={`rounded-[0.9rem] px-3 py-2 text-sm font-semibold transition-all ${
+                    isActive
+                      ? "bg-primary text-white"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  {period}
+                </button>
+              );
+            })}
           </div>
-
-          {step === "start-time" && !draftEndTime && (
-            <button
-              type="button"
-              onClick={() => {
-                setEditTarget("end");
-                setStep("end-time");
-              }}
-              disabled={!draftStartTime || !isManualTimeAllowed}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Continue to End Time
-            </button>
-          )}
         </div>
-      )}
-    </>
+        {isManualTimeComplete && !isManualTimeAllowed && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p className="font-semibold">Invalid time</p>
+            <p className="mt-1">{invalidTimeMessage}</p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 
   const renderEditControls = () => (
@@ -508,14 +436,12 @@ export default function CoworkingEventWindowModal({
           type="button"
           onClick={() => {
             setEditTarget("start");
-            setStep(canApply ? "confirm" : "start-time");
           }}
           className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-3 py-2.5 text-left transition-all sm:gap-4 sm:py-3 ${
             editTarget === "start" && !isEditingEndTime
               ? "border-primary/30 bg-primary/5"
               : "border-slate-200/80 hover:border-primary/30 hover:bg-slate-50"
           }`}
-          disabled={!hasInitialDateRange}
         >
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:text-[11px] sm:tracking-[0.22em]">
@@ -539,14 +465,13 @@ export default function CoworkingEventWindowModal({
           type="button"
           onClick={() => {
             setEditTarget("end");
-            setStep(canApply ? "confirm" : "end-time");
           }}
           className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-3 py-2.5 text-left transition-all sm:gap-4 sm:py-3 ${
             isEditingEndTime
               ? "border-primary/30 bg-primary/5"
               : "border-slate-200/80 hover:border-primary/30 hover:bg-slate-50"
           }`}
-          disabled={!hasInitialDateRange}
+          disabled={!draftStartDate}
         >
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:text-[11px] sm:tracking-[0.22em]">
@@ -720,11 +645,8 @@ export default function CoworkingEventWindowModal({
 
           <div className="hidden p-4 sm:p-6 lg:block lg:p-8">
             <div className="rounded-[1.5rem] border border-slate-200/80 bg-slate-50/60 p-4 sm:rounded-[1.75rem] sm:p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                {stepLabel}
-              </p>
               <h4 className="mt-2 text-lg font-semibold text-slate-900 sm:text-xl">
-                {stepTitle}
+                {editTarget === "start" ? "Start" : "End"}
               </h4>
               <p className="mt-2 text-sm text-slate-500 sm:mt-3">
                 {stepDescription}
@@ -754,11 +676,8 @@ export default function CoworkingEventWindowModal({
 
           <div className="border-t border-slate-200/80 px-4 py-3 lg:hidden">
             <div className="rounded-[1.5rem] border border-slate-200/80 bg-slate-50/60 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                {stepLabel}
-              </p>
               <h4 className="mt-2 text-lg font-semibold text-slate-900">
-                {stepTitle}
+                {editTarget === "start" ? "Start" : "End"}
               </h4>
               <p className="mt-2 text-sm text-slate-500">
                 {stepDescription}

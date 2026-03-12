@@ -24,11 +24,13 @@ import SessionAccordion from "./SessionAccordion";
 import DateSessionNav from "./DateSessionNav";
 import CheckoutBar from "./CheckoutBar";
 import RestaurantMenuBrowser from "./RestaurantMenuBrowser";
+import BundleBrowser from "./BundleBrowser";
 import AddDayModal from "./modals/AddDayModal";
 import EmptySessionWarningModal from "./modals/EmptySessionWarningModal";
 import RemoveSessionConfirmModal from "./modals/RemoveSessionConfirmModal";
 import MinOrderModal from "./modals/MinOrderModal";
 import PdfDownloadModal from "./modals/PdfDownloadModal";
+import SwapItemModal from "./modals/SwapItemModal";
 
 // Hooks
 import { useCateringTutorial } from "./hooks/useCateringTutorial";
@@ -43,7 +45,7 @@ import {
 import { CateringBundleItem } from "@/types/api/catering.api.types";
 
 // Icons
-import { Plus, Clock } from "lucide-react";
+import { Plus, Clock, Package } from "lucide-react";
 
 const CATERING_TIME_SLOTS = ["11:00", "13:00", "18:00"] as const;
 const TUTORIAL_HINT_DISABLED_KEY = "catering_tutorial_hint_disabled";
@@ -77,7 +79,8 @@ export default function CateringOrderBuilder({
   nextStep = 2,
 }: CateringOrderBuilderProps) {
   const searchParams = useSearchParams();
-  const { eventStartTime } = useCoworking();
+  const { eventStartDate, eventStartTime, eventEndDate, eventEndTime } =
+    useCoworking();
   const {
     mealSessions,
     activeSessionIndex,
@@ -92,6 +95,7 @@ export default function CateringOrderBuilder({
     getSessionTotal,
     getTotalPrice,
     setCurrentStep,
+    eventDetails,
   } = useCatering();
 
   // Session editing state
@@ -106,6 +110,7 @@ export default function CateringOrderBuilder({
   // Add day modal state
   const [isAddDayModalOpen, setIsAddDayModalOpen] = useState(false);
   const [newDayDate, setNewDayDate] = useState("");
+  const [addDayError, setAddDayError] = useState<string | null>(null);
 
   // Refs for scroll-to behavior
   const sessionAccordionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -130,6 +135,16 @@ export default function CateringOrderBuilder({
   const [tutorialResetKey, setTutorialResetKey] = useState(0);
   const [isTutorialHintVisible, setIsTutorialHintVisible] = useState(false);
   const [isTutorialHintDisabled, setIsTutorialHintDisabled] = useState(false);
+
+  // Bundle browsing state
+  const [showBundleBrowser, setShowBundleBrowser] = useState(false);
+
+  // Swap item state
+  const [swapItemIndex, setSwapItemIndex] = useState<number | null>(null);
+  const [swapAlternatives, setSwapAlternatives] = useState<MenuItem[]>([]);
+
+  // Remove bundle confirmation state
+  const [bundleToRemove, setBundleToRemove] = useState<{ id: string; name: string } | null>(null);
 
   // PDF generation state
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -483,16 +498,29 @@ export default function CateringOrderBuilder({
   // Handle adding a new day
   const handleAddDay = () => {
     setNewDayDate("");
+    setAddDayError(null);
     setIsAddDayModalOpen(true);
   };
 
   const handleConfirmAddDay = () => {
     if (!newDayDate) {
-      alert("Please select a date.");
+      setAddDayError("Please select a date.");
+      return;
+    }
+    if (
+      eventStartDate &&
+      eventEndDate &&
+      (newDayDate < eventStartDate || newDayDate > eventEndDate)
+    ) {
+      setAddDayError(
+        `Please select a date within the event window: ${eventStartDate} to ${eventEndDate}.`
+      );
       return;
     }
     if (dayGroups.find((g) => g.date === newDayDate)) {
-      alert("This date already has sessions. Please select a different date.");
+      setAddDayError(
+        "This date already has sessions. Please select a different date."
+      );
       return;
     }
     const newSession: MealSessionState = {
@@ -503,6 +531,7 @@ export default function CateringOrderBuilder({
     };
     addMealSession(newSession);
     const newIndex = mealSessions.length;
+    setAddDayError(null);
     setIsAddDayModalOpen(false);
     setSelectedDayDate(newDayDate);
     setNavMode("sessions");
@@ -618,8 +647,9 @@ export default function CateringOrderBuilder({
     if (editingItemIndex === null) return;
     const BACKEND_QUANTITY_UNIT = updatedItem.cateringQuantityUnit || 7;
     const quantity = (updatedItem.portionQuantity || 1) * BACKEND_QUANTITY_UNIT;
-    const originalItem =
-      mealSessions[activeSessionIndex].orderItems[editingItemIndex].item;
+    const originalOrderItem =
+      mealSessions[activeSessionIndex].orderItems[editingItemIndex];
+    const originalItem = originalOrderItem.item;
     updateMenuItemByIndex(activeSessionIndex, editingItemIndex, {
       item: {
         ...updatedItem,
@@ -633,9 +663,85 @@ export default function CateringOrderBuilder({
             : originalItem.restaurant?.name,
       },
       quantity,
+      bundleId: originalOrderItem.bundleId,
+      bundleName: originalOrderItem.bundleName,
     });
     setIsEditModalOpen(false);
     setEditingItemIndex(null);
+  };
+
+  // Handle remove entire bundle
+  const handleRemoveBundle = (bundleId: string) => {
+    const session = mealSessions[activeSessionIndex];
+    if (!session) return;
+    const bundleItem = session.orderItems.find((oi) => oi.bundleId === bundleId);
+    setBundleToRemove({ id: bundleId, name: bundleItem?.bundleName || "Bundle" });
+  };
+
+  const confirmRemoveBundle = () => {
+    if (!bundleToRemove) return;
+    const session = mealSessions[activeSessionIndex];
+    if (!session) return;
+    const indicesToRemove = session.orderItems
+      .map((oi, idx) => (oi.bundleId === bundleToRemove.id ? idx : -1))
+      .filter((idx) => idx !== -1)
+      .reverse();
+    for (const idx of indicesToRemove) {
+      removeMenuItemByIndex(activeSessionIndex, idx);
+    }
+    setBundleToRemove(null);
+  };
+
+  // Handle swap item (for bundle items)
+  const handleSwapItem = (itemIndex: number) => {
+    const session = mealSessions[activeSessionIndex];
+    if (!session) return;
+    const orderItem = session.orderItems[itemIndex];
+    if (!orderItem) return;
+
+    const item = orderItem.item as MenuItem;
+    const restaurantId = item.restaurantId;
+    const groupTitle = item.groupTitle;
+
+    // Find alternatives: same restaurant + same groupTitle
+    let alternatives: MenuItem[] = [];
+    if (allMenuItems && restaurantId && groupTitle) {
+      alternatives = allMenuItems.filter(
+        (mi) => mi.restaurantId === restaurantId && mi.groupTitle === groupTitle
+      );
+    }
+
+    setSwapAlternatives(alternatives);
+    setSwapItemIndex(itemIndex);
+  };
+
+  const handleConfirmSwap = (newItem: MenuItem) => {
+    if (swapItemIndex === null) return;
+    const session = mealSessions[activeSessionIndex];
+    if (!session) return;
+
+    const oldOrderItem = session.orderItems[swapItemIndex];
+    const backendQuantityUnit = newItem.cateringQuantityUnit || 7;
+    const quantity =
+      newItem.portionQuantity && newItem.portionQuantity > 0
+        ? newItem.portionQuantity * backendQuantityUnit
+        : oldOrderItem.quantity;
+
+    updateMenuItemByIndex(activeSessionIndex, swapItemIndex, {
+      item: {
+        ...newItem,
+        categoryId: oldOrderItem.item.categoryId,
+        categoryName: oldOrderItem.item.categoryName,
+        subcategoryId: oldOrderItem.item.subcategoryId,
+        subcategoryName: oldOrderItem.item.subcategoryName,
+      },
+      quantity,
+      bundleId: oldOrderItem.bundleId,
+      bundleName: oldOrderItem.bundleName,
+    });
+
+    setSwapItemIndex(null);
+    setSwapAlternatives([]);
   };
 
   // Handle checkout
@@ -881,33 +987,76 @@ export default function CateringOrderBuilder({
             sessionIndex={index}
             onEdit={handleEditItem}
             onRemove={handleRemoveItem}
+            onSwapItem={handleSwapItem}
+            onRemoveBundle={handleRemoveBundle}
             collapsedCategories={collapsedCategories}
             onToggleCategory={handleToggleCategory}
             onViewMenu={handleViewMenu}
           />
         </div>
       )}
-      <RestaurantMenuBrowser
-        restaurants={restaurants}
-        restaurantsLoading={restaurantsLoading}
-        allMenuItems={allMenuItems}
-        fetchAllMenuItems={fetchAllMenuItems}
-        onAddItem={handleAddItem}
-        onUpdateQuantity={handleUpdateQuantity}
-        onAddOrderPress={handleAddOrderPress}
-        getItemQuantity={getItemQuantity}
-        expandedItemId={expandedItemId}
-        setExpandedItemId={setExpandedItemId}
-        selectedDietaryFilters={selectedDietaryFilters}
-        toggleDietaryFilter={toggleDietaryFilter}
-        categoriesRowRef={categoriesRowRef}
-        restaurantListRef={restaurantListRef}
-        firstMenuItemRef={firstMenuItemRef}
-        sessionIndex={index}
-        expandedSessionIndex={expandedSessionIndex}
-        autoOpenFirstRestaurant={currentTutorialStep?.id === "menu-item"}
-        tutorialResetKey={tutorialResetKey}
-      />
+
+      {/* Browse Mode Toggle */}
+      <div className="flex items-center gap-2 mb-3">
+        <button
+          onClick={() => setShowBundleBrowser(false)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+            !showBundleBrowser
+              ? "bg-primary text-white"
+              : "bg-base-200 text-gray-600 hover:bg-base-300"
+          }`}
+        >
+          Menu
+        </button>
+        <button
+          onClick={() => {
+            setShowBundleBrowser(true);
+            if (!allMenuItems) fetchAllMenuItems();
+          }}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+            showBundleBrowser
+              ? "bg-primary text-white"
+              : "bg-base-200 text-gray-600 hover:bg-base-300"
+          }`}
+        >
+          <Package className="w-3.5 h-3.5" />
+          Bundles
+        </button>
+      </div>
+
+      {showBundleBrowser ? (
+        <BundleBrowser
+          sessionIndex={index}
+          allMenuItems={allMenuItems}
+          fetchAllMenuItems={fetchAllMenuItems}
+          onBack={() => setShowBundleBrowser(false)}
+          defaultGuestCount={eventDetails?.guestCount || 1}
+        />
+      ) : (
+        <RestaurantMenuBrowser
+          restaurants={restaurants}
+          restaurantsLoading={restaurantsLoading}
+          sessionDate={session.sessionDate}
+          eventTime={session.eventTime}
+          allMenuItems={allMenuItems}
+          fetchAllMenuItems={fetchAllMenuItems}
+          onAddItem={handleAddItem}
+          onUpdateQuantity={handleUpdateQuantity}
+          onAddOrderPress={handleAddOrderPress}
+          getItemQuantity={getItemQuantity}
+          expandedItemId={expandedItemId}
+          setExpandedItemId={setExpandedItemId}
+          selectedDietaryFilters={selectedDietaryFilters}
+          toggleDietaryFilter={toggleDietaryFilter}
+          categoriesRowRef={categoriesRowRef}
+          restaurantListRef={restaurantListRef}
+          firstMenuItemRef={firstMenuItemRef}
+          sessionIndex={index}
+          expandedSessionIndex={expandedSessionIndex}
+          autoOpenFirstRestaurant={currentTutorialStep?.id === "menu-item"}
+          tutorialResetKey={tutorialResetKey}
+        />
+      )}
     </SessionAccordion>
   );
 
@@ -944,6 +1093,10 @@ export default function CateringOrderBuilder({
           onUpdate={updateMealSession}
           onClose={handleEditorClose}
           restaurants={restaurants}
+          eventStartDate={eventStartDate}
+          eventStartTime={eventStartTime}
+          eventEndDate={eventEndDate}
+          eventEndTime={eventEndTime}
         />
       )}
 
@@ -1100,6 +1253,18 @@ export default function CateringOrderBuilder({
         />
       )}
 
+      {/* Swap Item Modal */}
+      {swapItemIndex !== null && activeSession && (
+        <SwapItemModal
+          currentItem={activeSession.orderItems[swapItemIndex].item as MenuItem}
+          currentQuantity={activeSession.orderItems[swapItemIndex].quantity}
+          alternatives={swapAlternatives}
+          isOpen={true}
+          onClose={() => { setSwapItemIndex(null); setSwapAlternatives([]); }}
+          onSwap={handleConfirmSwap}
+        />
+      )}
+
       {/* Pending Item Modal */}
       {pendingItem && (
         <MenuItemModal
@@ -1139,6 +1304,40 @@ export default function CateringOrderBuilder({
         />
       )}
 
+      {/* Remove Bundle Confirmation Modal */}
+      {bundleToRemove !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <Package className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Remove Bundle</h3>
+                <p className="text-sm text-gray-500">{bundleToRemove.name}</p>
+              </div>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to remove this bundle? All items from this bundle will be removed from the session.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setBundleToRemove(null)}
+                className="flex-1 px-4 py-3 border border-base-300 text-gray-600 rounded-xl hover:bg-base-100 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRemoveBundle}
+                className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-medium"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PDF Download Modal */}
       {showPdfModal && (
         <PdfDownloadModal
@@ -1153,9 +1352,16 @@ export default function CateringOrderBuilder({
         <AddDayModal
           isOpen={isAddDayModalOpen}
           newDayDate={newDayDate}
-          onDateChange={(date) => setNewDayDate(date)}
+          errorMessage={addDayError}
+          onDateChange={(date) => {
+            setNewDayDate(date);
+            setAddDayError(null);
+          }}
           onConfirm={handleConfirmAddDay}
-          onClose={() => setIsAddDayModalOpen(false)}
+          onClose={() => {
+            setIsAddDayModalOpen(false);
+            setAddDayError(null);
+          }}
         />
       )}
 

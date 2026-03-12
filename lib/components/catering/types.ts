@@ -18,6 +18,10 @@ export interface SessionEditorProps {
   onUpdate: (index: number, updates: Partial<MealSessionState>) => void;
   onClose: (cancelled: boolean) => void;
   restaurants: Restaurant[];
+  eventStartDate?: string;
+  eventStartTime?: string;
+  eventEndDate?: string;
+  eventEndTime?: string;
 }
 
 // SessionAccordion component props
@@ -66,6 +70,7 @@ export interface CheckoutBarProps {
 export interface AddDayModalProps {
   isOpen: boolean;
   newDayDate: string;
+  errorMessage?: string | null;
   onDateChange: (date: string) => void;
   onConfirm: () => void;
   onClose: () => void;
