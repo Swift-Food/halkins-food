@@ -24,6 +24,7 @@ export default function BundleDetailModal({
 }: BundleDetailModalProps) {
   const [quantity, setQuantity] = useState(Math.max(1, defaultQuantity));
   const [showDescriptions, setShowDescriptions] = useState(false);
+  const peopleServed = bundle.baseGuestCount * quantity;
 
   const sortedItems = [...bundle.items].sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -94,7 +95,12 @@ export default function BundleDetailModal({
         {/* Quantity selector */}
         <div className="px-4 py-3 border-b border-base-200 bg-base-100/50">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Number of guests</span>
+            <div>
+              <p className="text-sm font-medium text-gray-700">Bundle quantity</p>
+              <p className="text-xs text-gray-500">
+                Serves ~{peopleServed} people
+              </p>
+            </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -184,7 +190,7 @@ export default function BundleDetailModal({
             <div>
               <p className="font-bold text-gray-900">Estimated total</p>
               <p className="text-xs text-gray-500">
-                {bundle.items.length} items × {quantity} guests
+                {bundle.items.length} items • Serves ~{peopleServed} people
               </p>
             </div>
             <p className="text-xl font-bold text-primary">£{estimatedTotal.toFixed(2)}</p>

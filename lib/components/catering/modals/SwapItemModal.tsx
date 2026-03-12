@@ -7,6 +7,7 @@ import { ArrowLeftRight } from "lucide-react";
 
 interface SwapItemModalProps {
   currentItem: MenuItem;
+  currentQuantity: number;
   alternatives: MenuItem[];
   isOpen: boolean;
   onClose: () => void;
@@ -15,6 +16,7 @@ interface SwapItemModalProps {
 
 export default function SwapItemModal({
   currentItem,
+  currentQuantity,
   alternatives,
   isOpen,
   onClose,
@@ -30,7 +32,7 @@ export default function SwapItemModal({
         item={selectedAlternative}
         isOpen={true}
         onClose={() => setSelectedAlternative(null)}
-        quantity={0}
+        quantity={currentQuantity}
         onAddItem={(configuredItem) => {
           onSwap(configuredItem);
           setSelectedAlternative(null);
