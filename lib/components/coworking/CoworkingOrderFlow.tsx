@@ -309,11 +309,6 @@ export default function CoworkingOrderFlow() {
     );
   }
 
-  const steps = [
-    { label: "Menu Selection", step: 1 },
-    { label: "Contact & Delivery", step: 2 },
-  ];
-
   return (
     <div className="min-h-screen">
       <div className="py-2 max-w mx-auto bg-base-100">
