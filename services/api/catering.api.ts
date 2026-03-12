@@ -98,6 +98,18 @@ class CateringService {
     return response.json();
   }
 
+  async getActiveBundles(): Promise<CateringBundleResponse[]> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.CATERING_BUNDLES_ACTIVE}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch active bundles");
+    }
+
+    return response.json();
+  }
+
   async submitCateringOrder(
     eventDetails: EventDetails,
     mealSessions: MealSessionState[],

@@ -24,11 +24,13 @@ import SessionAccordion from "./SessionAccordion";
 import DateSessionNav from "./DateSessionNav";
 import CheckoutBar from "./CheckoutBar";
 import RestaurantMenuBrowser from "./RestaurantMenuBrowser";
+import BundleBrowser from "./BundleBrowser";
 import AddDayModal from "./modals/AddDayModal";
 import EmptySessionWarningModal from "./modals/EmptySessionWarningModal";
 import RemoveSessionConfirmModal from "./modals/RemoveSessionConfirmModal";
 import MinOrderModal from "./modals/MinOrderModal";
 import PdfDownloadModal from "./modals/PdfDownloadModal";
+import SwapItemModal from "./modals/SwapItemModal";
 
 // Hooks
 import { useCateringTutorial } from "./hooks/useCateringTutorial";
@@ -43,7 +45,7 @@ import {
 import { CateringBundleItem } from "@/types/api/catering.api.types";
 
 // Icons
-import { Plus, Clock } from "lucide-react";
+import { Plus, Clock, Package } from "lucide-react";
 
 const CATERING_TIME_SLOTS = ["11:00", "13:00", "18:00"] as const;
 const TUTORIAL_HINT_DISABLED_KEY = "catering_tutorial_hint_disabled";
@@ -130,6 +132,13 @@ export default function CateringOrderBuilder({
   const [tutorialResetKey, setTutorialResetKey] = useState(0);
   const [isTutorialHintVisible, setIsTutorialHintVisible] = useState(false);
   const [isTutorialHintDisabled, setIsTutorialHintDisabled] = useState(false);
+
+  // Bundle browsing state
+  const [showBundleBrowser, setShowBundleBrowser] = useState(false);
+
+  // Swap item state
+  const [swapItemIndex, setSwapItemIndex] = useState<number | null>(null);
+  const [swapAlternatives, setSwapAlternatives] = useState<MenuItem[]>([]);
 
   // PDF generation state
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -638,6 +647,55 @@ export default function CateringOrderBuilder({
     setEditingItemIndex(null);
   };
 
+  // Handle swap item (for bundle items)
+  const handleSwapItem = (itemIndex: number) => {
+    const session = mealSessions[activeSessionIndex];
+    if (!session) return;
+    const orderItem = session.orderItems[itemIndex];
+    if (!orderItem) return;
+
+    const item = orderItem.item as MenuItem;
+    const restaurantId = item.restaurantId;
+    const groupTitle = item.groupTitle;
+
+    // Find alternatives: same restaurant + same groupTitle
+    let alternatives: MenuItem[] = [];
+    if (allMenuItems && restaurantId && groupTitle) {
+      alternatives = allMenuItems.filter(
+        (mi) => mi.restaurantId === restaurantId && mi.groupTitle === groupTitle
+      );
+    }
+
+    setSwapAlternatives(alternatives);
+    setSwapItemIndex(itemIndex);
+  };
+
+  const handleConfirmSwap = (newItem: MenuItem) => {
+    if (swapItemIndex === null) return;
+    const session = mealSessions[activeSessionIndex];
+    if (!session) return;
+
+    const oldOrderItem = session.orderItems[swapItemIndex];
+    const BACKEND_QUANTITY_UNIT = newItem.cateringQuantityUnit || 7;
+    const quantity = (newItem.portionQuantity || 1) * BACKEND_QUANTITY_UNIT;
+
+    updateMenuItemByIndex(activeSessionIndex, swapItemIndex, {
+      item: {
+        ...newItem,
+        categoryId: oldOrderItem.item.categoryId,
+        categoryName: oldOrderItem.item.categoryName,
+        subcategoryId: oldOrderItem.item.subcategoryId,
+        subcategoryName: oldOrderItem.item.subcategoryName,
+      },
+      quantity,
+      bundleId: oldOrderItem.bundleId,
+      bundleName: oldOrderItem.bundleName,
+    });
+
+    setSwapItemIndex(null);
+    setSwapAlternatives([]);
+  };
+
   // Handle checkout
   const handleCheckout = () => {
     if (mealSessions.length > 1) {
@@ -881,33 +939,72 @@ export default function CateringOrderBuilder({
             sessionIndex={index}
             onEdit={handleEditItem}
             onRemove={handleRemoveItem}
+            onSwapItem={handleSwapItem}
             collapsedCategories={collapsedCategories}
             onToggleCategory={handleToggleCategory}
             onViewMenu={handleViewMenu}
           />
         </div>
       )}
-      <RestaurantMenuBrowser
-        restaurants={restaurants}
-        restaurantsLoading={restaurantsLoading}
-        allMenuItems={allMenuItems}
-        fetchAllMenuItems={fetchAllMenuItems}
-        onAddItem={handleAddItem}
-        onUpdateQuantity={handleUpdateQuantity}
-        onAddOrderPress={handleAddOrderPress}
-        getItemQuantity={getItemQuantity}
-        expandedItemId={expandedItemId}
-        setExpandedItemId={setExpandedItemId}
-        selectedDietaryFilters={selectedDietaryFilters}
-        toggleDietaryFilter={toggleDietaryFilter}
-        categoriesRowRef={categoriesRowRef}
-        restaurantListRef={restaurantListRef}
-        firstMenuItemRef={firstMenuItemRef}
-        sessionIndex={index}
-        expandedSessionIndex={expandedSessionIndex}
-        autoOpenFirstRestaurant={currentTutorialStep?.id === "menu-item"}
-        tutorialResetKey={tutorialResetKey}
-      />
+
+      {/* Browse Mode Toggle */}
+      <div className="flex items-center gap-2 mb-3">
+        <button
+          onClick={() => setShowBundleBrowser(false)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+            !showBundleBrowser
+              ? "bg-primary text-white"
+              : "bg-base-200 text-gray-600 hover:bg-base-300"
+          }`}
+        >
+          Menu
+        </button>
+        <button
+          onClick={() => {
+            setShowBundleBrowser(true);
+            if (!allMenuItems) fetchAllMenuItems();
+          }}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+            showBundleBrowser
+              ? "bg-primary text-white"
+              : "bg-base-200 text-gray-600 hover:bg-base-300"
+          }`}
+        >
+          <Package className="w-3.5 h-3.5" />
+          Bundles
+        </button>
+      </div>
+
+      {showBundleBrowser ? (
+        <BundleBrowser
+          sessionIndex={index}
+          allMenuItems={allMenuItems}
+          fetchAllMenuItems={fetchAllMenuItems}
+          onBack={() => setShowBundleBrowser(false)}
+        />
+      ) : (
+        <RestaurantMenuBrowser
+          restaurants={restaurants}
+          restaurantsLoading={restaurantsLoading}
+          allMenuItems={allMenuItems}
+          fetchAllMenuItems={fetchAllMenuItems}
+          onAddItem={handleAddItem}
+          onUpdateQuantity={handleUpdateQuantity}
+          onAddOrderPress={handleAddOrderPress}
+          getItemQuantity={getItemQuantity}
+          expandedItemId={expandedItemId}
+          setExpandedItemId={setExpandedItemId}
+          selectedDietaryFilters={selectedDietaryFilters}
+          toggleDietaryFilter={toggleDietaryFilter}
+          categoriesRowRef={categoriesRowRef}
+          restaurantListRef={restaurantListRef}
+          firstMenuItemRef={firstMenuItemRef}
+          sessionIndex={index}
+          expandedSessionIndex={expandedSessionIndex}
+          autoOpenFirstRestaurant={currentTutorialStep?.id === "menu-item"}
+          tutorialResetKey={tutorialResetKey}
+        />
+      )}
     </SessionAccordion>
   );
 
@@ -1097,6 +1194,17 @@ export default function CateringOrderBuilder({
             setIsEditModalOpen(false);
             setEditingItemIndex(null);
           }}
+        />
+      )}
+
+      {/* Swap Item Modal */}
+      {swapItemIndex !== null && activeSession && (
+        <SwapItemModal
+          currentItem={activeSession.orderItems[swapItemIndex].item as MenuItem}
+          alternatives={swapAlternatives}
+          isOpen={true}
+          onClose={() => { setSwapItemIndex(null); setSwapAlternatives([]); }}
+          onSwap={handleConfirmSwap}
         />
       )}
 
