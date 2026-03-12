@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import {
-  useCallback,
   ChangeEvent,
   PointerEvent as ReactPointerEvent,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
+import questionsConfigJson from "@/lib/data/coworking-booking-questions.json";
 import { useCatering } from "@/context/CateringContext";
 import { useCoworking } from "@/context/CoworkingContext";
 import { ContactInfo, CoworkingBookingQuestionnaire } from "@/types/catering.types";
@@ -38,7 +39,43 @@ const emptyQuestionnaire: CoworkingBookingQuestionnaire = {
   signature: "",
 };
 
-type ValidationErrors = Partial<Record<keyof ContactInfo | keyof CoworkingBookingQuestionnaire, string>>;
+type QuestionSource = "contactInfo" | "bookingQuestionnaire";
+type QuestionType = "short_text" | "long_text" | "single_choice" | "signature";
+type SectionLayout = "grid" | "stack";
+
+interface QuestionSchema {
+  key: string;
+  title: string;
+  description: string;
+  type: QuestionType;
+  required: boolean;
+  source: QuestionSource;
+  inputType?: string;
+  placeholder?: string;
+  options?: string[];
+  notes?: string[];
+}
+
+interface SectionSchema {
+  id: string;
+  title: string;
+  layout: SectionLayout;
+  description: string;
+  body?: string[];
+  link?: {
+    label: string;
+    href: string;
+  };
+  questions: QuestionSchema[];
+}
+
+interface QuestionsConfig {
+  sections: SectionSchema[];
+}
+
+const questionsConfig = questionsConfigJson as QuestionsConfig;
+
+type ValidationErrors = Record<string, string>;
 
 const fieldLabelClass = "mb-2 block text-sm font-semibold text-slate-900";
 const fieldClass =
@@ -187,9 +224,21 @@ function SignaturePad({ value, onChange }: SignaturePadProps) {
   );
 }
 
+function interpolateText(
+  text: string,
+  replacements: Record<string, string | number>
+) {
+  return text.replace(/\{\{(\w+)\}\}/g, (_, token) => String(replacements[token] ?? ""));
+}
+
 export default function CoworkingBookingQuestionsStep() {
-  const { contactInfo, bookingQuestionnaire, setContactInfo, setBookingQuestionnaire, setCurrentStep } =
-    useCatering();
+  const {
+    contactInfo,
+    bookingQuestionnaire,
+    setContactInfo,
+    setBookingQuestionnaire,
+    setCurrentStep,
+  } = useCatering();
   const { selectedVenue } = useCoworking();
   const [errors, setErrors] = useState<ValidationErrors>({});
 
@@ -207,6 +256,14 @@ export default function CoworkingBookingQuestionsStep() {
       ...bookingQuestionnaire,
     }),
     [bookingQuestionnaire]
+  );
+
+  const replacements = useMemo(
+    () => ({
+      venueName: selectedVenue?.name || "1-2 Paris Garden",
+      venueCapacity: selectedVenue?.capacity ?? 80,
+    }),
+    [selectedVenue]
   );
 
   const updateContactField = (field: keyof ContactInfo, value: string) => {
@@ -238,57 +295,55 @@ export default function CoworkingBookingQuestionsStep() {
     });
   };
 
-  const handleTextField =
-    (field: keyof CoworkingBookingQuestionnaire) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      updateQuestionnaireField(field, event.target.value);
-    };
+  const getQuestionValue = (question: QuestionSchema) => {
+    if (question.source === "contactInfo") {
+      return String(
+        currentContactInfo[question.key as keyof ContactInfo] ?? ""
+      );
+    }
+
+    return String(
+      currentQuestionnaire[
+        question.key as keyof CoworkingBookingQuestionnaire
+      ] ?? ""
+    );
+  };
+
+  const updateQuestionValue = (question: QuestionSchema, value: string) => {
+    if (question.source === "contactInfo") {
+      updateContactField(question.key as keyof ContactInfo, value);
+      return;
+    }
+
+    updateQuestionnaireField(
+      question.key as keyof CoworkingBookingQuestionnaire,
+      value
+    );
+  };
 
   const validate = () => {
     const nextErrors: ValidationErrors = {};
 
-    if (!currentContactInfo.fullName.trim()) {
-      nextErrors.fullName = "Please enter a value";
-    }
-    if (!currentContactInfo.email.trim()) {
-      nextErrors.email = "Please enter a value";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentContactInfo.email)) {
-      nextErrors.email = "Please enter a valid email address";
-    }
-    if (!currentContactInfo.phone.trim()) {
-      nextErrors.phone = "Please enter a value";
-    }
-    if (!currentContactInfo.organization.trim()) {
-      nextErrors.organization = "Please enter a value";
-    }
+    for (const section of questionsConfig.sections) {
+      for (const question of section.questions) {
+        const value = getQuestionValue(question).trim();
 
-    if (!currentQuestionnaire.eventUrl.trim()) {
-      nextErrors.eventUrl = "Please enter a value";
-    }
-    if (!currentQuestionnaire.eventInformation.trim()) {
-      nextErrors.eventInformation = "Please enter a value";
-    }
-    if (!currentQuestionnaire.invitedGuestCount.trim()) {
-      nextErrors.invitedGuestCount = "Please enter a value";
-    }
-    if (!currentQuestionnaire.runsOvernight) {
-      nextErrors.runsOvernight = "Please select an option";
-    }
-    if (!currentQuestionnaire.specialEquipment.trim()) {
-      nextErrors.specialEquipment = "Please enter a value";
-    }
-    if (!currentQuestionnaire.invoicingOrganisation.trim()) {
-      nextErrors.invoicingOrganisation = "Please enter a value";
-    }
-    if (!currentQuestionnaire.invoiceEmailAddress.trim()) {
-      nextErrors.invoiceEmailAddress = "Please enter a value";
-    } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentQuestionnaire.invoiceEmailAddress)
-    ) {
-      nextErrors.invoiceEmailAddress = "Please enter a valid email address";
-    }
-    if (!currentQuestionnaire.signature.trim()) {
-      nextErrors.signature = "Please enter a value";
+        if (question.required && !value) {
+          nextErrors[question.key] =
+            question.type === "single_choice"
+              ? "Please select an option"
+              : "Please enter a value";
+          continue;
+        }
+
+        if (
+          value &&
+          question.inputType === "email" &&
+          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+        ) {
+          nextErrors[question.key] = "Please enter a valid email address";
+        }
+      }
     }
 
     setErrors(nextErrors);
@@ -298,6 +353,108 @@ export default function CoworkingBookingQuestionsStep() {
   const handleContinue = () => {
     if (!validate()) return;
     setCurrentStep(3);
+  };
+
+  const renderQuestion = (question: QuestionSchema) => {
+    const value = getQuestionValue(question);
+
+    return (
+      <div key={question.key}>
+        <label className={fieldLabelClass}>
+          {question.title}
+          {question.required && <span className="text-slate-400"> *</span>}
+        </label>
+        {question.description && (
+          <p className="mb-3 text-base text-slate-700">
+            {interpolateText(question.description, replacements)}
+          </p>
+        )}
+
+        {question.type === "short_text" && (
+          <input
+            type={question.inputType ?? "text"}
+            min={question.inputType === "number" ? "1" : undefined}
+            value={value}
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              updateQuestionValue(question, event.target.value)
+            }
+            placeholder={question.placeholder}
+            className={fieldClass}
+          />
+        )}
+
+        {question.type === "long_text" && (
+          <textarea
+            value={value}
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+              updateQuestionValue(question, event.target.value)
+            }
+            placeholder={question.placeholder}
+            className={`${fieldClass} min-h-32 resize-y`}
+          />
+        )}
+
+        {question.type === "single_choice" && (
+          <div className="space-y-3">
+            {question.options?.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => updateQuestionValue(question, option)}
+                className={`flex w-full items-center rounded-2xl border px-4 py-3 text-left text-lg transition-colors ${
+                  value === option
+                    ? "border-primary bg-primary/10 text-slate-900"
+                    : "border-slate-300 bg-white text-slate-800 hover:border-slate-400"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {question.type === "signature" && (
+          <SignaturePad
+            value={value}
+            onChange={(nextValue) => updateQuestionValue(question, nextValue)}
+          />
+        )}
+
+        {question.notes && (
+          <div className="mt-4 space-y-2 text-base font-semibold text-slate-800">
+            {question.notes.map((note) => (
+              <p key={note}>{interpolateText(note, replacements)}</p>
+            ))}
+          </div>
+        )}
+
+        {errors[question.key] && <p className={errorClass}>{errors[question.key]}</p>}
+      </div>
+    );
+  };
+
+  const renderSectionBodyLine = (
+    sectionId: string,
+    line: string,
+    index: number
+  ) => {
+    if (sectionId === "billing" && index === 0) {
+      return (
+        <p key={line} className="font-semibold">
+          {line}
+        </p>
+      );
+    }
+
+    if (sectionId === "damage_waiver" && index > 0) {
+      return (
+        <p key={line} className="font-semibold">
+          {line}
+        </p>
+      );
+    }
+
+    return <p key={line}>{line}</p>;
   };
 
   return (
@@ -324,319 +481,47 @@ export default function CoworkingBookingQuestionsStep() {
             </p>
           </div>
 
-          <div className="border-t border-slate-200 pt-8">
-            <h2 className="text-3xl font-semibold text-slate-900">Your details</h2>
-            <p className="mt-3 text-lg text-slate-700">
-              Please provide the name and details of the lead person and the
-              company hosting this event.
-            </p>
+          {questionsConfig.sections.map((section) => (
+            <div key={section.id} className="border-t border-slate-200 pt-8">
+              <h2 className="text-3xl font-semibold text-slate-900">
+                {section.title}
+              </h2>
 
-            <div className="mt-8 grid gap-6 md:grid-cols-2">
-              <div>
-                <label className={fieldLabelClass}>
-                  Your name <span className="text-slate-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={currentContactInfo.fullName}
-                  onChange={(event) => updateContactField("fullName", event.target.value)}
-                  placeholder="First and last name"
-                  className={fieldClass}
-                />
-                {errors.fullName && <p className={errorClass}>{errors.fullName}</p>}
-              </div>
-
-              <div>
-                <label className={fieldLabelClass}>
-                  Your email address <span className="text-slate-400">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={currentContactInfo.email}
-                  onChange={(event) => updateContactField("email", event.target.value)}
-                  placeholder="organiser@example.com"
-                  className={fieldClass}
-                />
-                {errors.email && <p className={errorClass}>{errors.email}</p>}
-              </div>
-
-              <div>
-                <label className={fieldLabelClass}>
-                  Your mobile / WhatsApp number <span className="text-slate-400">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={currentContactInfo.phone}
-                  onChange={(event) => updateContactField("phone", event.target.value)}
-                  placeholder="+44 7835 555 555"
-                  className={fieldClass}
-                />
-                {errors.phone && <p className={errorClass}>{errors.phone}</p>}
-              </div>
-
-              <div>
-                <label className={fieldLabelClass}>
-                  Your company or organisation <span className="text-slate-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={currentContactInfo.organization}
-                  onChange={(event) =>
-                    updateContactField("organization", event.target.value)
-                  }
-                  placeholder="Team Rocket"
-                  className={fieldClass}
-                />
-                {errors.organization && (
-                  <p className={errorClass}>{errors.organization}</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-200 pt-8">
-            <h2 className="text-3xl font-semibold text-slate-900">About your event</h2>
-            <p className="mt-3 text-lg text-slate-700">
-              Your request will most likely be accepted at{" "}
-              <span className="font-semibold">
-                Halkin - {selectedVenue?.name || "1-2 Paris Garden"}
-              </span>
-              .
-            </p>
-
-            <div className="mt-8 space-y-8">
-              <div>
-                <label className={fieldLabelClass}>
-                  Event URL <span className="text-slate-400">*</span>
-                </label>
-                <p className="mb-3 text-base text-slate-700">
-                  Share the link where your attendees will register
+              {section.description && (
+                <p className="mt-3 text-lg text-slate-700">
+                  {interpolateText(section.description, replacements)}
                 </p>
-                <input
-                  type="url"
-                  value={currentQuestionnaire.eventUrl}
-                  onChange={handleTextField("eventUrl")}
-                  placeholder="https://luma.com/q108auy0"
-                  className={fieldClass}
-                />
-                {errors.eventUrl && <p className={errorClass}>{errors.eventUrl}</p>}
-              </div>
+              )}
 
-              <div>
-                <label className={fieldLabelClass}>
-                  Event information <span className="text-slate-400">*</span>
-                </label>
-                <p className="mb-3 text-base text-slate-700">What are you hosting?</p>
-                <textarea
-                  value={currentQuestionnaire.eventInformation}
-                  onChange={handleTextField("eventInformation")}
-                  placeholder="A hackathon for commercial real estate"
-                  className={`${fieldClass} min-h-36 resize-y`}
-                />
-                {errors.eventInformation && (
-                  <p className={errorClass}>{errors.eventInformation}</p>
-                )}
-              </div>
-
-              <div>
-                <label className={fieldLabelClass}>
-                  How many people are you inviting? <span className="text-slate-400">*</span>
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={currentQuestionnaire.invitedGuestCount}
-                  onChange={handleTextField("invitedGuestCount")}
-                  placeholder="150"
-                  className={fieldClass}
-                />
-                {errors.invitedGuestCount && (
-                  <p className={errorClass}>{errors.invitedGuestCount}</p>
-                )}
-                <div className="mt-4 space-y-2 text-base font-semibold text-slate-800">
-                  <p>
-                    Warning: Your selected venue seats a maximum of{" "}
-                    {selectedVenue?.capacity ?? 80} people.
-                  </p>
-                  <p>Warning: The maximum capacity across our venues is 150 people.</p>
+              {section.body && (
+                <div className="mt-4 space-y-4 text-lg text-slate-700">
+                  {section.body.map((line, index) =>
+                    renderSectionBodyLine(section.id, line, index)
+                  )}
                 </div>
-              </div>
+              )}
 
-              <div>
-                <label className={fieldLabelClass}>
-                  Will your event run overnight? <span className="text-slate-400">*</span>
-                </label>
-                <p className="mb-4 text-base text-slate-700">
-                  Will your event run between the hours of 12am to 9am?
-                </p>
-                <div className="space-y-3">
-                  {[
-                    "Yes - our event will run through the night",
-                    "No - our event will finish before midnight and resume again after 9am",
-                  ].map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => updateQuestionnaireField("runsOvernight", option)}
-                      className={`flex w-full items-center rounded-2xl border px-4 py-3 text-left text-lg transition-colors ${
-                        currentQuestionnaire.runsOvernight === option
-                          ? "border-primary bg-primary/10 text-slate-900"
-                          : "border-slate-300 bg-white text-slate-800 hover:border-slate-400"
-                      }`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-                {errors.runsOvernight && (
-                  <p className={errorClass}>{errors.runsOvernight}</p>
-                )}
-              </div>
+              {section.link && (
+                <Link
+                  href={section.link.href}
+                  target="_blank"
+                  className="mt-4 inline-block text-blue-600 underline underline-offset-2"
+                >
+                  {section.link.label}
+                </Link>
+              )}
 
-              <div>
-                <label className={fieldLabelClass}>
-                  Do you require any special equipment?{" "}
-                  <span className="text-slate-400">*</span>
-                </label>
-                <textarea
-                  value={currentQuestionnaire.specialEquipment}
-                  onChange={handleTextField("specialEquipment")}
-                  placeholder="Screens, microphones for speakers, 3D printers, 5-axis CNC mills...."
-                  className={`${fieldClass} min-h-32 resize-y`}
-                />
-                {errors.specialEquipment && (
-                  <p className={errorClass}>{errors.specialEquipment}</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-200 pt-8">
-            <h2 className="text-3xl font-semibold text-slate-900">
-              Sponsors and supporting organisations
-            </h2>
-            <p className="mt-3 text-lg text-slate-700">
-              If you&apos;re looking for sponsorship - tell us! We have a vast
-              network of people who can help.
-            </p>
-
-            <div className="mt-8 space-y-8">
-              <div>
-                <label className={fieldLabelClass}>List of sponsors</label>
-                <p className="mb-3 text-base text-slate-700">
-                  Please list the names of any organisations that are supporting
-                  the event financially.
-                </p>
-                <textarea
-                  value={currentQuestionnaire.sponsors}
-                  onChange={handleTextField("sponsors")}
-                  placeholder="Union Aerospace Corporation, Umbrella Corporation, UNATCO"
-                  className={`${fieldClass} min-h-32 resize-y`}
-                />
-              </div>
-
-              <div>
-                <label className={fieldLabelClass}>List of outcomes</label>
-                <p className="mb-3 text-base text-slate-700">
-                  What are you (and any sponsors) hoping to achieve from hosting
-                  your event?
-                </p>
-                <textarea
-                  value={currentQuestionnaire.outcomes}
-                  onChange={handleTextField("outcomes")}
-                  placeholder="Hiring founding engineers"
-                  className={`${fieldClass} min-h-32 resize-y`}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-200 pt-8">
-            <h2 className="text-3xl font-semibold text-slate-900">Billing</h2>
-            <div className="mt-4 space-y-4 text-lg text-slate-700">
-              <p className="font-semibold">
-                The venue hire charge is £1 for every £1 spent with Swift Food.
-              </p>
-              <p>For example, if you spend £500 on food, the venue hire fee is £500.</p>
-              <p>We require payment details to recover this cost.</p>
-              <p>We may waive this fee at our discretion for communities that we sponsor.</p>
-            </div>
-
-            <div className="mt-8 grid gap-8 md:grid-cols-2">
-              <div>
-                <label className={fieldLabelClass}>
-                  Invoicing organisation <span className="text-slate-400">*</span>
-                </label>
-                <p className="mb-3 text-base text-slate-700">
-                  Please list the full company name as it appears on Companies House
-                  or other registry.
-                </p>
-                <input
-                  type="text"
-                  value={currentQuestionnaire.invoicingOrganisation}
-                  onChange={handleTextField("invoicingOrganisation")}
-                  placeholder="Shinra Electric Power Company Ltd"
-                  className={fieldClass}
-                />
-                {errors.invoicingOrganisation && (
-                  <p className={errorClass}>{errors.invoicingOrganisation}</p>
-                )}
-              </div>
-
-              <div>
-                <label className={fieldLabelClass}>
-                  Invoice email address <span className="text-slate-400">*</span>
-                </label>
-                <p className="mb-3 text-base text-slate-700">
-                  Please ensure this email address is able to receive invoices.
-                </p>
-                <input
-                  type="email"
-                  value={currentQuestionnaire.invoiceEmailAddress}
-                  onChange={handleTextField("invoiceEmailAddress")}
-                  placeholder="accounts@"
-                  className={fieldClass}
-                />
-                {errors.invoiceEmailAddress && (
-                  <p className={errorClass}>{errors.invoiceEmailAddress}</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-200 pt-8">
-            <h2 className="text-3xl font-semibold text-slate-900">Damage waiver</h2>
-            <div className="mt-4 space-y-4 text-lg text-slate-700">
-              <p>By submitting this form, you agree that:</p>
-              <p className="font-semibold">
-                You will ensure that the venue is returned in its original condition
-              </p>
-              <p className="font-semibold">
-                You will cover the venue hire fee as stated above
-              </p>
-              <p className="font-semibold">
-                You will include the Halkin logo on any marketing and social media materials
-              </p>
-              <Link
-                href="https://github.com/halkin-offices/media-assets"
-                target="_blank"
-                className="inline-block text-blue-600 underline underline-offset-2"
+              <div
+                className={
+                  section.layout === "grid"
+                    ? "mt-8 grid gap-6 md:grid-cols-2"
+                    : "mt-8 space-y-8"
+                }
               >
-                Download our media assets
-              </Link>
+                {section.questions.map((question) => renderQuestion(question))}
+              </div>
             </div>
-
-            <div className="mt-8">
-              <label className={fieldLabelClass}>
-                Signature <span className="text-slate-400">*</span>
-              </label>
-              <SignaturePad
-                value={currentQuestionnaire.signature}
-                onChange={(value) => updateQuestionnaireField("signature", value)}
-              />
-              {errors.signature && <p className={errorClass}>{errors.signature}</p>}
-            </div>
-          </div>
+          ))}
 
           <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-8 sm:flex-row sm:justify-between">
             <button

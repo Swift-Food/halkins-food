@@ -1,0 +1,199 @@
+{
+  "sections": [
+    {
+      "id": "your_details",
+      "title": "Your details",
+      "layout": "grid",
+      "description": "Please provide the name and details of the lead person and the company hosting this event.",
+      "questions": [
+        {
+          "key": "fullName",
+          "title": "Your name",
+          "description": "",
+          "type": "short_text",
+          "required": true,
+          "source": "contactInfo",
+          "inputType": "text",
+          "placeholder": "First and last name"
+        },
+        {
+          "key": "email",
+          "title": "Your email address",
+          "description": "",
+          "type": "short_text",
+          "required": true,
+          "source": "contactInfo",
+          "inputType": "email",
+          "placeholder": "organiser@example.com"
+        },
+        {
+          "key": "phone",
+          "title": "Your mobile / WhatsApp number",
+          "description": "",
+          "type": "short_text",
+          "required": true,
+          "source": "contactInfo",
+          "inputType": "tel",
+          "placeholder": "+44 7835 555 555"
+        },
+        {
+          "key": "organization",
+          "title": "Your company or organisation",
+          "description": "",
+          "type": "short_text",
+          "required": true,
+          "source": "contactInfo",
+          "inputType": "text",
+          "placeholder": "Team Rocket"
+        }
+      ]
+    },
+    {
+      "id": "about_event",
+      "title": "About your event",
+      "layout": "stack",
+      "description": "Your request will most likely be accepted at Halkin - {{venueName}}.",
+      "questions": [
+        {
+          "key": "eventUrl",
+          "title": "Event URL",
+          "description": "Share the link where your attendees will register",
+          "type": "short_text",
+          "required": true,
+          "source": "bookingQuestionnaire",
+          "inputType": "url",
+          "placeholder": "https://luma.com/q108auy0"
+        },
+        {
+          "key": "eventInformation",
+          "title": "Event information",
+          "description": "What are you hosting?",
+          "type": "long_text",
+          "required": true,
+          "source": "bookingQuestionnaire",
+          "placeholder": "A hackathon for commercial real estate"
+        },
+        {
+          "key": "invitedGuestCount",
+          "title": "How many people are you inviting?",
+          "description": "",
+          "type": "short_text",
+          "required": true,
+          "source": "bookingQuestionnaire",
+          "inputType": "number",
+          "placeholder": "150",
+          "notes": [
+            "Warning: Your selected venue seats a maximum of {{venueCapacity}} people.",
+            "Warning: The maximum capacity across our venues is 150 people."
+          ]
+        },
+        {
+          "key": "runsOvernight",
+          "title": "Will your event run overnight?",
+          "description": "Will your event run between the hours of 12am to 9am?",
+          "type": "single_choice",
+          "required": true,
+          "source": "bookingQuestionnaire",
+          "options": [
+            "Yes - our event will run through the night",
+            "No - our event will finish before midnight and resume again after 9am"
+          ]
+        },
+        {
+          "key": "specialEquipment",
+          "title": "Do you require any special equipment?",
+          "description": "",
+          "type": "long_text",
+          "required": true,
+          "source": "bookingQuestionnaire",
+          "placeholder": "Screens, microphones for speakers, 3D printers, 5-axis CNC mills...."
+        }
+      ]
+    },
+    {
+      "id": "sponsors",
+      "title": "Sponsors and supporting organisations",
+      "layout": "stack",
+      "description": "If you're looking for sponsorship - tell us! We have a vast network of people who can help.",
+      "questions": [
+        {
+          "key": "sponsors",
+          "title": "List of sponsors",
+          "description": "Please list the names of any organisations that are supporting the event financially.",
+          "type": "long_text",
+          "required": false,
+          "source": "bookingQuestionnaire",
+          "placeholder": "Union Aerospace Corporation, Umbrella Corporation, UNATCO"
+        },
+        {
+          "key": "outcomes",
+          "title": "List of outcomes",
+          "description": "What are you (and any sponsors) hoping to achieve from hosting your event?",
+          "type": "long_text",
+          "required": false,
+          "source": "bookingQuestionnaire",
+          "placeholder": "Hiring founding engineers"
+        }
+      ]
+    },
+    {
+      "id": "billing",
+      "title": "Billing",
+      "layout": "grid",
+      "description": "",
+      "body": [
+        "The venue hire charge is £1 for every £1 spent with Swift Food.",
+        "For example, if you spend £500 on food, the venue hire fee is £500.",
+        "We require payment details to recover this cost.",
+        "We may waive this fee at our discretion for communities that we sponsor."
+      ],
+      "questions": [
+        {
+          "key": "invoicingOrganisation",
+          "title": "Invoicing organisation",
+          "description": "Please list the full company name as it appears on Companies House or other registry.",
+          "type": "short_text",
+          "required": true,
+          "source": "bookingQuestionnaire",
+          "inputType": "text",
+          "placeholder": "Shinra Electric Power Company Ltd"
+        },
+        {
+          "key": "invoiceEmailAddress",
+          "title": "Invoice email address",
+          "description": "Please ensure this email address is able to receive invoices.",
+          "type": "short_text",
+          "required": true,
+          "source": "bookingQuestionnaire",
+          "inputType": "email",
+          "placeholder": "accounts@"
+        }
+      ]
+    },
+    {
+      "id": "damage_waiver",
+      "title": "Damage waiver",
+      "layout": "stack",
+      "description": "By submitting this form, you agree that:",
+      "body": [
+        "You will ensure that the venue is returned in its original condition",
+        "You will cover the venue hire fee as stated above",
+        "You will include the Halkin logo on any marketing and social media materials"
+      ],
+      "link": {
+        "label": "Download our media assets",
+        "href": "https://github.com/halkin-offices/media-assets"
+      },
+      "questions": [
+        {
+          "key": "signature",
+          "title": "Signature",
+          "description": "",
+          "type": "signature",
+          "required": true,
+          "source": "bookingQuestionnaire"
+        }
+      ]
+    }
+  ]
+}
