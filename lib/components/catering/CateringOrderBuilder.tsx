@@ -1015,6 +1015,8 @@ export default function CateringOrderBuilder({
         <RestaurantMenuBrowser
           restaurants={restaurants}
           restaurantsLoading={restaurantsLoading}
+          sessionDate={session.sessionDate}
+          eventTime={session.eventTime}
           allMenuItems={allMenuItems}
           fetchAllMenuItems={fetchAllMenuItems}
           onAddItem={handleAddItem}
