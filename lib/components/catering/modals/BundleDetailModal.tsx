@@ -57,7 +57,7 @@ export default function BundleDetailModal({
   }, [bundle.items, menuItemLookup, quantity]);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60]">
       <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-base-200 flex items-start justify-between gap-3">
