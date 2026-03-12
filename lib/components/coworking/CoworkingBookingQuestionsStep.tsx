@@ -281,6 +281,7 @@ export default function CoworkingBookingQuestionsStep() {
   } = useCatering();
   const { selectedVenue } = useCoworking();
   const [errors, setErrors] = useState<ValidationErrors>({});
+  const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const currentContactInfo = useMemo(
     () => ({
@@ -361,8 +362,19 @@ export default function CoworkingBookingQuestionsStep() {
     );
   };
 
+  const scrollToQuestion = (questionKey: string) => {
+    const element = fieldRefs.current[questionKey];
+    if (!element) return;
+
+    element.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  };
+
   const validate = () => {
     const nextErrors: ValidationErrors = {};
+    let firstInvalidQuestionKey: string | null = null;
 
     for (const section of questionsConfig.sections) {
       for (const question of section.questions) {
@@ -373,6 +385,9 @@ export default function CoworkingBookingQuestionsStep() {
             question.type === "single_choice"
               ? "Please select an option"
               : "Please enter a value";
+          if (!firstInvalidQuestionKey) {
+            firstInvalidQuestionKey = question.key;
+          }
           continue;
         }
 
@@ -382,11 +397,21 @@ export default function CoworkingBookingQuestionsStep() {
           !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
         ) {
           nextErrors[question.key] = "Please enter a valid email address";
+          if (!firstInvalidQuestionKey) {
+            firstInvalidQuestionKey = question.key;
+          }
         }
       }
     }
 
     setErrors(nextErrors);
+
+    if (firstInvalidQuestionKey) {
+      window.requestAnimationFrame(() => {
+        scrollToQuestion(firstInvalidQuestionKey);
+      });
+    }
+
     return Object.keys(nextErrors).length === 0;
   };
 
@@ -407,6 +432,9 @@ export default function CoworkingBookingQuestionsStep() {
     return (
       <div
         key={question.key}
+        ref={(element) => {
+          fieldRefs.current[question.key] = element;
+        }}
         className="rounded-[1.5rem] border border-slate-200/80 bg-slate-50/70 p-4 sm:p-5"
       >
         <label className={fieldLabelClass}>
