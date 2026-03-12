@@ -1046,10 +1046,10 @@ export default function Step3ContactInfo() {
         ></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
+      <div className="max-w-7xl mx-auto px-4 py-4 md:py-12">
         {/* Header */}
-        <div ref={topSectionRef} className="mb-8">
-          <div className="flex justify-between items-start mb-4">
+        <div ref={topSectionRef} className="mb-5 md:mb-8">
+          <div className="flex justify-between items-start mb-3 md:mb-4">
             <div>
               {/* <p className="text-sm text-base-content/60 mb-2">
                 Step 3 of 3 - Contact & Confirmation

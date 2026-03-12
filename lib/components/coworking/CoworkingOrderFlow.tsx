@@ -319,9 +319,9 @@ export default function CoworkingOrderFlow() {
       <div className="py-2 max-w mx-auto bg-base-100">
 
         {/* Progress bar (step 2+) */}
-        {currentStep !== 1 && (
-          <div className="my-10 mr-10 ml-10 max-w mx-auto">
-            <div className="text-sm text-gray-500 mb-2">
+        {/* {currentStep !== 1 && (
+          <div className="mx-8 my-4 max-w mx-auto md:mx-10 md:my-10">
+            <div className="mb-1 text-sm text-gray-500 md:mb-2">
               Step {currentStep} of 2
             </div>
             <div className="h-2 bg-gray-200 rounded-full">
@@ -330,7 +330,7 @@ export default function CoworkingOrderFlow() {
                 style={{ width: `${(currentStep / 2) * 100}%` }}
               />
             </div>
-            <div className="mt-2 text-sm text-gray-600 font-medium flex items-center gap-2">
+            <div className="mt-1.5 flex items-center gap-2 text-sm font-medium text-gray-600 md:mt-2">
               {steps.map((s, idx) => (
                 <div key={s.step} className="flex items-center gap-2">
                   <span className={currentStep === s.step ? "text-primary" : "text-gray-600"}>
@@ -343,7 +343,7 @@ export default function CoworkingOrderFlow() {
               ))}
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Event summary bar — only on step 1 */}
         {currentStep === 1 && selectedVenue && (
