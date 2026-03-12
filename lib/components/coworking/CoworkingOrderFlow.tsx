@@ -11,6 +11,7 @@ import CoworkingBookingDetailsForm, {
   isCoworkingBookingWindowValid,
 } from "./CoworkingBookingDetailsForm";
 import CateringOrderBuilder from "@/lib/components/catering/CateringOrderBuilder";
+import CoworkingBookingQuestionsStep from "./CoworkingBookingQuestionsStep";
 import Step3ContactInfo from "@/lib/components/catering/Step3ContactDetails";
 import { CoworkingVenue } from "@/types/api";
 import { Calendar, Clock, MapPin, Pencil, X } from "lucide-react";
@@ -388,7 +389,8 @@ export default function CoworkingOrderFlow() {
         {/* Step content */}
         <div className="bg-base-100 rounded-lg max-w-none">
           {currentStep === 1 && <CateringOrderBuilder />}
-          {currentStep === 2 && <Step3ContactInfo />}
+          {currentStep === 2 && <CoworkingBookingQuestionsStep />}
+          {currentStep === 3 && <Step3ContactInfo />}
         </div>
       </div>
 

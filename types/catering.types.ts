@@ -165,6 +165,20 @@ export interface ContactInfo {
   };
 }
 
+export interface CoworkingBookingQuestionnaire {
+  eventUrl: string;
+  eventInformation: string;
+  invitedGuestCount: string;
+  runsOvernight: string;
+  hasCatering: string;
+  specialEquipment: string;
+  sponsors: string;
+  outcomes: string;
+  invoicingOrganisation: string;
+  invoiceEmailAddress: string;
+  signature: string;
+}
+
 /**
  * @deprecated This is the OLD format - DO NOT use for new order creation!
  */

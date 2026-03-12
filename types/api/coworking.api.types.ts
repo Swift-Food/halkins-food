@@ -97,6 +97,7 @@ export interface CreateCoworkingOrderRequest {
   eventEndDateTime?: string; // ISO datetime e.g. "2025-06-15T14:00:00"
   deliveryDate?: string; // "YYYY-MM-DD"
   deliveryTime?: string; // "HH:MM"
+  additionalAnswers?: Record<string, string>;
   promoCodes?: string[];
 }
 

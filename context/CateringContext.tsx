@@ -13,6 +13,7 @@ import {
   SelectedMenuItem,
   ContactInfo,
   MealSessionState,
+  CoworkingBookingQuestionnaire,
 } from "@/types/catering.types";
 import { Restaurant } from "@/types/restaurant.types";
 
@@ -28,6 +29,7 @@ interface CateringContextType {
   currentStep: number;
   eventDetails: EventDetails | null;
   contactInfo: ContactInfo | null;
+  bookingQuestionnaire: CoworkingBookingQuestionnaire | null;
   promoCodes: string[] | null;
   selectedRestaurants: Restaurant[];
   restaurantPromotions: Record<string, any[]>;
@@ -61,6 +63,7 @@ interface CateringContextType {
   setCurrentStep: (step: number) => void;
   setEventDetails: (details: EventDetails) => void;
   setContactInfo: (info: ContactInfo) => void;
+  setBookingQuestionnaire: (answers: CoworkingBookingQuestionnaire) => void;
   setPromoCodes: (codes: string[]) => void;
   setSelectedRestaurants: (restaurants: Restaurant[]) => void;
   setRestaurantPromotions: (promotions: Record<string, any[]>) => void;
@@ -79,6 +82,7 @@ const STORAGE_KEYS = {
   MEAL_SESSIONS: "catering_meal_sessions",
   ACTIVE_SESSION_INDEX: "catering_active_session_index",
   CONTACT_INFO: "catering_contact_info",
+  BOOKING_QUESTIONNAIRE: "catering_booking_questionnaire",
   PROMO_CODES: "catering_promo_codes",
   SELECTED_RESTAURANTS: "catering_selected_restaurants",
   ORDER_SUBMITTED: "catering_order_submitted",
@@ -92,6 +96,8 @@ export function CateringProvider({ children }: { children: ReactNode }) {
   const [currentStep, setCurrentStepState] = useState(1);
   const [eventDetails, setEventDetailsState] = useState<EventDetails | null>(null);
   const [contactInfo, setContactInfoState] = useState<ContactInfo | null>(null);
+  const [bookingQuestionnaire, setBookingQuestionnaireState] =
+    useState<CoworkingBookingQuestionnaire | null>(null);
   const [promoCodes, setPromoCodesState] = useState<string[]>([]);
   const [selectedRestaurants, setSelectedRestaurantsState] = useState<Restaurant[]>([]);
   const [restaurantPromotions, setRestaurantPromotionsState] = useState<Record<string, any[]>>({});
@@ -351,6 +357,9 @@ export function CateringProvider({ children }: { children: ReactNode }) {
       const savedMealSessions = localStorage.getItem(STORAGE_KEYS.MEAL_SESSIONS);
       const savedActiveSessionIndex = localStorage.getItem(STORAGE_KEYS.ACTIVE_SESSION_INDEX);
       const savedContactInfo = localStorage.getItem(STORAGE_KEYS.CONTACT_INFO);
+      const savedBookingQuestionnaire = localStorage.getItem(
+        STORAGE_KEYS.BOOKING_QUESTIONNAIRE
+      );
       const savedPromoCodes = localStorage.getItem(STORAGE_KEYS.PROMO_CODES);
       const savedRestaurants = localStorage.getItem(STORAGE_KEYS.SELECTED_RESTAURANTS);
       const savedPromotions = localStorage.getItem(STORAGE_KEYS.RESTAURANT_PROMOTIONS);
@@ -361,6 +370,9 @@ export function CateringProvider({ children }: { children: ReactNode }) {
       if (savedStep) setCurrentStepState(JSON.parse(savedStep));
       if (savedEventDetails) setEventDetailsState(JSON.parse(savedEventDetails));
       if (savedContactInfo) setContactInfoState(JSON.parse(savedContactInfo));
+      if (savedBookingQuestionnaire) {
+        setBookingQuestionnaireState(JSON.parse(savedBookingQuestionnaire));
+      }
       if (savedPromoCodes) setPromoCodesState(JSON.parse(savedPromoCodes));
       if (savedRestaurants) setSelectedRestaurantsState(JSON.parse(savedRestaurants));
       if (savedPromotions) setRestaurantPromotionsState(JSON.parse(savedPromotions));
@@ -595,6 +607,17 @@ export function CateringProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEYS.CONTACT_INFO, JSON.stringify(info));
   }, []);
 
+  const setBookingQuestionnaire = useCallback(
+    (answers: CoworkingBookingQuestionnaire) => {
+      setBookingQuestionnaireState(answers);
+      localStorage.setItem(
+        STORAGE_KEYS.BOOKING_QUESTIONNAIRE,
+        JSON.stringify(answers)
+      );
+    },
+    []
+  );
+
   const setPromoCodes = (codes: string[]) => {
     setPromoCodesState(codes);
     localStorage.setItem(STORAGE_KEYS.PROMO_CODES, JSON.stringify(codes));
@@ -612,6 +635,7 @@ export function CateringProvider({ children }: { children: ReactNode }) {
     setMealSessionsState([]);
     setActiveSessionIndexState(0);
     setContactInfoState(null);
+    setBookingQuestionnaireState(null);
     setPromoCodesState([]);
     setSelectedRestaurantsState([]);
     setRestaurantPromotionsState({});
@@ -633,6 +657,7 @@ export function CateringProvider({ children }: { children: ReactNode }) {
         currentStep,
         eventDetails,
         contactInfo,
+        bookingQuestionnaire,
         promoCodes,
         selectedRestaurants,
         restaurantPromotions,
@@ -666,6 +691,7 @@ export function CateringProvider({ children }: { children: ReactNode }) {
         setCurrentStep,
         setEventDetails,
         setContactInfo,
+        setBookingQuestionnaire,
         setPromoCodes,
         setSelectedRestaurants,
         setRestaurantPromotions,

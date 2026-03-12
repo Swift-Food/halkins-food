@@ -106,6 +106,7 @@ export default function Step3ContactInfo() {
     setContactInfo,
     setCurrentStep,
     eventDetails,
+    bookingQuestionnaire,
     mealSessions,
     getAllItems,
     resetOrder,
@@ -507,6 +508,22 @@ export default function Step3ContactInfo() {
         };
       });
 
+    const additionalAnswers = bookingQuestionnaire
+      ? {
+          eventUrl: bookingQuestionnaire.eventUrl,
+          eventInformation: bookingQuestionnaire.eventInformation,
+          invitedGuestCount: bookingQuestionnaire.invitedGuestCount,
+          runsOvernight: bookingQuestionnaire.runsOvernight,
+          hasCatering: bookingQuestionnaire.hasCatering,
+          specialEquipment: bookingQuestionnaire.specialEquipment,
+          sponsors: bookingQuestionnaire.sponsors,
+          outcomes: bookingQuestionnaire.outcomes,
+          invoicingOrganisation: bookingQuestionnaire.invoicingOrganisation,
+          invoiceEmailAddress: bookingQuestionnaire.invoiceEmailAddress,
+          signature: bookingQuestionnaire.signature,
+        }
+      : undefined;
+
     return {
       spaceSlug: slug,
       orderData: {
@@ -530,6 +547,7 @@ export default function Step3ContactInfo() {
         ...(eventEndDate && eventEndTime && {
           eventEndDateTime: `${eventEndDate}T${eventEndTime}:00`,
         }),
+        ...(additionalAnswers && { additionalAnswers }),
       },
     };
   };
@@ -1088,7 +1106,7 @@ export default function Step3ContactInfo() {
                   ccEmails,
                   specialInstructions,
                 });
-                setCurrentStep(1);
+                setCurrentStep(2);
               }}
               className="text-primary hover:opacity-80 font-medium flex items-center gap-1"
             >
