@@ -198,7 +198,7 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
       const base = `${promo.discountAmount}%`;
       return promo.maxDiscount ? `${base} (max £${promo.maxDiscount})` : base;
     }
-    return `£${promo.discountAmount.toFixed(2)}`;
+    return `£${Number(promo.discountAmount).toFixed(2)}`;
   };
 
   const formatDate = (iso?: string) => {
