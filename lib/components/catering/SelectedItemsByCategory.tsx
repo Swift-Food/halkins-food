@@ -181,6 +181,7 @@ export default function SelectedItemsByCategory({
 
   const renderItemRow = (groupedItem: GroupedItem) => {
     const { item, quantity, originalIndex } = groupedItem;
+    const restaurantName = item.restaurantName || item.restaurant?.name;
     const price = parseFloat(item.price?.toString() || "0");
     const discountPrice = parseFloat(item.discountPrice?.toString() || "0");
     const itemPrice =
@@ -216,6 +217,11 @@ export default function SelectedItemsByCategory({
             <p className="font-semibold text-gray-800 italic">
               {item.menuItemName}
             </p>
+            {restaurantName && (
+              <p className="mt-0.5 text-xs text-gray-500">
+                From: {restaurantName}
+              </p>
+            )}
             {item.selectedAddons && item.selectedAddons.length > 0 && (
               <div className="text-sm text-gray-600 mt-1">
                 {(() => {
@@ -360,6 +366,11 @@ export default function SelectedItemsByCategory({
         {/* Name + Addons */}
         <div className="hidden sm:block flex-1 min-w-0">
           <p className="font-semibold text-gray-800">{item.menuItemName}</p>
+          {restaurantName && (
+            <p className="mt-0.5 text-xs text-gray-500">
+              From: {restaurantName}
+            </p>
+          )}
           {item.selectedAddons && item.selectedAddons.length > 0 && (
             <div className="text-sm text-gray-600 mt-1">
               {(() => {
