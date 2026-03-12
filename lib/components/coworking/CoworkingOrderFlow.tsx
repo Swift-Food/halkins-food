@@ -111,8 +111,8 @@ function EventEditModal({
     });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[2rem] border border-white/70 bg-[linear-gradient(180deg,#f8fafc_0%,#f3f4f6_42%,#eef2f7_100%)] p-4 shadow-2xl sm:p-6">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4">
+      <div className="h-[100dvh] max-h-[100dvh] w-full overflow-y-auto rounded-none border-0 bg-[linear-gradient(180deg,#f8fafc_0%,#f3f4f6_42%,#eef2f7_100%)] p-4 shadow-none sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:rounded-[2rem] sm:border sm:border-white/70 sm:p-6 sm:shadow-2xl">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between border-b border-slate-200 pb-4">
           <h3 className="font-semibold text-slate-900">Edit Event Details</h3>
