@@ -140,6 +140,9 @@ export default function CateringOrderBuilder({
   const [swapItemIndex, setSwapItemIndex] = useState<number | null>(null);
   const [swapAlternatives, setSwapAlternatives] = useState<MenuItem[]>([]);
 
+  // Remove bundle confirmation state
+  const [bundleToRemove, setBundleToRemove] = useState<{ id: string; name: string } | null>(null);
+
   // PDF generation state
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
@@ -627,8 +630,9 @@ export default function CateringOrderBuilder({
     if (editingItemIndex === null) return;
     const BACKEND_QUANTITY_UNIT = updatedItem.cateringQuantityUnit || 7;
     const quantity = (updatedItem.portionQuantity || 1) * BACKEND_QUANTITY_UNIT;
-    const originalItem =
-      mealSessions[activeSessionIndex].orderItems[editingItemIndex].item;
+    const originalOrderItem =
+      mealSessions[activeSessionIndex].orderItems[editingItemIndex];
+    const originalItem = originalOrderItem.item;
     updateMenuItemByIndex(activeSessionIndex, editingItemIndex, {
       item: {
         ...updatedItem,
@@ -642,9 +646,33 @@ export default function CateringOrderBuilder({
             : originalItem.restaurant?.name,
       },
       quantity,
+      bundleId: originalOrderItem.bundleId,
+      bundleName: originalOrderItem.bundleName,
     });
     setIsEditModalOpen(false);
     setEditingItemIndex(null);
+  };
+
+  // Handle remove entire bundle
+  const handleRemoveBundle = (bundleId: string) => {
+    const session = mealSessions[activeSessionIndex];
+    if (!session) return;
+    const bundleItem = session.orderItems.find((oi) => oi.bundleId === bundleId);
+    setBundleToRemove({ id: bundleId, name: bundleItem?.bundleName || "Bundle" });
+  };
+
+  const confirmRemoveBundle = () => {
+    if (!bundleToRemove) return;
+    const session = mealSessions[activeSessionIndex];
+    if (!session) return;
+    const indicesToRemove = session.orderItems
+      .map((oi, idx) => (oi.bundleId === bundleToRemove.id ? idx : -1))
+      .filter((idx) => idx !== -1)
+      .reverse();
+    for (const idx of indicesToRemove) {
+      removeMenuItemByIndex(activeSessionIndex, idx);
+    }
+    setBundleToRemove(null);
   };
 
   // Handle swap item (for bundle items)
@@ -940,6 +968,7 @@ export default function CateringOrderBuilder({
             onEdit={handleEditItem}
             onRemove={handleRemoveItem}
             onSwapItem={handleSwapItem}
+            onRemoveBundle={handleRemoveBundle}
             collapsedCategories={collapsedCategories}
             onToggleCategory={handleToggleCategory}
             onViewMenu={handleViewMenu}
@@ -1245,6 +1274,40 @@ export default function CateringOrderBuilder({
           onConfirm={confirmRemoveSession}
           onCancel={() => setSessionToRemove(null)}
         />
+      )}
+
+      {/* Remove Bundle Confirmation Modal */}
+      {bundleToRemove !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <Package className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Remove Bundle</h3>
+                <p className="text-sm text-gray-500">{bundleToRemove.name}</p>
+              </div>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to remove this bundle? All items from this bundle will be removed from the session.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setBundleToRemove(null)}
+                className="flex-1 px-4 py-3 border border-base-300 text-gray-600 rounded-xl hover:bg-base-100 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRemoveBundle}
+                className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-medium"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* PDF Download Modal */}

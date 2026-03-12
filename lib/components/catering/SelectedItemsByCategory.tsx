@@ -24,6 +24,7 @@ interface SelectedItemsByCategoryProps {
   onEdit?: (index: number) => void;
   onRemove?: (index: number) => void;
   onSwapItem?: (index: number) => void;
+  onRemoveBundle?: (bundleId: string) => void;
   collapsedCategories?: Set<string>;
   onToggleCategory?: (categoryName: string) => void;
   showActions?: boolean;
@@ -35,6 +36,7 @@ export default function SelectedItemsByCategory({
   onEdit,
   onRemove,
   onSwapItem,
+  onRemoveBundle,
   collapsedCategories: externalCollapsedCategories,
   onToggleCategory: externalOnToggleCategory,
   showActions = true,
@@ -309,41 +311,41 @@ export default function SelectedItemsByCategory({
           </div>
         </div>
 
-        {/* Mobile Price & Portions + Actions */}
-        <div className="flex items-center justify-between sm:hidden">
-          <div>
-            <p className="font-bold text-primary text-lg">
-              £{subtotal.toFixed(2)}
-            </p>
-            <p className="text-sm text-gray-600">
-              {portions} portion{portions !== 1 ? "s" : ""}
-            </p>
-          </div>
-          {showActions && onEdit && onRemove && (
-            <div className="flex items-center gap-2">
-              {onSwapItem && orderItems[originalIndex]?.bundleId && (
-                <button
-                  onClick={() => onSwapItem(originalIndex)}
-                  className="px-3 py-2 border border-amber-500 text-amber-600 rounded-lg hover:bg-amber-50 transition-colors text-sm font-medium"
-                >
-                  Swap
-                </button>
-              )}
-              <button
-                onClick={() => onEdit(originalIndex)}
-                className="px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors text-sm font-medium"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => onRemove(originalIndex)}
-                className="px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors text-sm font-medium"
-              >
-                Remove
-              </button>
-            </div>
-          )}
+        {/* Mobile Price & Portions */}
+        <div className="sm:hidden">
+          <p className="font-bold text-primary text-lg">
+            £{subtotal.toFixed(2)}
+          </p>
+          <p className="text-sm text-gray-600">
+            {portions} portion{portions !== 1 ? "s" : ""}
+          </p>
         </div>
+
+        {/* Mobile Actions */}
+        {showActions && onEdit && onRemove && (
+          <div className="flex items-center gap-2 sm:hidden">
+            {onSwapItem && orderItems[originalIndex]?.bundleId && (
+              <button
+                onClick={() => onSwapItem(originalIndex)}
+                className="px-3 py-2 border border-amber-500 text-amber-600 rounded-lg hover:bg-amber-50 transition-colors text-sm font-medium"
+              >
+                Swap
+              </button>
+            )}
+            <button
+              onClick={() => onEdit(originalIndex)}
+              className="px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors text-sm font-medium"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => onRemove(originalIndex)}
+              className="px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors text-sm font-medium"
+            >
+              Remove
+            </button>
+          </div>
+        )}
 
         {/* Desktop Layout */}
         {/* Image */}
@@ -531,6 +533,30 @@ export default function SelectedItemsByCategory({
               <span className="text-xs text-primary/60">
                 ({items.length} item{items.length !== 1 ? "s" : ""})
               </span>
+              <div className="flex-1" />
+              {onRemoveBundle && (
+                <>
+                  {/* Mobile: X only */}
+                  <button
+                    onClick={() => onRemoveBundle(bundleId)}
+                    className="sm:hidden w-7 h-7 flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  {/* Desktop: X + text */}
+                  <button
+                    onClick={() => onRemoveBundle(bundleId)}
+                    className="hidden sm:flex items-center gap-1 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                    Remove Bundle
+                  </button>
+                </>
+              )}
             </div>
             <div className="p-2 space-y-3">
               {items.map(renderItemRow)}
