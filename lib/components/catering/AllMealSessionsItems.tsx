@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useCatering } from "@/context/CateringContext";
 import { MealSessionState, SelectedMenuItem } from "@/types/catering.types";
-import { ChefHat, ChevronDown, ChevronUp, Calendar, Clock } from "lucide-react";
+import { ChefHat, ChevronDown, ChevronUp, Calendar, Clock, Package } from "lucide-react";
 import { categoryService } from "@/services/api/category.api";
 import { ALLERGENS } from "@/lib/constants/allergens";
 
@@ -122,7 +122,10 @@ export default function AllMealSessionsItems({
     const map = new Map<string, CategoryGroup>();
 
     orderItems.forEach((orderItem, index) => {
-      const catName = orderItem.item.categoryName || "Uncategorized";
+      // Skip bundle items — they're rendered separately
+      if (orderItem.bundleId) return;
+
+      const catName = orderItem.item.categoryName || (orderItem.item as any).groupTitle || "Uncategorized";
       const subName = orderItem.item.subcategoryName || "";
 
       if (!map.has(catName)) {
@@ -165,6 +168,23 @@ export default function AllMealSessionsItems({
     }
 
     return map;
+  };
+
+  // Group bundle items by bundleId
+  const getBundleGroups = (orderItems: SelectedMenuItem[]) => {
+    const bundleMap = new Map<string, { bundleName: string; items: GroupedItem[] }>();
+    orderItems.forEach((orderItem, index) => {
+      if (!orderItem.bundleId) return;
+      if (!bundleMap.has(orderItem.bundleId)) {
+        bundleMap.set(orderItem.bundleId, { bundleName: orderItem.bundleName || "Bundle", items: [] });
+      }
+      bundleMap.get(orderItem.bundleId)!.items.push({
+        item: orderItem.item,
+        quantity: orderItem.quantity,
+        originalIndex: index,
+      });
+    });
+    return bundleMap;
   };
 
   // Calculate session total
@@ -386,12 +406,56 @@ export default function AllMealSessionsItems({
     );
   };
 
+  const renderBundleGroup = (
+    bundleId: string,
+    bundleName: string,
+    items: GroupedItem[],
+    sessionIndex: number,
+  ) => {
+    const categoryKey = `${sessionIndex}-bundle-${bundleId}`;
+    const isCollapsed = collapsedCategories.has(categoryKey);
+
+    return (
+      <div
+        key={categoryKey}
+        className="border-2 border-dashed border-primary/30 rounded-lg overflow-hidden"
+      >
+        <button
+          onClick={() => toggleCategory(categoryKey)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-primary/5 hover:bg-primary/10 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-primary" />
+            <span className="font-semibold text-primary">{bundleName}</span>
+            <span className="text-sm text-gray-500">
+              ({items.length} item{items.length !== 1 ? "s" : ""})
+            </span>
+          </div>
+          {isCollapsed ? (
+            <ChevronDown className="h-5 w-5 text-primary/60" />
+          ) : (
+            <ChevronUp className="h-5 w-5 text-primary/60" />
+          )}
+        </button>
+
+        {!isCollapsed && (
+          <div className="p-3 space-y-2">
+            {items.map((groupedItem) =>
+              renderItemRow(groupedItem, sessionIndex),
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderMealSession = (
     session: MealSessionState,
     sessionIndex: number,
   ) => {
     const isExpanded = expandedSessions.has(sessionIndex);
     const groupedItems = groupItemsByCategory(session.orderItems);
+    const bundleGroups = getBundleGroups(session.orderItems);
     const sessionTotal = calculateSessionTotal(session.orderItems);
     const itemCount = session.orderItems.length;
 
@@ -455,6 +519,16 @@ export default function AllMealSessionsItems({
                       {session.specialRequirements}
                     </p>
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Bundle groups */}
+            {bundleGroups.size > 0 && (
+              <div className="space-y-3">
+                {Array.from(bundleGroups.entries()).map(
+                  ([bundleId, { bundleName, items }]) =>
+                    renderBundleGroup(bundleId, bundleName, items, sessionIndex),
                 )}
               </div>
             )}
