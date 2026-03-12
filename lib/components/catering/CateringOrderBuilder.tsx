@@ -79,7 +79,8 @@ export default function CateringOrderBuilder({
   nextStep = 2,
 }: CateringOrderBuilderProps) {
   const searchParams = useSearchParams();
-  const { eventStartTime } = useCoworking();
+  const { eventStartDate, eventStartTime, eventEndDate, eventEndTime } =
+    useCoworking();
   const {
     mealSessions,
     activeSessionIndex,
@@ -109,6 +110,7 @@ export default function CateringOrderBuilder({
   // Add day modal state
   const [isAddDayModalOpen, setIsAddDayModalOpen] = useState(false);
   const [newDayDate, setNewDayDate] = useState("");
+  const [addDayError, setAddDayError] = useState<string | null>(null);
 
   // Refs for scroll-to behavior
   const sessionAccordionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -496,16 +498,29 @@ export default function CateringOrderBuilder({
   // Handle adding a new day
   const handleAddDay = () => {
     setNewDayDate("");
+    setAddDayError(null);
     setIsAddDayModalOpen(true);
   };
 
   const handleConfirmAddDay = () => {
     if (!newDayDate) {
-      alert("Please select a date.");
+      setAddDayError("Please select a date.");
+      return;
+    }
+    if (
+      eventStartDate &&
+      eventEndDate &&
+      (newDayDate < eventStartDate || newDayDate > eventEndDate)
+    ) {
+      setAddDayError(
+        `Please select a date within the event window: ${eventStartDate} to ${eventEndDate}.`
+      );
       return;
     }
     if (dayGroups.find((g) => g.date === newDayDate)) {
-      alert("This date already has sessions. Please select a different date.");
+      setAddDayError(
+        "This date already has sessions. Please select a different date."
+      );
       return;
     }
     const newSession: MealSessionState = {
@@ -516,6 +531,7 @@ export default function CateringOrderBuilder({
     };
     addMealSession(newSession);
     const newIndex = mealSessions.length;
+    setAddDayError(null);
     setIsAddDayModalOpen(false);
     setSelectedDayDate(newDayDate);
     setNavMode("sessions");
@@ -1077,6 +1093,10 @@ export default function CateringOrderBuilder({
           onUpdate={updateMealSession}
           onClose={handleEditorClose}
           restaurants={restaurants}
+          eventStartDate={eventStartDate}
+          eventStartTime={eventStartTime}
+          eventEndDate={eventEndDate}
+          eventEndTime={eventEndTime}
         />
       )}
 
@@ -1332,9 +1352,16 @@ export default function CateringOrderBuilder({
         <AddDayModal
           isOpen={isAddDayModalOpen}
           newDayDate={newDayDate}
-          onDateChange={(date) => setNewDayDate(date)}
+          errorMessage={addDayError}
+          onDateChange={(date) => {
+            setNewDayDate(date);
+            setAddDayError(null);
+          }}
           onConfirm={handleConfirmAddDay}
-          onClose={() => setIsAddDayModalOpen(false)}
+          onClose={() => {
+            setIsAddDayModalOpen(false);
+            setAddDayError(null);
+          }}
         />
       )}
 

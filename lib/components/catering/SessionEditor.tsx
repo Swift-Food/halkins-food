@@ -21,6 +21,10 @@ export default function SessionEditor({
   onUpdate,
   onClose,
   restaurants,
+  eventStartDate,
+  eventStartTime,
+  eventEndDate,
+  eventEndTime,
 }: SessionEditorProps) {
   const [sessionName, setSessionName] = useState(session.sessionName);
   const [sessionDate, setSessionDate] = useState(session.sessionDate);
@@ -41,6 +45,34 @@ export default function SessionEditor({
     if (!selectedTime) {
       setValidationError("Please select a time for this session.");
       return;
+    }
+
+    if (eventStartDate && eventStartTime && eventEndDate && eventEndTime) {
+      const selectedDateTime = new Date(`${sessionDate}T${selectedTime}:00`);
+      const eventStartDateTime = new Date(
+        `${eventStartDate}T${eventStartTime}:00`
+      );
+      const eventEndDateTime = new Date(`${eventEndDate}T${eventEndTime}:00`);
+
+      if (
+        selectedDateTime < eventStartDateTime ||
+        selectedDateTime > eventEndDateTime
+      ) {
+        const formatDateTime = (value: Date) =>
+          value.toLocaleString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          });
+
+        setValidationError(
+          `This session must be within the event window: ${formatDateTime(eventStartDateTime)} to ${formatDateTime(eventEndDateTime)}.`
+        );
+        return;
+      }
     }
 
     // Validate catering operation hours
@@ -151,21 +183,25 @@ export default function SessionEditor({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Time
             </label>
-            <select
-              value={selectedTime}
-              onChange={(e) => {
-                setSelectedTime(e.target.value);
-                setValidationError(null);
-              }}
-              className="w-full px-4 py-3 border border-base-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            >
-              <option value="">Select a time</option>
+            <div className="grid grid-cols-3 gap-2">
               {PRESET_TIMES.map((opt) => (
-                <option key={opt.value} value={opt.value}>
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    setSelectedTime(opt.value);
+                    setValidationError(null);
+                  }}
+                  className={`px-3 py-3 rounded-xl border text-sm font-medium transition-colors ${
+                    selectedTime === opt.value
+                      ? "border-primary bg-primary text-white"
+                      : "border-base-300 text-gray-700 hover:bg-base-100"
+                  }`}
+                >
                   {opt.label}
-                </option>
+                </button>
               ))}
-            </select>
+            </div>
           </div>
         </div>
 
