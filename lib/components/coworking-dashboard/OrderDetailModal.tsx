@@ -132,6 +132,7 @@ export default function OrderDetailModal({
   const [order, setOrder] = useState<DashboardOrderDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isSheetVisible, setIsSheetVisible] = useState(false);
 
   const [actionLoading, setActionLoading] = useState<
     "approve" | "reject" | null
@@ -158,6 +159,14 @@ export default function OrderDetailModal({
   useEffect(() => {
     setShowResponses(false);
   }, [orderId]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setIsSheetVisible(true);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -288,13 +297,17 @@ export default function OrderDetailModal({
   }, [responseEntries]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 md:items-center md:p-4">
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-lg max-h-[85vh] overflow-hidden rounded-2xl bg-white shadow-xl">
+      <div
+        className={`relative w-full max-w-none max-h-[90vh] overflow-hidden rounded-t-3xl bg-white shadow-xl transition-transform duration-300 ease-out md:max-h-[85vh] md:max-w-lg md:rounded-2xl md:transition-none ${
+          isSheetVisible ? "translate-y-0" : "translate-y-full"
+        }`}
+      >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
           <div className="flex items-center gap-3">
             {showResponses && (
@@ -565,7 +578,7 @@ export default function OrderDetailModal({
             ) : null}
           </div>
 
-          <div className="w-1/2 max-h-[calc(85vh-73px)] overflow-y-auto border-l border-gray-200 px-6 py-5">
+          <div className="w-1/2 max-h-[calc(85vh-73px)] overflow-y-auto border-l border-gray-200 px-4 py-4 md:px-6 md:py-5">
             {!order || groupedResponseSections.length === 0 ? (
               <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-6 text-center">
                 <MessageSquareText className="h-8 w-8 text-gray-400" />
@@ -581,9 +594,9 @@ export default function OrderDetailModal({
                 {groupedResponseSections.map((section) => (
                   <section
                     key={section.title}
-                    className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4"
+                    className="md:rounded-2xl md:border md:border-gray-200 md:bg-gray-50/70 md:p-4"
                   >
-                    <div className="border-b border-gray-200 pb-3">
+                    <div className="border-b border-gray-200 pb-2 md:pb-3">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
                         Section
                       </p>
@@ -597,7 +610,7 @@ export default function OrderDetailModal({
                       )}
                     </div>
 
-                    <div className="mt-4 space-y-4">
+                    <div className="mt-3 space-y-3 md:mt-4 md:space-y-4">
                       {section.responses.map(({ key, value, metadata }) => {
                         const isSignature =
                           metadata?.type === "signature" &&
@@ -606,7 +619,7 @@ export default function OrderDetailModal({
                         return (
                           <div
                             key={key}
-                            className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                            className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm md:rounded-xl md:p-4"
                           >
                             <h4 className="text-sm font-semibold text-gray-900">
                               {metadata?.title || key}
