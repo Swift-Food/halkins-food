@@ -9,28 +9,33 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <Link
           href="/"
-          className="flex items-center gap-3 text-gray-900"
-          aria-label="Halkin x Swift"
+          className="flex items-end gap-4 text-gray-900 sm:gap-5"
+          aria-label="Halkin and Swift"
         >
-          <Image
-            src="/halkinLogo.svg"
-            alt="Halkin"
-            width={190}
-            height={44}
-            className="block h-8 w-auto self-center sm:h-9"
-            priority
-          />
-          <span className="flex items-center self-center text-sm font-semibold leading-none tracking-[0.2em] text-gray-500">
-            X
+          <span className="flex h-8 items-end sm:h-10">
+            <Image
+              src="/halkinLogo.svg"
+              alt="Halkin"
+              width={190}
+              height={44}
+              className="block h-7 w-auto sm:h-8"
+              priority
+            />
           </span>
-          <Image
-            src="/SwiftFullLogoPink.png"
-            alt="Swift"
-            width={100}
-            height={44}
-            className="block h-8 w-auto self-center sm:h-9"
-            priority
+          <span
+            aria-hidden="true"
+            className="mb-0.5 h-8 w-px bg-black/70 sm:h-10"
           />
+          <span className="flex h-8 items-end sm:h-10">
+            <Image
+              src="/SwiftFullLogoPink.png"
+              alt="Swift"
+              width={100}
+              height={44}
+              className="block h-7 w-auto sm:h-8"
+              priority
+            />
+          </span>
         </Link>
         <div className="flex items-center gap-6"></div>
       </div>
