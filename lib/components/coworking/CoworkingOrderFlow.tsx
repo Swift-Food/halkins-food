@@ -343,12 +343,21 @@ export default function CoworkingOrderFlow() {
         {/* Event summary bar — only on step 1 */}
         {currentStep === 1 && selectedVenue && (
           <div className="mx-4 md:mx-10 mb-4">
-            <div className="flex items-center justify-between bg-white border border-gray-100 rounded-2xl px-4 py-3 shadow-sm gap-4">
-              <div className="flex items-center gap-4 flex-wrap min-w-0">
-                <span className="flex items-center gap-1.5 text-sm text-gray-700 font-medium shrink-0">
-                  <MapPin className="w-4 h-4 text-primary shrink-0" />
-                  {selectedVenue.name}
-                </span>
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-4">
+                <div className="flex w-full min-w-0 items-center justify-between sm:w-auto sm:block">
+                  <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-gray-700 shrink-0">
+                    <MapPin className="w-4 h-4 text-primary shrink-0" />
+                    {selectedVenue.name}
+                  </span>
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    aria-label="Edit booking details"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-opacity hover:opacity-75 sm:hidden"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 {eventStartDate && (
                   <span className="flex items-center gap-1.5 text-sm text-gray-500 shrink-0">
                     <Calendar className="w-4 h-4 shrink-0" />
@@ -366,10 +375,11 @@ export default function CoworkingOrderFlow() {
               </div>
               <button
                 onClick={() => setShowEditModal(true)}
-                className="flex items-center gap-1.5 text-sm text-primary font-medium hover:opacity-75 transition-opacity shrink-0"
+                aria-label="Edit booking details"
+                className="hidden shrink-0 items-center gap-1.5 text-sm font-medium text-primary transition-opacity hover:opacity-75 sm:flex"
               >
                 <Pencil className="w-3.5 h-3.5" />
-                Edit Booking Details
+                <span>Edit Booking Details</span>
               </button>
             </div>
           </div>
