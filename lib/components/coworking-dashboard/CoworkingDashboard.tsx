@@ -276,26 +276,28 @@ function CoworkingDashboardInner({
 
       {/* Tab Bar */}
       {spaceId && (
-        <div className="flex gap-1 border-b border-gray-200">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
+        <div className="-mx-4 overflow-x-auto border-b border-gray-200 px-4 sm:mx-0 sm:px-0">
+          <div className="flex min-w-max gap-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
 
-            return (
-              <Link
-                key={tab.id}
-                href={tab.href}
-                aria-current={activeTab === tab.id ? "page" : undefined}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? "border-primary text-primary"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {tab.label}
-              </Link>
-            );
-          })}
+              return (
+                <Link
+                  key={tab.id}
+                  href={tab.href}
+                  aria-current={activeTab === tab.id ? "page" : undefined}
+                  className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? "border-primary text-primary"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       )}
 
