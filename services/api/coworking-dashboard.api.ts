@@ -432,6 +432,22 @@ class CoworkingDashboardService {
     if (!response.ok) throw new Error('Failed to delete promo code');
   }
 
+  async updatePromoCode(spaceId: string, code: string, dto: any): Promise<any> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_PROMO_CODE(spaceId, code)}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dto),
+      }
+    );
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to update promo code');
+    }
+    return response.json();
+  }
+
   async togglePromoCode(spaceId: string, code: string): Promise<any> {
     const response = await fetchWithAuth(
       `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_PROMO_CODE(spaceId, code)}/toggle`,

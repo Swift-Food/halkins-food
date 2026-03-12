@@ -15,6 +15,7 @@ import {
   ChevronUp,
   ToggleLeft,
   ToggleRight,
+  Pencil,
 } from "lucide-react";
 
 interface PromoCodesTabProps {
@@ -25,10 +26,11 @@ interface PromoCode {
   code: string;
   name?: string;
   discountAmount: number;
-  discountType: "fixed" | "percentage";
+  discountType: string; // DB returns "FIXED" | "PERCENT"
   maxDiscount?: number;
   minOrderValue?: number;
   venueIds?: string[];
+  coworkingVenueIds?: string[];
   venues?: Array<{ id: string; name: string }>;
   maxUses?: number;
   maxUsesPerUser?: number;
@@ -36,13 +38,16 @@ interface PromoCode {
   validFrom?: string;
   expiresAt?: string;
   active?: boolean;
+  isActive?: boolean;
 }
 
-interface CreateForm {
+type FormDiscountType = "FIXED" | "PERCENT";
+
+interface PromoForm {
   code: string;
   name: string;
   discountAmount: string;
-  discountType: "fixed" | "percentage";
+  discountType: FormDiscountType;
   maxDiscount: string;
   minOrderValue: string;
   venueIds: string[];
@@ -52,11 +57,11 @@ interface CreateForm {
   expiresAt: string;
 }
 
-const emptyForm: CreateForm = {
+const emptyForm: PromoForm = {
   code: "",
   name: "",
   discountAmount: "",
-  discountType: "fixed",
+  discountType: "FIXED",
   maxDiscount: "",
   minOrderValue: "",
   venueIds: [],
@@ -76,7 +81,8 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<CreateForm>(emptyForm);
+  const [editingCode, setEditingCode] = useState<string | null>(null); // null = creating, string = editing
+  const [form, setForm] = useState<PromoForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
@@ -109,19 +115,42 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
     fetchVenues();
   }, [fetchPromoCodes, fetchVenues]);
 
+  const isPercent = (type: string) => type === "PERCENT" || type === "percentage";
+
   const openForm = () => {
     setForm(emptyForm);
+    setEditingCode(null);
     setShowForm(true);
     setError("");
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const openEdit = (promo: PromoCode) => {
+    const dt: FormDiscountType = isPercent(promo.discountType) ? "PERCENT" : "FIXED";
+    setForm({
+      code: promo.code,
+      name: promo.name || "",
+      discountAmount: String(promo.discountAmount),
+      discountType: dt,
+      maxDiscount: promo.maxDiscount != null ? String(promo.maxDiscount) : "",
+      minOrderValue: promo.minOrderValue != null ? String(promo.minOrderValue) : "",
+      venueIds: promo.coworkingVenueIds || [],
+      maxUses: promo.maxUses != null ? String(promo.maxUses) : "",
+      maxUsesPerUser: promo.maxUsesPerUser != null ? String(promo.maxUsesPerUser) : "",
+      validFrom: promo.validFrom ? promo.validFrom.slice(0, 10) : "",
+      expiresAt: promo.expiresAt ? promo.expiresAt.slice(0, 10) : "",
+    });
+    setEditingCode(promo.code);
+    setShowForm(true);
+    setError("");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError("");
 
     if (
-      form.discountType === "percentage" &&
+      form.discountType === "PERCENT" &&
       Number(form.discountAmount) > 100
     ) {
       setError("Percentage discount cannot exceed 100%.");
@@ -131,27 +160,34 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
 
     try {
       const dto: Record<string, unknown> = {
-        code: form.code.toUpperCase().trim(),
         discountAmount: Number(form.discountAmount),
         discountType: form.discountType,
       };
+      if (!editingCode) {
+        dto.code = form.code.toUpperCase().trim();
+      }
       if (form.name.trim()) dto.name = form.name.trim();
-      if (form.discountType === "percentage" && form.maxDiscount) {
+      if (form.discountType === "PERCENT" && form.maxDiscount) {
         dto.maxDiscount = Number(form.maxDiscount);
       }
       if (form.minOrderValue) dto.minOrderValue = Number(form.minOrderValue);
-      if (form.venueIds.length > 0) dto.venueIds = form.venueIds;
+      if (form.venueIds.length > 0) dto.coworkingVenueIds = form.venueIds;
       if (form.maxUses) dto.maxUses = Number(form.maxUses);
       if (form.maxUsesPerUser) dto.maxUsesPerUser = Number(form.maxUsesPerUser);
       if (form.validFrom) dto.validFrom = form.validFrom;
       if (form.expiresAt) dto.expiresAt = form.expiresAt;
 
-      await coworkingDashboardService.createPromoCode(spaceId, dto);
+      if (editingCode) {
+        await coworkingDashboardService.updatePromoCode(spaceId, editingCode, dto);
+      } else {
+        await coworkingDashboardService.createPromoCode(spaceId, dto);
+      }
       await fetchPromoCodes();
       setShowForm(false);
+      setEditingCode(null);
       setForm(emptyForm);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to create promo code"));
+      setError(getErrorMessage(err, editingCode ? "Failed to update promo code" : "Failed to create promo code"));
     } finally {
       setSaving(false);
     }
@@ -194,9 +230,9 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
   };
 
   const formatDiscount = (promo: PromoCode) => {
-    if (promo.discountType === "percentage") {
-      const base = `${promo.discountAmount}%`;
-      return promo.maxDiscount ? `${base} (max £${promo.maxDiscount})` : base;
+    if (isPercent(promo.discountType)) {
+      const base = `${Number(promo.discountAmount)}%`;
+      return promo.maxDiscount ? `${base} (max £${Number(promo.maxDiscount).toFixed(2)})` : base;
     }
     return `£${Number(promo.discountAmount).toFixed(2)}`;
   };
@@ -255,9 +291,9 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
       {showForm && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <h3 className="text-base font-semibold text-gray-900 mb-4">
-            New Promo Code
+            {editingCode ? `Edit ${editingCode}` : "New Promo Code"}
           </h3>
-          <form onSubmit={handleCreate} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Code */}
               <div>
@@ -269,6 +305,7 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
                   <input
                     type="text"
                     required
+                    disabled={!!editingCode}
                     value={form.code}
                     onChange={(e) =>
                       setForm((f) => ({
@@ -277,7 +314,7 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
                       }))
                     }
                     placeholder="SUMMER20"
-                    className="input h-11 w-full rounded-lg border border-gray-300 pl-10 pr-3 text-sm uppercase focus:border-primary focus:ring-1 focus:ring-primary"
+                    className={`input h-11 w-full rounded-lg border border-gray-300 pl-10 pr-3 text-sm uppercase focus:border-primary focus:ring-1 focus:ring-primary ${editingCode ? "bg-gray-100 text-gray-500" : ""}`}
                   />
                 </div>
               </div>
@@ -304,20 +341,20 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
                 <select
                   value={form.discountType}
                   onChange={(e) => {
-                    const next = e.target.value as "fixed" | "percentage";
+                    const next = e.target.value as FormDiscountType;
                     setForm((f) => ({
                       ...f,
                       discountType: next,
                       discountAmount:
-                        next === "percentage" && Number(f.discountAmount) > 100
+                        next === "PERCENT" && Number(f.discountAmount) > 100
                           ? "100"
                           : f.discountAmount,
                     }));
                   }}
                   className="select h-11 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
                 >
-                  <option value="fixed">Fixed (£)</option>
-                  <option value="percentage">Percentage (%)</option>
+                  <option value="FIXED">Fixed (£)</option>
+                  <option value="PERCENT">Percentage (%)</option>
                 </select>
               </div>
 
@@ -328,13 +365,13 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                    {form.discountType === "fixed" ? "£" : "%"}
+                    {form.discountType === "FIXED" ? "£" : "%"}
                   </span>
                   <input
                     type="number"
                     required
                     min="0"
-                    {...(form.discountType === "percentage" ? { max: 100 } : {})}
+                    {...(form.discountType === "PERCENT" ? { max: 100 } : {})}
                     step="0.01"
                     value={form.discountAmount}
                     onChange={(e) =>
@@ -347,7 +384,7 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
               </div>
 
               {/* Max Discount (percentage only) */}
-              {form.discountType === "percentage" && (
+              {form.discountType === "PERCENT" && (
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
                     Max Discount Cap{" "}
@@ -519,12 +556,13 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
                 className="btn btn-sm border-none bg-primary px-5 text-white shadow-sm hover:bg-primary/90 gap-2"
               >
                 {saving && <span className="loading loading-spinner loading-xs" />}
-                Create Code
+                {editingCode ? "Save Changes" : "Create Code"}
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setShowForm(false);
+                  setEditingCode(null);
                   setError("");
                 }}
                 className="btn btn-sm btn-ghost text-gray-600"
@@ -570,7 +608,7 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
                 <div
                   key={promo.code}
                   className={`bg-white rounded-xl border shadow-sm p-5 ${
-                    expired || atLimit || promo.active === false
+                    expired || atLimit || (promo.active ?? promo.isActive) === false
                       ? "border-gray-200 opacity-60"
                       : "border-gray-100"
                   }`}
@@ -591,7 +629,7 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
                           <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
                             Limit reached
                           </span>
-                        ) : promo.active === false ? (
+                        ) : (promo.active ?? promo.isActive) === false ? (
                           <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
                             Inactive
                           </span>
@@ -657,25 +695,32 @@ export default function PromoCodesTab({ spaceId }: PromoCodesTabProps) {
                       )}
                     </div>
 
-                    {/* Right: toggle + delete */}
+                    {/* Right: edit + toggle + delete */}
                     <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => openEdit(promo)}
+                        className="btn btn-sm rounded-full border-blue-200 bg-blue-50 text-blue-600 shadow-none hover:border-blue-300 hover:bg-blue-100 gap-1.5"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Edit
+                      </button>
                       <button
                         onClick={() => handleToggle(promo.code)}
                         disabled={toggling === promo.code}
                         className={`btn btn-sm rounded-full shadow-none gap-1.5 ${
-                          promo.active === false
+                          (promo.active ?? promo.isActive) === false
                             ? "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
                             : "border-green-200 bg-green-50 text-green-700 hover:border-green-300 hover:bg-green-100"
                         }`}
                       >
                         {toggling === promo.code ? (
                           <span className="loading loading-spinner loading-xs" />
-                        ) : promo.active === false ? (
+                        ) : (promo.active ?? promo.isActive) === false ? (
                           <ToggleLeft className="h-4 w-4" />
                         ) : (
                           <ToggleRight className="h-4 w-4" />
                         )}
-                        {promo.active === false ? "Enable" : "Disable"}
+                        {(promo.active ?? promo.isActive) === false ? "Enable" : "Disable"}
                       </button>
                       <button
                         onClick={() => handleDelete(promo.code)}
