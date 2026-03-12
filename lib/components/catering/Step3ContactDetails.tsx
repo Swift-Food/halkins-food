@@ -472,7 +472,7 @@ export default function Step3ContactInfo() {
   };
 
   const buildCoworkingOrderData = (): { spaceSlug: string; orderData: CreateCoworkingOrderRequest } => {
-    const slug = coworkingSpaceSlug || 'halkins';
+    const slug = coworkingSpaceSlug || 'halkin';
     const firstSession = mealSessions[0];
     const sessionDate = firstSession?.sessionDate || '';
     const sessionTime = firstSession?.eventTime || eventDetails?.eventTime || '';
@@ -658,7 +658,7 @@ export default function Step3ContactInfo() {
   const calculatePricing = async () => {
     setCalculatingPricing(true);
     try {
-      const slug = coworkingSpaceSlug || 'halkins';
+      const slug = coworkingSpaceSlug || 'halkin';
       console.log("calculating")
       const pricingResult = await coworkingService.calculateCartPricing(
         slug,
@@ -858,7 +858,7 @@ export default function Step3ContactInfo() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen">
-        <CoworkingAuthForm spaceSlug={coworkingSpaceSlug || "halkins"} />
+        <CoworkingAuthForm spaceSlug={coworkingSpaceSlug || "halkin"} />
       </div>
     );
   }
