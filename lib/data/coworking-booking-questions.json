@@ -52,7 +52,7 @@
       "id": "about_event",
       "title": "About your event",
       "layout": "stack",
-      "description": "Your request will most likely be accepted at Halkin - {{venueName}}.",
+      "description": "",
       "questions": [
         {
           "key": "eventUrl",

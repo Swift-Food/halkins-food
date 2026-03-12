@@ -35,7 +35,9 @@ interface QuestionSchema {
 }
 
 interface SectionSchema {
+  id?: string;
   title: string;
+  description?: string;
   questions: QuestionSchema[];
 }
 
@@ -43,7 +45,29 @@ interface QuestionsConfig {
   sections: SectionSchema[];
 }
 
+interface ResponseEntry {
+  key: string;
+  value: string;
+  metadata?: QuestionSchema & { sectionTitle: string };
+}
+
+interface ResponseSection {
+  title: string;
+  description?: string;
+  responses: ResponseEntry[];
+}
+
 const questionsConfig = questionsConfigJson as QuestionsConfig;
+const orderedQuestionKeys = questionsConfig.sections.flatMap((section) =>
+  section.questions.map((question) => question.key),
+);
+const questionOrderIndex = orderedQuestionKeys.reduce<Record<string, number>>(
+  (accumulator, key, index) => {
+    accumulator[key] = index;
+    return accumulator;
+  },
+  {},
+);
 const questionLookup = questionsConfig.sections.reduce<
   Record<string, QuestionSchema & { sectionTitle: string }>
 >((accumulator, section) => {
@@ -192,12 +216,76 @@ export default function OrderDetailModal({
   const responseEntries = useMemo(
     () =>
       order?.additionalAnswers
-        ? Object.entries(order.additionalAnswers).filter(([, value]) =>
-            Boolean(value),
-          )
+        ? Object.entries(order.additionalAnswers)
+            .filter(([, value]) => Boolean(value))
+            .sort(([leftKey], [rightKey]) => {
+              const leftIndex = questionOrderIndex[leftKey] ?? Number.MAX_SAFE_INTEGER;
+              const rightIndex =
+                questionOrderIndex[rightKey] ?? Number.MAX_SAFE_INTEGER;
+
+              if (leftIndex !== rightIndex) {
+                return leftIndex - rightIndex;
+              }
+
+              return leftKey.localeCompare(rightKey);
+            })
         : [],
     [order?.additionalAnswers],
   );
+  const groupedResponseSections = useMemo(() => {
+    if (responseEntries.length === 0) {
+      return [] as ResponseSection[];
+    }
+
+    const seenKeys = new Set<string>();
+    const sections = questionsConfig.sections
+      .map((section): ResponseSection | null => {
+        const responses = section.questions
+          .map((question) => {
+            const entry = responseEntries.find(([key]) => key === question.key);
+            if (!entry) {
+              return null;
+            }
+
+            seenKeys.add(question.key);
+            return {
+              key: question.key,
+              value: entry[1],
+              metadata: questionLookup[question.key],
+            };
+          })
+          .filter((response): response is ResponseEntry => response !== null);
+
+        if (responses.length === 0) {
+          return null;
+        }
+
+        return {
+          title: section.title,
+          description: section.description,
+          responses,
+        };
+      })
+      .filter((section): section is ResponseSection => section !== null);
+
+    const unknownResponses = responseEntries
+      .filter(([key]) => !seenKeys.has(key))
+      .map(([key, value]) => ({
+        key,
+        value,
+        metadata: questionLookup[key],
+      }));
+
+    if (unknownResponses.length > 0) {
+      sections.push({
+        title: "Other Responses",
+        description: undefined,
+        responses: unknownResponses,
+      });
+    }
+
+    return sections;
+  }, [responseEntries]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -478,7 +566,7 @@ export default function OrderDetailModal({
           </div>
 
           <div className="w-1/2 max-h-[calc(85vh-73px)] overflow-y-auto border-l border-gray-200 px-6 py-5">
-            {!order || responseEntries.length === 0 ? (
+            {!order || groupedResponseSections.length === 0 ? (
               <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-6 text-center">
                 <MessageSquareText className="h-8 w-8 text-gray-400" />
                 <p className="mt-4 text-sm font-semibold text-gray-900">
@@ -490,46 +578,72 @@ export default function OrderDetailModal({
               </div>
             ) : (
               <div className="space-y-6">
-                {responseEntries.map(([key, value]) => {
-                  const metadata = questionLookup[key];
-                  const isSignature =
-                    metadata?.type === "signature" && value.startsWith("data:image");
-
-                  return (
-                    <div
-                      key={key}
-                      className="rounded-xl border border-gray-200 bg-white p-4"
-                    >
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
-                        {metadata?.sectionTitle || "Response"}
+                {groupedResponseSections.map((section) => (
+                  <section
+                    key={section.title}
+                    className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4"
+                  >
+                    <div className="border-b border-gray-200 pb-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+                        Section
                       </p>
-                      <h3 className="mt-2 text-sm font-semibold text-gray-900">
-                        {metadata?.title || key}
+                      <h3 className="mt-1 text-base font-bold text-gray-900">
+                        {section.title}
                       </h3>
-                      {metadata?.description && (
-                        <p className="mt-1 text-sm text-gray-500">
-                          {metadata.description}
-                        </p>
-                      )}
-                      {isSignature ? (
-                        <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
-                          <Image
-                            src={value}
-                            alt="Signature response"
-                            width={640}
-                            height={240}
-                            unoptimized
-                            className="h-auto w-full"
-                          />
-                        </div>
-                      ) : (
-                        <p className="mt-4 whitespace-pre-wrap break-words text-sm text-gray-700">
-                          {value}
+                      {section.description && (
+                        <p className="mt-2 text-sm text-gray-500">
+                          {section.description}
                         </p>
                       )}
                     </div>
-                  );
-                })}
+
+                    <div className="mt-4 space-y-4">
+                      {section.responses.map(({ key, value, metadata }) => {
+                        const isSignature =
+                          metadata?.type === "signature" &&
+                          value.startsWith("data:image");
+
+                        return (
+                          <div
+                            key={key}
+                            className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                          >
+                            <h4 className="text-sm font-semibold text-gray-900">
+                              {metadata?.title || key}
+                            </h4>
+                            {metadata?.description && (
+                              <p className="mt-1 text-sm leading-6 text-gray-500">
+                                {metadata.description}
+                              </p>
+                            )}
+
+                            <div className="mt-3 rounded-lg border border-primary/15 bg-primary/[0.04] p-3">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/70">
+                                Answer
+                              </p>
+                              {isSignature ? (
+                                <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white">
+                                  <Image
+                                    src={value}
+                                    alt="Signature response"
+                                    width={640}
+                                    height={240}
+                                    unoptimized
+                                    className="h-auto w-full"
+                                  />
+                                </div>
+                              ) : (
+                                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-gray-800">
+                                  {value}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ))}
               </div>
             )}
           </div>
