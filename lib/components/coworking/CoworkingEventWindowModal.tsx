@@ -357,7 +357,7 @@ export default function CoworkingEventWindowModal({
   const renderTimeEditor = () => (
     <div
       ref={timeEntryRef}
-      className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
+      className="mt-3 space-y-4 sm:mt-6 sm:space-y-5"
     >
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-700">
@@ -496,8 +496,8 @@ export default function CoworkingEventWindowModal({
   );
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 px-3 py-3 backdrop-blur-sm sm:px-4 sm:py-6">
-      <div className="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-[1.5rem] border border-white/70 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:max-h-[92vh] sm:rounded-[2rem]">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 backdrop-blur-sm sm:px-4 sm:py-6">
+      <div className="h-[100dvh] max-h-[100dvh] w-full overflow-auto rounded-none border-0 bg-white shadow-none sm:h-auto sm:max-h-[92vh] sm:max-w-4xl sm:rounded-[2rem] sm:border sm:border-white/70 sm:shadow-[0_30px_80px_rgba(15,23,42,0.25)]">
         <div className="sticky top-0 z-30 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5 sm:px-8">
           <div className="flex items-start justify-between gap-3 sm:items-center sm:gap-4">
             <div>
@@ -674,32 +674,24 @@ export default function CoworkingEventWindowModal({
             </div>
           </div>
 
-          <div className="border-t border-slate-200/80 px-4 py-3 lg:hidden">
-            <div className="rounded-[1.5rem] border border-slate-200/80 bg-slate-50/60 p-4">
-              <h4 className="mt-2 text-lg font-semibold text-slate-900">
-                {editTarget === "start" ? "Start" : "End"}
-              </h4>
-              <p className="mt-2 text-sm text-slate-500">
-                {stepDescription}
-              </p>
-              {renderTimeEditor()}
-              <div className="mt-5 flex flex-col gap-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    onApply({
-                      startDate: draftStartDate,
-                      startTime: draftStartTime,
-                      endDate: draftEndDate,
-                      endTime: draftEndTime,
-                    })
-                  }
-                  disabled={!canApply}
-                  className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Apply Event Window
-                </button>
-              </div>
+          <div className="border-t border-slate-200/80 px-4 py-4 lg:hidden">
+            {renderTimeEditor()}
+            <div className="mt-5 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  onApply({
+                    startDate: draftStartDate,
+                    startTime: draftStartTime,
+                    endDate: draftEndDate,
+                    endTime: draftEndTime,
+                  })
+                }
+                disabled={!canApply}
+                className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Apply Event Window
+              </button>
             </div>
           </div>
         </div>

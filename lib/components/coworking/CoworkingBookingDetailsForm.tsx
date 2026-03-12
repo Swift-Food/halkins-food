@@ -66,7 +66,7 @@ export function getCoworkingMinDate(): string {
 
 export function getCoworkingMaxDate(): string {
   const d = new Date();
-  d.setMonth(d.getMonth() + 6);
+  d.setFullYear(d.getFullYear() + 1);
   return d.toISOString().split("T")[0];
 }
 
