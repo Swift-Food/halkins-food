@@ -234,6 +234,15 @@ export default function CoworkingOrderFlow() {
     });
   }, [currentStep]);
 
+  useEffect(() => {
+    if (currentStep <= 1 || typeof window === "undefined") return;
+
+    window.scrollTo({
+      top: 0,
+      behavior: "auto",
+    });
+  }, [currentStep]);
+
   // Fetch space info on mount
   useEffect(() => {
     if (!spaceSlug || spaceInfo) return;
