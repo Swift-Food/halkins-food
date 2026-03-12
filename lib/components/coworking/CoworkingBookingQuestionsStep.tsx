@@ -275,11 +275,13 @@ export default function CoworkingBookingQuestionsStep() {
   const {
     contactInfo,
     bookingQuestionnaire,
+    highestVisitedStep,
     setContactInfo,
     setBookingQuestionnaire,
     setCurrentStep,
+    updateMealSession,
   } = useCatering();
-  const { selectedVenue } = useCoworking();
+  const { selectedVenue, eventStartDate, eventStartTime } = useCoworking();
   const [errors, setErrors] = useState<ValidationErrors>({});
   const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -417,6 +419,14 @@ export default function CoworkingBookingQuestionsStep() {
 
   const handleContinue = () => {
     if (!validate()) return;
+
+    if (highestVisitedStep < 3 && eventStartDate && eventStartTime) {
+      updateMealSession(0, {
+        sessionDate: eventStartDate,
+        eventTime: eventStartTime,
+      });
+    }
+
     setCurrentStep(3);
   };
 

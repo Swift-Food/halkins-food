@@ -200,7 +200,6 @@ export default function CoworkingOrderFlow() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [venues, setVenues] = useState<CoworkingVenue[]>([]);
   const hasPrefilledContact = useRef(false);
-  const hasPrefilledSession = useRef(false);
   const hasBookingDetails = Boolean(
     selectedVenue &&
       eventStartDate &&
@@ -283,22 +282,6 @@ export default function CoworkingOrderFlow() {
       });
     }
   }, [contactInfo, isAuthenticated, member, setContactInfo]);
-
-  // Pre-fill meal session date/time from venue selection once when authenticated
-  useEffect(() => {
-    if (
-      isAuthenticated &&
-      !hasPrefilledSession.current &&
-      eventStartDate &&
-      eventStartTime
-    ) {
-      hasPrefilledSession.current = true;
-      updateMealSession(0, {
-        sessionDate: eventStartDate,
-        eventTime: eventStartTime,
-      });
-    }
-  }, [isAuthenticated, eventStartDate, eventStartTime, updateMealSession]);
 
   const handleSaveEventEdit = (
     companyName: string,
