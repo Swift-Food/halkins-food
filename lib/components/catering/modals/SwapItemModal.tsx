@@ -33,6 +33,8 @@ export default function SwapItemModal({
         isOpen={true}
         onClose={() => setSelectedAlternative(null)}
         quantity={currentQuantity}
+        forceAddMode={true}
+        addButtonLabel="Confirm Swap"
         onAddItem={(configuredItem) => {
           onSwap(configuredItem);
           setSelectedAlternative(null);

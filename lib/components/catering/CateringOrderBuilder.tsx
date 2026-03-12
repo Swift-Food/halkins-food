@@ -705,6 +705,11 @@ export default function CateringOrderBuilder({
     if (!session) return;
 
     const oldOrderItem = session.orderItems[swapItemIndex];
+    const backendQuantityUnit = newItem.cateringQuantityUnit || 7;
+    const quantity =
+      newItem.portionQuantity && newItem.portionQuantity > 0
+        ? newItem.portionQuantity * backendQuantityUnit
+        : oldOrderItem.quantity;
 
     updateMenuItemByIndex(activeSessionIndex, swapItemIndex, {
       item: {
@@ -714,7 +719,7 @@ export default function CateringOrderBuilder({
         subcategoryId: oldOrderItem.item.subcategoryId,
         subcategoryName: oldOrderItem.item.subcategoryName,
       },
-      quantity: oldOrderItem.quantity,
+      quantity,
       bundleId: oldOrderItem.bundleId,
       bundleName: oldOrderItem.bundleName,
     });
