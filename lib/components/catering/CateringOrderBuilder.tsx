@@ -996,34 +996,6 @@ export default function CateringOrderBuilder({
         </div>
       )}
 
-      {/* Browse Mode Toggle */}
-      <div className="flex items-center gap-2 mb-3">
-        <button
-          onClick={() => setShowBundleBrowser(false)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-            !showBundleBrowser
-              ? "bg-primary text-white"
-              : "bg-base-200 text-gray-600 hover:bg-base-300"
-          }`}
-        >
-          Menu
-        </button>
-        <button
-          onClick={() => {
-            setShowBundleBrowser(true);
-            if (!allMenuItems) fetchAllMenuItems();
-          }}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-            showBundleBrowser
-              ? "bg-primary text-white"
-              : "bg-base-200 text-gray-600 hover:bg-base-300"
-          }`}
-        >
-          <Package className="w-3.5 h-3.5" />
-          Bundles
-        </button>
-      </div>
-
       {showBundleBrowser ? (
         <BundleBrowser
           sessionIndex={index}
@@ -1039,6 +1011,10 @@ export default function CateringOrderBuilder({
           sessionDate={session.sessionDate}
           eventTime={session.eventTime}
           defaultBundleGuestCount={session.guestCount || 1}
+          onOpenBundles={() => {
+            setShowBundleBrowser(true);
+            if (!allMenuItems) fetchAllMenuItems();
+          }}
           allMenuItems={allMenuItems}
           fetchAllMenuItems={fetchAllMenuItems}
           onAddItem={handleAddItem}

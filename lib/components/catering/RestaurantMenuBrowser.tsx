@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
+  Package,
 } from "lucide-react";
 import { MenuItem, Restaurant } from "@/types/restaurant.types";
 import { DietaryFilter } from "@/types/menuItem";
@@ -24,6 +25,7 @@ import { mapToMenuItem } from "./catering-order-helpers";
 interface RestaurantMenuBrowserProps {
   restaurants: Restaurant[];
   restaurantsLoading: boolean;
+  onOpenBundles: () => void;
   sessionDate?: string;
   eventTime?: string;
   defaultBundleGuestCount?: number;
@@ -86,6 +88,7 @@ function enrichBundleItemAddons(
 export default function RestaurantMenuBrowser({
   restaurants,
   restaurantsLoading,
+  onOpenBundles,
   sessionDate,
   eventTime,
   defaultBundleGuestCount = 1,
@@ -1026,6 +1029,30 @@ export default function RestaurantMenuBrowser({
       </div>
 
       <div>
+        {!isSearchActive && (
+          <button
+            type="button"
+            onClick={onOpenBundles}
+            className="mb-3 flex w-full items-start justify-between rounded-2xl border border-primary/15 bg-primary/[0.05] px-4 py-4 text-left transition-colors hover:bg-primary/[0.08]"
+          >
+            <span className="flex items-start gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
+                <Package className="h-5 w-5" />
+              </span>
+              <span>
+                <span className="block text-sm font-semibold text-gray-900">
+                  Don&apos;t know what to get?
+                </span>
+                <span className="mt-1 block text-sm text-gray-600">
+                  Look at our bundles.
+                </span>
+              </span>
+            </span>
+            <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">
+              Browse
+            </span>
+          </button>
+        )}
         {!isSearchActive && renderCategoryFilters()}
         {renderDietaryFilters()}
       </div>
