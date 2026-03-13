@@ -319,20 +319,19 @@ export interface BundleSelectionDetails {
 export interface CateringBundleItem {
   id: string;
   cateringBundleId: string;
-  restaurantId: string;
-  restaurantName: string;
   menuItemId: string;
   menuItemName: string;
+  menuItemImageUrl?: string;
+  menuItemPrice: number;
+  restaurantId: string;
+  restaurantName: string;
   quantity: number;
-  selectedAddons: Array<{
+  selectedAddons?: Array<{
+    addonId: string;
     name: string;
-    price: number;
     quantity: number;
-    groupTitle: string;
   }>;
   sortOrder: number;
-  createdAt: string | Date;
-  updatedAt: string | Date;
 }
 
 /**
@@ -341,12 +340,15 @@ export interface CateringBundleItem {
  */
 export interface CateringBundleResponse {
   id: string;
+  type: 'prismo' | 'catering';
   name: string;
   description?: string;
   imageUrl?: string;
-  pricePerPerson: number;
-  baseGuestCount: number;
+  pricePerPerson?: number;
+  baseGuestCount?: number;
   isActive: boolean;
+  restaurantId?: string;
+  restaurantName?: string;
   items: CateringBundleItem[];
   createdAt: string | Date;
   updatedAt: string | Date;
