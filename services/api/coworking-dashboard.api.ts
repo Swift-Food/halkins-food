@@ -267,6 +267,34 @@ class CoworkingDashboardService {
     );
     if (!response.ok) throw new Error('Failed to delete venue');
   }
+
+  async getVenueActiveOrderCount(spaceId: string, venueId: string): Promise<{ count: number }> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_VENUE_ACTIVE_ORDER_COUNT(spaceId, venueId)}`
+    );
+    if (!response.ok) throw new Error('Failed to fetch active order count');
+    return response.json();
+  }
+
+  async transferAndDeleteVenue(
+    spaceId: string,
+    venueId: string,
+    targetVenueId: string,
+  ): Promise<{ transferredCount: number }> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_VENUE_TRANSFER_AND_DELETE(spaceId, venueId)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetVenueId }),
+      }
+    );
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to transfer and delete venue');
+    }
+    return response.json();
+  }
   // =========================================================================
   // STRIPE ACCOUNT MANAGEMENT
   // =========================================================================

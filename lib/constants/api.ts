@@ -44,6 +44,10 @@ export const API_ENDPOINTS = {
     `/coworking-dashboard/${spaceId}/venues`,
   COWORKING_DASHBOARD_VENUE: (spaceId: string, venueId: string) =>
     `/coworking-dashboard/${spaceId}/venues/${venueId}`,
+  COWORKING_DASHBOARD_VENUE_ACTIVE_ORDER_COUNT: (spaceId: string, venueId: string) =>
+    `/coworking-dashboard/${spaceId}/venues/${venueId}/active-order-count`,
+  COWORKING_DASHBOARD_VENUE_TRANSFER_AND_DELETE: (spaceId: string, venueId: string) =>
+    `/coworking-dashboard/${spaceId}/venues/${venueId}/transfer-and-delete`,
   COWORKING_DASHBOARD_STRIPE_STATUS: (spaceId: string) =>
     `/coworking-dashboard/${spaceId}/stripe/status`,
   COWORKING_DASHBOARD_STRIPE_SETUP: (spaceId: string) =>

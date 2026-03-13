@@ -17,6 +17,8 @@ import {
   ImageIcon,
   ArrowLeft,
   Users,
+  AlertTriangle,
+  ArrowRightLeft,
 } from "lucide-react";
 
 interface VenuesModalProps {
@@ -53,6 +55,15 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
   const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
   const [addressSearchError, setAddressSearchError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Transfer-on-delete state
+  const [transferModal, setTransferModal] = useState<{
+    venueId: string;
+    venueName: string;
+    activeOrderCount: number;
+  } | null>(null);
+  const [targetVenueId, setTargetVenueId] = useState<string>("");
+  const [transferring, setTransferring] = useState(false);
 
   const fetchVenues = useCallback(async () => {
     setLoading(true);
@@ -127,16 +138,67 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
   };
 
   const handleDelete = async (venueId: string) => {
-    if (!confirm("Delete this venue?")) return;
+    const venue = venues.find((v) => v.id === venueId);
+    if (!venue) return;
+
     setDeleting(venueId);
     setError("");
+
     try {
-      await coworkingDashboardService.deleteVenue(spaceId, venueId);
-      setVenues((v) => v.filter((x) => x.id !== venueId));
+      const { count } = await coworkingDashboardService.getVenueActiveOrderCount(spaceId, venueId);
+
+      if (count === 0) {
+        // No active orders — simple delete with confirmation
+        if (!confirm("Delete this venue? This cannot be undone.")) {
+          setDeleting(null);
+          return;
+        }
+        await coworkingDashboardService.deleteVenue(spaceId, venueId);
+        setVenues((v) => v.filter((x) => x.id !== venueId));
+      } else {
+        // Has active orders — check if there are other venues to transfer to
+        const otherVenues = venues.filter((v) => v.id !== venueId);
+        if (otherVenues.length === 0) {
+          setError(
+            `Cannot delete "${venue.name}" — it has ${count} active booking${count !== 1 ? "s" : ""} and there are no other venues to transfer them to.`
+          );
+        } else {
+          // Open transfer modal
+          setTransferModal({ venueId, venueName: venue.name, activeOrderCount: count });
+          setTargetVenueId(otherVenues[0].id);
+        }
+      }
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to delete venue"));
+      setError(getErrorMessage(err, "Failed to check venue"));
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleTransferAndDelete = async () => {
+    if (!transferModal || !targetVenueId) return;
+
+    setTransferring(true);
+    setError("");
+
+    try {
+      const { transferredCount } = await coworkingDashboardService.transferAndDeleteVenue(
+        spaceId,
+        transferModal.venueId,
+        targetVenueId,
+      );
+
+      const targetVenue = venues.find((v) => v.id === targetVenueId);
+      setVenues((v) => v.filter((x) => x.id !== transferModal.venueId));
+      setTransferModal(null);
+      setTargetVenueId("");
+
+      // Brief success indication via the error banner (green would be ideal but reusing existing UI)
+      setError("");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to transfer bookings and delete venue"));
+    } finally {
+      setTransferring(false);
     }
   };
 
@@ -240,6 +302,74 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
           {error && (
             <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
               {error}
+            </div>
+          )}
+
+          {/* Transfer confirmation modal */}
+          {transferModal && (
+            <div className="mb-5 rounded-[24px] border border-amber-200 bg-amber-50 p-5 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-600">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-base font-semibold text-slate-900">
+                    Transfer bookings before deleting
+                  </h4>
+                  <p className="mt-1.5 text-sm leading-6 text-slate-600">
+                    <strong>{transferModal.venueName}</strong> has{" "}
+                    <strong>
+                      {transferModal.activeOrderCount} active booking
+                      {transferModal.activeOrderCount !== 1 ? "s" : ""}
+                    </strong>
+                    . Choose a venue to transfer them to before deletion.
+                  </p>
+
+                  <div className="mt-4">
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Transfer to
+                    </label>
+                    <select
+                      value={targetVenueId}
+                      onChange={(e) => setTargetVenueId(e.target.value)}
+                      className="select h-12 w-full max-w-sm rounded-2xl border-slate-200 bg-white px-4 text-sm text-slate-900 shadow-none focus:border-primary"
+                    >
+                      {venues
+                        .filter((v) => v.id !== transferModal.venueId)
+                        .map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.name} (capacity {v.capacity})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      onClick={handleTransferAndDelete}
+                      disabled={transferring || !targetVenueId}
+                      className="btn btn-sm rounded-full border-none bg-red-600 px-5 text-white shadow-sm hover:bg-red-700"
+                    >
+                      {transferring ? (
+                        <span className="loading loading-spinner loading-xs" />
+                      ) : (
+                        <ArrowRightLeft className="h-4 w-4" />
+                      )}
+                      Transfer & Delete
+                    </button>
+                    <button
+                      onClick={() => {
+                        setTransferModal(null);
+                        setTargetVenueId("");
+                      }}
+                      disabled={transferring}
+                      className="btn btn-ghost btn-sm rounded-full px-5"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
