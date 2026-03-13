@@ -200,6 +200,7 @@ export default function CoworkingOrderFlow() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [venues, setVenues] = useState<CoworkingVenue[]>([]);
   const hasPrefilledContact = useRef(false);
+  const previousStepRef = useRef<number | null>(null);
   const hasBookingDetails = Boolean(
     selectedVenue &&
       eventStartDate &&
@@ -241,6 +242,24 @@ export default function CoworkingOrderFlow() {
       behavior: "auto",
     });
   }, [currentStep]);
+
+  useEffect(() => {
+    const previousStep = previousStepRef.current;
+
+    if (
+      previousStep === 2 &&
+      currentStep === 3 &&
+      eventStartDate &&
+      eventStartTime
+    ) {
+      updateMealSession(0, {
+        sessionDate: eventStartDate,
+        eventTime: eventStartTime,
+      });
+    }
+
+    previousStepRef.current = currentStep;
+  }, [currentStep, eventStartDate, eventStartTime, updateMealSession]);
 
   // Fetch space info on mount
   useEffect(() => {
