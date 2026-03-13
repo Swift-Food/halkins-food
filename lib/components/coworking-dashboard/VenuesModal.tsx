@@ -220,17 +220,17 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
   };
 
-  const handleAttendanceTagChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value as CoworkingVenueAttendanceTag;
-
+  const handleAttendanceTagToggle = (tag: CoworkingVenueAttendanceTag) => {
     setForm((currentForm) => ({
       ...currentForm,
-      attendanceTags: value ? [value] : [],
+      attendanceTags: currentForm.attendanceTags?.includes(tag)
+        ? currentForm.attendanceTags.filter((currentTag) => currentTag !== tag)
+        : [...(currentForm.attendanceTags ?? []), tag],
     }));
   };
 
@@ -562,23 +562,30 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
                           placeholder="Rooftop space with great views and easy access for lunch setup."
                         />
                       </div>
-                      <div>
+                      <div className="sm:col-span-2">
                         <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                          Attendance tag
+                          Attendance tags
                         </label>
-                        <select
-                          name="attendanceTags"
-                          value={form.attendanceTags?.[0] ?? ""}
-                          onChange={handleAttendanceTagChange}
-                          className="select h-12 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 shadow-none focus:border-primary focus:bg-white"
-                        >
-                          <option value="">Select attendance tag</option>
+                        <div className="grid gap-3 sm:grid-cols-2">
                           {ATTENDANCE_TAG_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
+                            <label
+                              key={option.value}
+                              className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition-colors ${
+                                form.attendanceTags?.includes(option.value)
+                                  ? "border-primary bg-primary/5 text-primary"
+                                  : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={form.attendanceTags?.includes(option.value) ?? false}
+                                onChange={() => handleAttendanceTagToggle(option.value)}
+                                className="checkbox checkbox-sm border-slate-300 bg-white checked:border-primary checked:bg-primary checked:text-white"
+                              />
+                              <span className="font-medium">{option.label}</span>
+                            </label>
                           ))}
-                        </select>
+                        </div>
                       </div>
                     </div>
                   </section>
