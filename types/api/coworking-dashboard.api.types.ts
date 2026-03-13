@@ -141,6 +141,7 @@ export interface DashboardOrderBooking {
 export interface DashboardOrderMember {
   email: string;
   name: string | null;
+  phone: string | null;
 }
 
 /**

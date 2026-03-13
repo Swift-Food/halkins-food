@@ -9,6 +9,7 @@ import {
   X,
   User,
   Mail,
+  Phone,
   Hash,
   MapPin,
   Clock,
@@ -391,6 +392,12 @@ export default function OrderDetailModal({
                       <Mail className="h-4 w-4 text-gray-400" />
                       {order.member.email}
                     </p>
+                    {order.member.phone && (
+                      <p className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-gray-400" />
+                        {order.member.phone}
+                      </p>
+                    )}
                   </div>
                 </div>
 
