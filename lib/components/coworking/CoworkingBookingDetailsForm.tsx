@@ -308,18 +308,17 @@ export default function CoworkingBookingDetailsForm({
                       <div className="h-full w-full bg-gradient-to-br from-gray-200 to-gray-300" />
                     )}
 
-                    {isSelected && (
+                    {(isSelected || formattedAttendanceTags.length > 0) && (
                       <div className="absolute right-3 top-3 flex max-w-[75%] flex-wrap justify-end gap-2">
-                        {formattedAttendanceTags.length > 0 ? (
-                          formattedAttendanceTags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 shadow-sm backdrop-blur"
-                            >
-                              {tag}
-                            </span>
-                          ))
-                        ) : (
+                        {formattedAttendanceTags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-full border border-primary/25 bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-sm"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {isSelected && formattedAttendanceTags.length === 0 && (
                           <CheckCircle2 className="h-6 w-6 text-white drop-shadow" />
                         )}
                       </div>
