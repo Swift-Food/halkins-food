@@ -89,6 +89,14 @@ export function formatCoworkingEventDateTime(date: string, time: string) {
   }`;
 }
 
+function formatAttendanceTag(tag: string) {
+  return tag
+    .split("_")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
 export function isCoworkingBookingWindowValid(values: EventWindowValues) {
   const { startDate, startTime, endDate, endTime } = values;
 
@@ -269,6 +277,10 @@ export default function CoworkingBookingDetailsForm({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {venues.map((venue) => {
               const isSelected = selectedVenue?.id === venue.id;
+              const formattedAttendanceTags =
+                venue.attendanceTags
+                  ?.filter((tag): tag is string => Boolean(tag))
+                  .map(formatAttendanceTag) ?? [];
 
               return (
                 <button
@@ -297,8 +309,19 @@ export default function CoworkingBookingDetailsForm({
                     )}
 
                     {isSelected && (
-                      <div className="absolute right-3 top-3">
-                        <CheckCircle2 className="h-6 w-6 text-white drop-shadow" />
+                      <div className="absolute right-3 top-3 flex max-w-[75%] flex-wrap justify-end gap-2">
+                        {formattedAttendanceTags.length > 0 ? (
+                          formattedAttendanceTags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 shadow-sm backdrop-blur"
+                            >
+                              {tag}
+                            </span>
+                          ))
+                        ) : (
+                          <CheckCircle2 className="h-6 w-6 text-white drop-shadow" />
+                        )}
                       </div>
                     )}
                   </div>
