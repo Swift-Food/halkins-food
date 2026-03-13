@@ -12,7 +12,7 @@ export default function BundleCard({ bundle, onClick }: BundleCardProps) {
   return (
     <button
       onClick={() => onClick(bundle)}
-      className="w-full flex items-center gap-3 p-3 border-2 border-primary/20 rounded-xl bg-white shadow-sm hover:shadow-md hover:border-primary/40 transition-all text-left"
+      className="w-full cursor-pointer flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 text-left transition-shadow"
     >
       {/* Image or fallback */}
       {bundle.imageUrl ? (
