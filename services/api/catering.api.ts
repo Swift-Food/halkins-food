@@ -98,13 +98,13 @@ class CateringService {
     return response.json();
   }
 
-  async getActiveBundles(): Promise<CateringBundleResponse[]> {
+  async getCateringBundles(): Promise<CateringBundleResponse[]> {
     const response = await fetchWithAuth(
-      `${API_BASE_URL}${API_ENDPOINTS.CATERING_BUNDLES_ACTIVE}`
+      `${API_BASE_URL}${API_ENDPOINTS.CATERING_BUNDLES_CATERING}`
     );
 
     if (!response.ok) {
-      throw new Error("Failed to fetch active bundles");
+      throw new Error("Failed to fetch catering bundles");
     }
 
     return response.json();

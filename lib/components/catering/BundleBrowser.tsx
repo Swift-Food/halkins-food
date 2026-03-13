@@ -59,8 +59,8 @@ export default function BundleBrowser({
     const fetchBundles = async () => {
       try {
         setLoading(true);
-        const activeBundles = await cateringService.getActiveBundles();
-        setBundles(activeBundles);
+        const cateringBundles = await cateringService.getCateringBundles();
+        setBundles(cateringBundles);
       } catch (err) {
         console.error("Failed to fetch bundles:", err);
         setError("Failed to load bundles. Please try again.");
