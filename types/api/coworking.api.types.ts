@@ -123,6 +123,7 @@ export interface CoworkingVenue {
   longitude: number;
   image?: string;
   description?: string;
+  attendanceTags?: string[] | null;
 }
 
 // ============================================================================

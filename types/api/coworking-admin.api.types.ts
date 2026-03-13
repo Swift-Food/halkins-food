@@ -199,6 +199,7 @@ export interface CoworkingVenueAdmin {
   longitude: string;
   image?: string | null;
   description?: string | null;
+  attendanceTags?: string[] | null;
   createdAt: string;
   updatedAt: string;
   coworkingSpaceId: string;
@@ -215,6 +216,7 @@ export interface CreateCoworkingVenueRequest {
   longitude: number;
   image?: string;
   description?: string;
+  attendanceTags?: string[];
 }
 
 /**
@@ -228,6 +230,7 @@ export interface UpdateCoworkingVenueRequest {
   longitude?: number;
   image?: string;
   description?: string;
+  attendanceTags?: string[];
 }
 
 /**
