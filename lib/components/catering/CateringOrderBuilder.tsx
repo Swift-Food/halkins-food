@@ -1038,6 +1038,7 @@ export default function CateringOrderBuilder({
           restaurantsLoading={restaurantsLoading}
           sessionDate={session.sessionDate}
           eventTime={session.eventTime}
+          defaultBundleGuestCount={session.guestCount || 1}
           allMenuItems={allMenuItems}
           fetchAllMenuItems={fetchAllMenuItems}
           onAddItem={handleAddItem}

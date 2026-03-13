@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, RefObject } from "react";
+import { useState, useMemo, useEffect, useRef, RefObject, useCallback } from "react";
 import {
   Search,
   X,
@@ -12,14 +12,21 @@ import {
 import { MenuItem, Restaurant } from "@/types/restaurant.types";
 import { DietaryFilter } from "@/types/menuItem";
 import { CategoryWithSubcategories } from "@/types/catering.types";
+import { CateringBundleItem, CateringBundleResponse } from "@/types/api/catering.api.types";
 import { categoryService } from "@/services/api/category.api";
+import { cateringService } from "@/services/api/catering.api";
+import { useCatering } from "@/context/CateringContext";
 import MenuItemCard from "./MenuItemCard";
+import BundleCard from "./BundleCard";
+import BundleDetailModal from "./modals/BundleDetailModal";
+import { mapToMenuItem } from "./catering-order-helpers";
 
 interface RestaurantMenuBrowserProps {
   restaurants: Restaurant[];
   restaurantsLoading: boolean;
   sessionDate?: string;
   eventTime?: string;
+  defaultBundleGuestCount?: number;
   allMenuItems: MenuItem[] | null;
   fetchAllMenuItems: () => void;
   onAddItem: (item: MenuItem) => void;
@@ -39,11 +46,49 @@ interface RestaurantMenuBrowserProps {
   tutorialResetKey?: number;
 }
 
+interface MenuItemGroup {
+  type: "items";
+  name: string;
+  items: MenuItem[];
+  information: string | null;
+}
+
+interface BundleGroup {
+  type: "bundles";
+  name: string;
+  bundles: CateringBundleResponse[];
+}
+
+type RestaurantGroup = MenuItemGroup | BundleGroup;
+
+function enrichBundleItemAddons(
+  bundleItem: CateringBundleItem,
+  menuItem: MenuItem
+): MenuItem["selectedAddons"] {
+  if (!bundleItem.selectedAddons || bundleItem.selectedAddons.length === 0) {
+    return [];
+  }
+
+  return bundleItem.selectedAddons.map((bundleAddon) => {
+    const matchedAddon = menuItem.addons?.find(
+      (addon) => addon.name === bundleAddon.name
+    );
+
+    return {
+      name: bundleAddon.name,
+      price: Number(matchedAddon?.price ?? 0),
+      quantity: bundleAddon.quantity,
+      groupTitle: matchedAddon?.groupTitle ?? "Options",
+    };
+  });
+}
+
 export default function RestaurantMenuBrowser({
   restaurants,
   restaurantsLoading,
   sessionDate,
   eventTime,
+  defaultBundleGuestCount = 1,
   allMenuItems,
   fetchAllMenuItems,
   onAddItem,
@@ -62,6 +107,7 @@ export default function RestaurantMenuBrowser({
   autoOpenFirstRestaurant = false,
   tutorialResetKey = 0,
 }: RestaurantMenuBrowserProps) {
+  const { addMenuItem } = useCatering();
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<
     string | null
   >(null);
@@ -77,11 +123,20 @@ export default function RestaurantMenuBrowser({
   );
   const [activeGroupName, setActiveGroupName] = useState<string | null>(null);
   const [stickyTopOffset, setStickyTopOffset] = useState(72);
+  const [restaurantBundles, setRestaurantBundles] = useState<
+    CateringBundleResponse[]
+  >([]);
+  const [bundlesLoading, setBundlesLoading] = useState(false);
+  const [bundlesError, setBundlesError] = useState<string | null>(null);
+  const [selectedBundle, setSelectedBundle] =
+    useState<CateringBundleResponse | null>(null);
+  const [addingBundleId, setAddingBundleId] = useState<string | null>(null);
+  const [menuItemsCache, setMenuItemsCache] = useState<MenuItem[] | null>(null);
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const groupButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const isProgrammaticScroll = useRef(false);
 
-  const isRestaurantAvailableForSession = (restaurant: Restaurant) => {
+  const isRestaurantAvailableForSession = useCallback((restaurant: Restaurant) => {
     if (!sessionDate || !eventTime) return true;
 
     const cateringHours = restaurant.cateringOperatingHours;
@@ -110,11 +165,17 @@ export default function RestaurantMenuBrowser({
       const closeTotal = closeHours * 60 + closeMinutes;
       return eventMinutes >= openTotal && eventMinutes <= closeTotal;
     });
-  };
+  }, [sessionDate, eventTime]);
 
   useEffect(() => {
     fetchAllMenuItems();
   }, [fetchAllMenuItems]);
+
+  useEffect(() => {
+    if (allMenuItems) {
+      setMenuItemsCache(allMenuItems);
+    }
+  }, [allMenuItems]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -138,6 +199,9 @@ export default function RestaurantMenuBrowser({
     setRestaurantSearchQuery("");
     setSelectedCategoryId(null);
     setCollapsedGroups(new Set());
+    setRestaurantBundles([]);
+    setBundlesError(null);
+    setSelectedBundle(null);
   }, [tutorialResetKey]);
 
   const isSearchActive = searchQuery.trim().length > 0;
@@ -148,7 +212,7 @@ export default function RestaurantMenuBrowser({
       restaurants.filter(
         (r) => r.status !== "coming_soon" && isRestaurantAvailableForSession(r)
       ),
-    [restaurants, sessionDate, eventTime]
+    [restaurants, isRestaurantAvailableForSession]
   );
 
   const dietaryFilteredItems = useMemo(() => {
@@ -245,7 +309,7 @@ export default function RestaurantMenuBrowser({
     );
   }, [restaurantItems, isRestaurantSearchActive, restaurantSearchQuery]);
 
-  const groupedItems = useMemo(() => {
+  const groupedItems = useMemo<MenuItemGroup[]>(() => {
     if (filteredRestaurantItems.length === 0) return [];
 
     const restaurant = restaurants.find((r) => r.id === selectedRestaurantId);
@@ -305,12 +369,101 @@ export default function RestaurantMenuBrowser({
         const information = menuGroupSettings?.[name]?.information || null;
 
         return {
+          type: "items",
           name,
           items,
           information,
         };
       });
   }, [filteredRestaurantItems, restaurants, selectedRestaurantId]);
+
+  const filteredRestaurantBundles = useMemo(() => {
+    if (!isRestaurantSearchActive) return restaurantBundles;
+
+    const query = restaurantSearchQuery.toLowerCase();
+
+    return restaurantBundles.filter((bundle) => {
+      const matchesBundle =
+        bundle.name.toLowerCase().includes(query) ||
+        bundle.description?.toLowerCase().includes(query);
+      const matchesItems = bundle.items.some((item) =>
+        item.menuItemName.toLowerCase().includes(query)
+      );
+
+      return matchesBundle || matchesItems;
+    });
+  }, [restaurantBundles, isRestaurantSearchActive, restaurantSearchQuery]);
+
+  const restaurantGroups = useMemo<RestaurantGroup[]>(() => {
+    const groups: RestaurantGroup[] = [];
+    const shouldShowBundlesSection =
+      bundlesLoading ||
+      bundlesError !== null ||
+      filteredRestaurantBundles.length > 0;
+
+    if (shouldShowBundlesSection) {
+      groups.push({
+        type: "bundles",
+        name: "Bundles",
+        bundles: filteredRestaurantBundles,
+      });
+    }
+
+    groups.push(...groupedItems);
+
+    return groups;
+  }, [bundlesLoading, bundlesError, filteredRestaurantBundles, groupedItems]);
+
+  const firstMenuGroupName = groupedItems[0]?.name ?? null;
+
+  const ensureMenuItems = useCallback(async (): Promise<MenuItem[]> => {
+    if (menuItemsCache) return menuItemsCache;
+    if (allMenuItems) {
+      setMenuItemsCache(allMenuItems);
+      return allMenuItems;
+    }
+
+    fetchAllMenuItems();
+    const response = await cateringService.getMenuItems();
+    const items = (response || []).map(mapToMenuItem);
+    setMenuItemsCache(items);
+    return items;
+  }, [menuItemsCache, allMenuItems, fetchAllMenuItems]);
+
+  const handleAddBundle = useCallback(
+    async (bundle: CateringBundleResponse, guestQuantity: number) => {
+      setAddingBundleId(bundle.id);
+      try {
+        const items = await ensureMenuItems();
+
+        for (const bundleItem of bundle.items) {
+          const menuItem = items.find((item) => item.id === bundleItem.menuItemId);
+          if (!menuItem) continue;
+
+          const enrichedAddons = enrichBundleItemAddons(bundleItem, menuItem);
+          const scaledQuantity = bundleItem.quantity * guestQuantity;
+
+          addMenuItem(sessionIndex, {
+            item: {
+              ...menuItem,
+              selectedAddons: enrichedAddons,
+            },
+            quantity: scaledQuantity,
+            bundleId: bundle.id,
+            bundleName: bundle.name,
+          });
+        }
+
+        setSelectedBundle(null);
+      } catch (error) {
+        console.error("Failed to add bundle:", error);
+        alert("Failed to add bundle. Please try again.");
+      } finally {
+        setAddingBundleId(null);
+      }
+    },
+    [addMenuItem, ensureMenuItems, sessionIndex]
+  );
 
   const toggleGroupCollapse = (groupName: string) => {
     setCollapsedGroups((prev) => {
@@ -366,6 +519,46 @@ export default function RestaurantMenuBrowser({
   }, [availableRestaurants, selectedRestaurantId]);
 
   useEffect(() => {
+    if (!selectedRestaurantId) {
+      setRestaurantBundles([]);
+      setBundlesLoading(false);
+      setBundlesError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchRestaurantBundles = async () => {
+      try {
+        setBundlesLoading(true);
+        setBundlesError(null);
+        const bundles = await cateringService.getBundlesByRestaurant(
+          selectedRestaurantId
+        );
+        if (!cancelled) {
+          setRestaurantBundles(bundles);
+        }
+      } catch (error) {
+        console.error("Failed to fetch restaurant bundles:", error);
+        if (!cancelled) {
+          setRestaurantBundles([]);
+          setBundlesError("Failed to load bundles for this restaurant.");
+        }
+      } finally {
+        if (!cancelled) {
+          setBundlesLoading(false);
+        }
+      }
+    };
+
+    fetchRestaurantBundles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRestaurantId]);
+
+  useEffect(() => {
     const navElement = document.querySelector<HTMLElement>(
       "[data-catering-session-nav='true']"
     );
@@ -388,8 +581,8 @@ export default function RestaurantMenuBrowser({
   useEffect(() => {
     sectionRefs.current.clear();
     groupButtonRefs.current.clear();
-    setActiveGroupName(groupedItems[0]?.name || null);
-  }, [groupedItems, selectedRestaurantId]);
+    setActiveGroupName(restaurantGroups[0]?.name || null);
+  }, [restaurantGroups, selectedRestaurantId]);
 
   useEffect(() => {
     if (!activeGroupName) return;
@@ -403,15 +596,15 @@ export default function RestaurantMenuBrowser({
   }, [activeGroupName]);
 
   useEffect(() => {
-    if (!selectedRestaurantId || groupedItems.length === 0) return;
+    if (!selectedRestaurantId || restaurantGroups.length === 0) return;
 
     const updateActiveGroup = () => {
       if (isProgrammaticScroll.current) return;
 
       const activationLine = stickyTopOffset + 96;
-      let nextActiveGroup = groupedItems[0]?.name || null;
+      let nextActiveGroup = restaurantGroups[0]?.name || null;
 
-      for (const group of groupedItems) {
+      for (const group of restaurantGroups) {
         const section = sectionRefs.current.get(group.name);
         if (!section) continue;
 
@@ -436,7 +629,7 @@ export default function RestaurantMenuBrowser({
       window.removeEventListener("scroll", updateActiveGroup);
       window.removeEventListener("resize", updateActiveGroup);
     };
-  }, [groupedItems, selectedRestaurantId, stickyTopOffset]);
+  }, [restaurantGroups, selectedRestaurantId, stickyTopOffset]);
 
   const handleGroupTabClick = (groupName: string) => {
     setCollapsedGroups((prev) => {
@@ -654,7 +847,7 @@ export default function RestaurantMenuBrowser({
         <div className="mt-2">{renderDietaryFilters()}</div>
 
         <div className="mt-3">
-          {groupedItems.length === 0 ? (
+          {restaurantGroups.length === 0 ? (
             <div className="text-center py-6">
               <p className="text-gray-500 text-sm">
                 No items match the current filters.
@@ -667,7 +860,7 @@ export default function RestaurantMenuBrowser({
                 style={{ top: stickyTopOffset + 8 }}
               >
                 <div className="flex gap-2 md:gap-5">
-                  {groupedItems.map((group) => {
+                  {restaurantGroups.map((group) => {
                     const isActive = activeGroupName === group.name;
                     return (
                       <button
@@ -690,8 +883,10 @@ export default function RestaurantMenuBrowser({
                 </div>
               </div>
 
-              {groupedItems.map((group) => {
+              {restaurantGroups.map((group) => {
                 const isCollapsed = collapsedGroups.has(group.name);
+                const groupCount =
+                  group.type === "bundles" ? group.bundles.length : group.items.length;
                 return (
                   <div
                     key={group.name}
@@ -712,7 +907,7 @@ export default function RestaurantMenuBrowser({
                           {group.name}
                         </h3>
                         <span className="text-xs text-gray-400 font-normal">
-                          ({group.items.length})
+                          ({groupCount})
                         </span>
                       </div>
                       {isCollapsed ? (
@@ -722,7 +917,7 @@ export default function RestaurantMenuBrowser({
                       )}
                     </button>
 
-                    {group.information && !isCollapsed && (
+                    {group.type === "items" && group.information && !isCollapsed && (
                       <div className="flex items-start gap-1.5 px-1 pb-2">
                         <Info className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
                         <p className="text-xs text-gray-500 whitespace-pre-line">
@@ -732,34 +927,61 @@ export default function RestaurantMenuBrowser({
                     )}
 
                     {!isCollapsed && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
-                        {group.items.map((item, itemIdx) => (
-                          <div
-                            key={item.id}
-                            ref={
-                              expandedSessionIndex === sessionIndex &&
-                              itemIdx === 0 &&
-                              group === groupedItems[0]
-                                ? firstMenuItemRef
-                                : undefined
-                            }
-                          >
-                            <MenuItemCard
-                              item={item}
-                              quantity={getItemQuantity(item.id)}
-                              isExpanded={expandedItemId === item.id}
-                              onToggleExpand={() =>
-                                setExpandedItemId(
-                                  expandedItemId === item.id ? null : item.id
-                                )
-                              }
-                              onAddItem={onAddItem}
-                              onUpdateQuantity={onUpdateQuantity}
-                              onAddOrderPress={onAddOrderPress}
-                            />
+                      group.type === "bundles" ? (
+                        bundlesLoading ? (
+                          <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                            <span className="loading loading-spinner loading-sm text-primary" />
+                            Loading bundles...
                           </div>
-                        ))}
-                      </div>
+                        ) : bundlesError ? (
+                          <div className="mt-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            {bundlesError}
+                          </div>
+                        ) : group.bundles.length === 0 ? (
+                          <div className="mt-2 rounded-xl border border-dashed border-base-300 bg-base-100/60 px-4 py-5 text-sm text-gray-500">
+                            No bundles match the current filters.
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
+                            {group.bundles.map((bundle) => (
+                              <BundleCard
+                                key={bundle.id}
+                                bundle={bundle}
+                                onClick={setSelectedBundle}
+                              />
+                            ))}
+                          </div>
+                        )
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
+                          {group.items.map((item, itemIdx) => (
+                            <div
+                              key={item.id}
+                              ref={
+                                expandedSessionIndex === sessionIndex &&
+                                itemIdx === 0 &&
+                                group.name === firstMenuGroupName
+                                  ? firstMenuItemRef
+                                  : undefined
+                              }
+                            >
+                              <MenuItemCard
+                                item={item}
+                                quantity={getItemQuantity(item.id)}
+                                isExpanded={expandedItemId === item.id}
+                                onToggleExpand={() =>
+                                  setExpandedItemId(
+                                    expandedItemId === item.id ? null : item.id
+                                  )
+                                }
+                                onAddItem={onAddItem}
+                                onUpdateQuantity={onUpdateQuantity}
+                                onAddOrderPress={onAddOrderPress}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )
                     )}
                   </div>
                 );
@@ -767,6 +989,17 @@ export default function RestaurantMenuBrowser({
             </>
           )}
         </div>
+
+        {selectedBundle && (
+          <BundleDetailModal
+            bundle={selectedBundle}
+            defaultQuantity={defaultBundleGuestCount}
+            isAdding={addingBundleId === selectedBundle.id}
+            onAdd={handleAddBundle}
+            onClose={() => setSelectedBundle(null)}
+            allMenuItems={menuItemsCache || allMenuItems}
+          />
+        )}
       </div>
     );
   }
