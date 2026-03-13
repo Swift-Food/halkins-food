@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { CoworkingVenueAdmin, CreateCoworkingVenueRequest, UpdateCoworkingVenueRequest } from "@/types/api";
+import {
+  CoworkingVenueAdmin,
+  CoworkingVenueAttendanceTag,
+  CreateCoworkingVenueRequest,
+  UpdateCoworkingVenueRequest,
+} from "@/types/api";
 import { coworkingDashboardService } from "@/services/api/coworking-dashboard.api";
 import { fetchWithAuth, API_BASE_URL } from "@/lib/api-client/auth-client";
 import { API_ENDPOINTS } from "@/lib/constants";
@@ -33,9 +38,21 @@ const emptyForm: CreateCoworkingVenueRequest = {
   longitude: 0,
   image: "",
   description: "",
+  attendanceTags: [],
 };
 
 type FormMode = "list" | "create" | "edit";
+
+const ATTENDANCE_TAG_OPTIONS = [
+  {
+    value: CoworkingVenueAttendanceTag.FEMALES_ONLY,
+    label: "Females Only",
+  },
+  {
+    value: CoworkingVenueAttendanceTag.STUDENTS_ONLY,
+    label: "Students Only",
+  },
+] as const;
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -102,6 +119,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
       longitude: Number(venue.longitude),
       image: venue.image ?? "",
       description: venue.description ?? "",
+      attendanceTags: venue.attendanceTags ?? [],
     });
     setHasSelectedAddress(false);
     setAddressSearchError("");
@@ -182,13 +200,12 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
     setError("");
 
     try {
-      const { transferredCount } = await coworkingDashboardService.transferAndDeleteVenue(
+      await coworkingDashboardService.transferAndDeleteVenue(
         spaceId,
         transferModal.venueId,
         targetVenueId,
       );
 
-      const targetVenue = venues.find((v) => v.id === targetVenueId);
       setVenues((v) => v.filter((x) => x.id !== transferModal.venueId));
       setTransferModal(null);
       setTargetVenueId("");
@@ -203,9 +220,18 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  };
+
+  const handleAttendanceTagChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as CoworkingVenueAttendanceTag;
+
+    setForm((currentForm) => ({
+      ...currentForm,
+      attendanceTags: value ? [value] : [],
+    }));
   };
 
   const handlePlaceSelect = useCallback((place: google.maps.places.PlaceResult) => {
@@ -535,6 +561,24 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
                           className="textarea min-h-28 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-none focus:border-primary focus:bg-white"
                           placeholder="Rooftop space with great views and easy access for lunch setup."
                         />
+                      </div>
+                      <div>
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          Attendance tag
+                        </label>
+                        <select
+                          name="attendanceTags"
+                          value={form.attendanceTags?.[0] ?? ""}
+                          onChange={handleAttendanceTagChange}
+                          className="select h-12 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 shadow-none focus:border-primary focus:bg-white"
+                        >
+                          <option value="">Select attendance tag</option>
+                          {ATTENDANCE_TAG_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   </section>

@@ -191,6 +191,11 @@ export interface UpdateSpaceUserResponse {
  * A bookable venue within a coworking space
  * Backend: CoworkingVenueEntity
  */
+export enum CoworkingVenueAttendanceTag {
+  FEMALES_ONLY = 'females_only',
+  STUDENTS_ONLY = 'students_only',
+}
+
 export interface CoworkingVenueAdmin {
   id: string;
   name: string;
@@ -199,7 +204,7 @@ export interface CoworkingVenueAdmin {
   longitude: string;
   image?: string | null;
   description?: string | null;
-  attendanceTags?: string[] | null;
+  attendanceTags?: CoworkingVenueAttendanceTag[] | null;
   createdAt: string;
   updatedAt: string;
   coworkingSpaceId: string;
@@ -216,7 +221,7 @@ export interface CreateCoworkingVenueRequest {
   longitude: number;
   image?: string;
   description?: string;
-  attendanceTags?: string[];
+  attendanceTags?: CoworkingVenueAttendanceTag[];
 }
 
 /**
@@ -230,7 +235,7 @@ export interface UpdateCoworkingVenueRequest {
   longitude?: number;
   image?: string;
   description?: string;
-  attendanceTags?: string[];
+  attendanceTags?: CoworkingVenueAttendanceTag[];
 }
 
 /**
