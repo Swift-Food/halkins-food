@@ -27,6 +27,7 @@ import {
   useCoworking,
 } from "@/context/CoworkingContext";
 import CoworkingAuthForm from "@/lib/components/coworking/CoworkingAuthForm";
+import { isValidUKPhone } from "@/lib/utils/validation.utils";
 
 const FALLBACK_DELIVERY_ADDRESS = "1-2 Paris Gardens, London";
 const FALLBACK_DELIVERY_LAT = 51.50664530535029;
@@ -277,9 +278,7 @@ export default function Step3ContactInfo() {
     if (!phone.trim()) {
       return "Phone number is required";
     }
-    // UK phone number validation (accepts various formats)
-    const cleanPhone = phone.replace(/[\s()-]/g, "");
-    if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+    if (!isValidUKPhone(phone)) {
       return "Please enter a valid UK phone number";
     }
     return undefined;

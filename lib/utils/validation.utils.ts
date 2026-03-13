@@ -13,7 +13,7 @@ export function isValidUKPostcode(postcode: string): boolean {
 }
 
 export function isValidUKPhone(phone: string): boolean {
-  const cleanPhone = phone.replace(/\s/g, '');
+  const cleanPhone = phone.trim().replace(/[\s()-]/g, '');
   const ukPhoneRegex = /^(\+44|0)7\d{9}$/;
   return ukPhoneRegex.test(cleanPhone);
 }
