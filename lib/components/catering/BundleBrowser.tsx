@@ -33,9 +33,9 @@ function enrichBundleItemAddons(
 
     return {
       name: bundleAddon.name,
-      price: bundleAddon.price ?? matchedAddon?.price ?? 0,
+      price: Number(matchedAddon?.price ?? 0),
       quantity: bundleAddon.quantity,
-      groupTitle: bundleAddon.groupTitle ?? matchedAddon?.groupTitle ?? "Options",
+      groupTitle: matchedAddon?.groupTitle ?? "Options",
     };
   });
 }

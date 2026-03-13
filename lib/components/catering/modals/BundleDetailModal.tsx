@@ -34,7 +34,7 @@ export default function BundleDetailModal({
 }: BundleDetailModalProps) {
   const [quantity, setQuantity] = useState(Math.max(1, defaultQuantity));
   const [showDescriptions, setShowDescriptions] = useState(false);
-  const peopleServed = bundle.baseGuestCount * quantity;
+  const peopleServed = (bundle.baseGuestCount ?? 1) * quantity;
 
   const sortedItems = [...bundle.items].sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -58,7 +58,10 @@ export default function BundleDetailModal({
         ? parseFloat(mi.discountPrice.toString())
         : parseFloat(mi.price?.toString() || "0");
       const addonTotal = (item.selectedAddons || []).reduce(
-        (sum, a) => sum + (a.price || 0) * (a.quantity || 0),
+        (sum, a) => {
+          const addonPrice = mi.addons?.find((ma) => ma.name === a.name);
+          return sum + Number(addonPrice?.price ?? 0) * (a.quantity || 0);
+        },
         0
       );
       const scaledQty = item.quantity * quantity;
@@ -163,7 +166,10 @@ export default function BundleDetailModal({
                   : parseFloat(mi.price?.toString() || "0"))
               : 0;
             const addonTotal = (item.selectedAddons || []).reduce(
-              (sum, a) => sum + (a.price || 0) * (a.quantity || 0),
+              (sum, a) => {
+                const addonPrice = mi?.addons?.find((ma) => ma.name === a.name);
+                return sum + Number(addonPrice?.price ?? 0) * (a.quantity || 0);
+              },
               0
             );
             const lineTotal = unitPrice * scaledQty + addonTotal * quantity;
@@ -214,12 +220,15 @@ export default function BundleDetailModal({
                     )}
                     {item.selectedAddons && item.selectedAddons.length > 0 && (
                       <div className="mt-1 space-y-0.5">
-                        {item.selectedAddons.map((addon, i) => (
-                          <p key={i} className="text-xs text-gray-500">
-                            • {addon.groupTitle}: {addon.name}
-                            {addon.quantity > 1 && ` (×${addon.quantity})`}
-                          </p>
-                        ))}
+                        {item.selectedAddons.map((addon, i) => {
+                          const matchedAddon = mi?.addons?.find((ma) => ma.name === addon.name);
+                          return (
+                            <p key={i} className="text-xs text-gray-500">
+                              • {matchedAddon?.groupTitle ?? "Options"}: {addon.name}
+                              {addon.quantity > 1 && ` (×${addon.quantity})`}
+                            </p>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
