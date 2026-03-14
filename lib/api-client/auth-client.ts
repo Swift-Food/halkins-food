@@ -87,15 +87,11 @@ export const fetchWithAuth = async (
     const refreshToken = localStorage.getItem("refresh_token");
 
     if (!refreshToken) {
-      // No refresh token, logout
+      // No refresh token, clear stale auth state and return
       isRefreshing = false;
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("user");
-
-      if (typeof window !== "undefined") {
-        window.location.href = "/";
-      }
 
       return response;
     }
@@ -137,17 +133,13 @@ export const fetchWithAuth = async (
         _retry: true,
       } as any);
     } catch (refreshError) {
-      // Refresh failed, logout
+      // Refresh failed, clear auth state and return
       processQueue(refreshError, null);
       isRefreshing = false;
 
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("user");
-
-      if (typeof window !== "undefined") {
-        window.location.href = "/";
-      }
 
       return response;
     }
