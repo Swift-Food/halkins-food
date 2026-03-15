@@ -20,7 +20,7 @@ import { CateringOrderResponse } from "@/types/api";
 export const restaurantApi = {
   // Auth endpoints - Keep using regular fetch (no auth needed)
   login: async (credentials: SignInDto): Promise<TokenPair> => {
-    const response = await fetch(`${API_BASE_URL}/auth/login-consumer`, {
+    const response = await fetch(`${API_BASE_URL}/auth/login-restaurant`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),

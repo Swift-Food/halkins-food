@@ -2,13 +2,6 @@
 import { useState, useEffect } from "react";
 import { restaurantApi } from "@/services/api/restaurant.api";
 
-const UserRole = {
-  RESTAURANT: "restaurant_owner",
-  CUSTOMER: "customer",
-  DRIVER: "driver",
-  ADMIN: "admin",
-} as const;
-
 export const useAuth = () => {
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -28,7 +21,6 @@ export const useAuth = () => {
     const credentials = {
       email,
       password,
-      role: UserRole.RESTAURANT,
     };
     const tokens = await restaurantApi.login(credentials);
     localStorage.setItem("access_token", tokens.access_token);

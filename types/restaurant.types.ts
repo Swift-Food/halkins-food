@@ -120,7 +120,6 @@ export interface TokenPair {
 export interface SignInDto {
   email: string;
   password: string;
-  role: string;
 }
 
 export interface StripeOnboardingStatus {
