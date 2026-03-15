@@ -33,7 +33,7 @@ export default function BundleCard({ bundle, onClick }: BundleCardProps) {
           <h3 className="font-bold text-gray-900 text-sm sm:text-base">{bundle.name}</h3>
           <div className="flex-shrink-0 text-right">
             <p className="text-sm sm:text-base font-bold text-primary">
-              £{Number(bundle.pricePerPerson).toFixed(2)}
+              £{Number(bundle.pricePerPerson || 0).toFixed(2)}
             </p>
             <p className="text-xs text-gray-500">per person</p>
           </div>
@@ -47,7 +47,7 @@ export default function BundleCard({ bundle, onClick }: BundleCardProps) {
           <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
             {bundle.items.length} items
           </span>
-          <span>Serves {bundle.baseGuestCount}+</span>
+          <span>Serves {bundle.baseGuestCount || 0}+</span>
         </div>
       </div>
     </button>
