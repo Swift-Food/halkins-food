@@ -112,6 +112,9 @@ export function isCoworkingBookingWindowValid(values: EventWindowValues) {
 export const COWORKING_INPUT_BASE_CLASS =
   "w-full rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3.5 text-base text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 sm:text-sm";
 
+const COWORKING_SECTION_HEADER_CLASS =
+  "inline-flex rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-white";
+
 export default function CoworkingBookingDetailsForm({
   name,
   email,
@@ -141,12 +144,8 @@ export default function CoworkingBookingDetailsForm({
           <div className="space-y-8 lg:grid lg:gap-0 lg:space-y-0 lg:grid-cols-[1fr_1.15fr]">
             <div className="relative sm:px-8 sm:pb-8 sm:pt-5">
               <div className="absolute bottom-8 right-0 top-8 hidden w-px bg-slate-200/80 lg:block" />
-              <div className="mb-5 sm:mb-6 flex items-center gap-3">
-                <span className="h-px flex-1 bg-primary/20" />
-                <p className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/75">
-                  Your Details
-                </p>
-                <span className="h-px flex-1 bg-primary/20" />
+              <div className="mb-5 sm:mb-6">
+                <p className={COWORKING_SECTION_HEADER_CLASS}>Your Details</p>
               </div>
 
               <div className="space-y-4">
@@ -199,12 +198,8 @@ export default function CoworkingBookingDetailsForm({
             </div>
 
             <div className="sm:px-8 sm:pb-8 sm:pt-5">
-              <div className="mb-5 sm:mb-6 flex items-center gap-3">
-                <span className="h-px flex-1 bg-primary/20" />
-                <p className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/75">
-                  Event Details
-                </p>
-                <span className="h-px flex-1 bg-primary/20" />
+              <div className="mb-5 sm:mb-6">
+                <p className={COWORKING_SECTION_HEADER_CLASS}>Event Details</p>
               </div>
 
               <div
@@ -260,13 +255,7 @@ export default function CoworkingBookingDetailsForm({
           className="sm:rounded-[2rem] sm:border sm:border-white/70 sm:bg-white/75 sm:p-8 sm:backdrop-blur"
         >
           <div className="mb-5">
-            <div className="flex items-center gap-3">
-              <span className="h-px flex-1 bg-primary/20" />
-              <p className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/75">
-                Choose a Venue
-              </p>
-              <span className="h-px flex-1 bg-primary/20" />
-            </div>
+            <p className={COWORKING_SECTION_HEADER_CLASS}>Choose a Venue</p>
             <h3 className="mt-2 text-xl font-semibold text-slate-900">
               Pick the space that fits your event
             </h3>
