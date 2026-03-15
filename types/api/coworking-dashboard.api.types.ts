@@ -194,6 +194,14 @@ export interface DashboardStatsSummary {
   uniqueMembers: number;
 }
 
+export interface DashboardHeadlineMetrics {
+  upcomingEventsNext7Days: number;
+  eventsTomorrow: number;
+  confirmedRevenueLastMonth: number;
+  confirmedRevenueThisMonth: number;
+  averageBookingValuePast30Days: number;
+}
+
 /**
  * Popular item statistics
  */
@@ -226,6 +234,7 @@ export interface OrdersByHourStat {
  */
 export interface DashboardStatsResponse {
   summary: DashboardStatsSummary;
+  headlineMetrics: DashboardHeadlineMetrics;
   popularItems: PopularItemStat[];
   ordersByDay: OrdersByDayStat[];
   ordersByHour: OrdersByHourStat[];

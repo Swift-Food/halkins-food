@@ -18,7 +18,16 @@ import VenuesModal from "./VenuesModal";
 import PaymentsTab from "./PaymentsTab";
 import CalendarTab from "./CalendarTab";
 import PromoCodesTab from "./PromoCodesTab";
-import { LogOut, Building2, MapPin, ShoppingBag, CreditCard, AlertTriangle, CalendarDays, Tag } from "lucide-react";
+import {
+  LogOut,
+  Building2,
+  MapPin,
+  ShoppingBag,
+  CreditCard,
+  AlertTriangle,
+  CalendarDays,
+  Tag,
+} from "lucide-react";
 import StripeReturnPage from "./StripeReturnPage";
 
 const readexPro = Readex_Pro({
@@ -36,7 +45,9 @@ type DashboardTab = "orders" | "calendar" | "payment" | "promos";
 function isStripeReturnTab() {
   if (typeof window === "undefined") return false;
   const params = new URLSearchParams(window.location.search);
-  return params.get("stripe") === "complete" || params.get("stripe") === "refresh";
+  return (
+    params.get("stripe") === "complete" || params.get("stripe") === "refresh"
+  );
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -56,7 +67,9 @@ export default function CoworkingDashboard({
     );
   }
 
-  return <CoworkingDashboardInner spaceSlug={spaceSlug} activeTab={activeTab} />;
+  return (
+    <CoworkingDashboardInner spaceSlug={spaceSlug} activeTab={activeTab} />
+  );
 }
 
 function CoworkingDashboardInner({
@@ -69,7 +82,8 @@ function CoworkingDashboardInner({
   const [me, setMe] = useState<DashboardMeResponse | null>(null);
   const [stats, setStats] = useState<DashboardStatsResponse | null>(null);
   const [orders, setOrders] = useState<DashboardOrderSummary[]>([]);
-  const [activeStatus, setActiveStatus] = useState<DashboardOrderStatusFilter>("all");
+  const [activeStatus, setActiveStatus] =
+    useState<DashboardOrderStatusFilter>("all");
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [showVenues, setShowVenues] = useState(false);
@@ -80,31 +94,31 @@ function CoworkingDashboardInner({
     label: string;
     icon: typeof ShoppingBag;
   }> = [
-    {
-      id: "orders",
-      href: `/coworking-dashboard/${spaceSlug}/orders`,
-      label: "Orders",
-      icon: ShoppingBag,
-    },
-    {
-      id: "calendar",
-      href: `/coworking-dashboard/${spaceSlug}/calendar`,
-      label: "Calendar",
-      icon: CalendarDays,
-    },
-    {
-      id: "payment",
-      href: `/coworking-dashboard/${spaceSlug}/payment`,
-      label: "Payment",
-      icon: CreditCard,
-    },
-    {
-      id: "promos",
-      href: `/coworking-dashboard/${spaceSlug}/promos`,
-      label: "Promo Codes",
-      icon: Tag,
-    },
-  ];
+      {
+        id: "orders",
+        href: `/coworking-dashboard/${spaceSlug}/orders`,
+        label: "Orders",
+        icon: ShoppingBag,
+      },
+      {
+        id: "calendar",
+        href: `/coworking-dashboard/${spaceSlug}/calendar`,
+        label: "Calendar",
+        icon: CalendarDays,
+      },
+      {
+        id: "payment",
+        href: `/coworking-dashboard/${spaceSlug}/payment`,
+        label: "Payment",
+        icon: CreditCard,
+      },
+      {
+        id: "promos",
+        href: `/coworking-dashboard/${spaceSlug}/promos`,
+        label: "Promo Codes",
+        icon: Tag,
+      },
+    ];
 
   // The resolved space ID from the getMe response
   const spaceId = me?.space.id ?? null;
@@ -168,7 +182,11 @@ function CoworkingDashboardInner({
       });
       const filtered =
         activeStatus === "needs_review"
-          ? data.orders.filter((o) => o.adminReviewStatus === "pending" && o.status == "pending_review")
+          ? data.orders.filter(
+            (o) =>
+              o.adminReviewStatus === "pending" &&
+              o.status == "pending_review",
+          )
           : data.orders;
       setOrders(filtered);
     } catch (err: unknown) {
@@ -184,11 +202,13 @@ function CoworkingDashboardInner({
       await coworkingDashboardService.approveOrder(spaceId, orderId);
       await fetchOrders();
     },
-    [spaceId, fetchOrders]
+    [spaceId, fetchOrders],
   );
 
   // Count of pending-review orders across all loaded orders (or from a separate fetch)
-  const pendingCount = orders.filter((o) => o.adminReviewStatus === "pending" && o.status == "pending_review").length;
+  const pendingCount = orders.filter(
+    (o) => o.adminReviewStatus === "pending" && o.status == "pending_review",
+  ).length;
 
   useEffect(() => {
     if (spaceId) {
@@ -286,11 +306,10 @@ function CoworkingDashboardInner({
                   key={tab.id}
                   href={tab.href}
                   aria-current={activeTab === tab.id ? "page" : undefined}
-                  className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === tab.id
-                      ? "border-primary text-primary"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
+                  className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
                 >
                   <Icon className="h-4 w-4" />
                   {tab.label}
@@ -315,7 +334,8 @@ function CoworkingDashboardInner({
               <span className="flex items-center gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
                 <span className="text-sm font-semibold text-amber-800">
-                  {pendingCount} order{pendingCount !== 1 ? "s" : ""} need{pendingCount === 1 ? "s" : ""} your approval
+                  {pendingCount} order{pendingCount !== 1 ? "s" : ""} need
+                  {pendingCount === 1 ? "s" : ""} your approval
                 </span>
               </span>
               <span className="text-xs font-semibold text-amber-700 underline underline-offset-2">
@@ -347,19 +367,13 @@ function CoworkingDashboardInner({
       )}
 
       {/* Calendar Tab */}
-      {activeTab === "calendar" && spaceId && (
-        <CalendarTab spaceId={spaceId} />
-      )}
+      {activeTab === "calendar" && spaceId && <CalendarTab spaceId={spaceId} />}
 
       {/* Payments Tab */}
-      {activeTab === "payment" && spaceId && (
-        <PaymentsTab spaceId={spaceId} />
-      )}
+      {activeTab === "payment" && spaceId && <PaymentsTab spaceId={spaceId} />}
 
       {/* Promo Codes Tab */}
-      {activeTab === "promos" && spaceId && (
-        <PromoCodesTab spaceId={spaceId} />
-      )}
+      {activeTab === "promos" && spaceId && <PromoCodesTab spaceId={spaceId} />}
 
       {/* Venues Modal */}
       {showVenues && spaceId && (
