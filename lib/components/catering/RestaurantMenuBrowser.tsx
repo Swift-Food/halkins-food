@@ -99,6 +99,58 @@ function formatAdvanceNoticeTime(value: string): string {
   return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
 }
 
+function getRestaurantAdvanceNoticeDeadline(
+  restaurant: Restaurant,
+  sessionDate?: string,
+  eventTime?: string
+): Date | null {
+  if (!sessionDate || !eventTime) {
+    return null;
+  }
+
+  const advanceNotice = restaurant.advanceNoticeSettings;
+
+  if (
+    advanceNotice?.type === "hours" &&
+    typeof advanceNotice.hours === "number" &&
+    advanceNotice.hours > 0
+  ) {
+    const eventDateTime = new Date(`${sessionDate}T${eventTime}:00`);
+    return new Date(eventDateTime.getTime() - advanceNotice.hours * 60 * 60 * 1000);
+  }
+
+  if (
+    advanceNotice?.type === "days_before_time" &&
+    typeof advanceNotice.days === "number" &&
+    advanceNotice.days >= 0
+  ) {
+    const cutoffDate = new Date(`${sessionDate}T00:00:00`);
+    const cutoffTime = advanceNotice.cutoffTime || eventTime;
+    const [cutoffHours, cutoffMinutes] = cutoffTime.split(":").map(Number);
+
+    if (Number.isNaN(cutoffHours) || Number.isNaN(cutoffMinutes)) {
+      return null;
+    }
+
+    cutoffDate.setDate(cutoffDate.getDate() - advanceNotice.days);
+    cutoffDate.setHours(cutoffHours, cutoffMinutes, 0, 0);
+
+    return cutoffDate;
+  }
+
+  if (
+    typeof restaurant.minimumDeliveryNoticeHours === "number" &&
+    restaurant.minimumDeliveryNoticeHours > 0
+  ) {
+    const eventDateTime = new Date(`${sessionDate}T${eventTime}:00`);
+    return new Date(
+      eventDateTime.getTime() - restaurant.minimumDeliveryNoticeHours * 60 * 60 * 1000
+    );
+  }
+
+  return null;
+}
+
 function getRestaurantAdvanceNoticeText(restaurant: Restaurant): string | null {
   const advanceNotice = restaurant.advanceNoticeSettings;
 
@@ -722,6 +774,13 @@ export default function RestaurantMenuBrowser({
     onClick?: () => void
   ) => {
     const advanceNoticeText = getRestaurantAdvanceNoticeText(restaurant);
+    const advanceNoticeDeadline = getRestaurantAdvanceNoticeDeadline(
+      restaurant,
+      sessionDate,
+      eventTime
+    );
+    const isWithinNoticeWindow =
+      !!advanceNoticeDeadline && new Date() > advanceNoticeDeadline;
 
     const cardContent = (
       <>
@@ -753,8 +812,16 @@ export default function RestaurantMenuBrowser({
             </div>
           ) : null}
           {advanceNoticeText ? (
-            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] leading-4 text-gray-500">
-              <Clock3 className="h-3.5 w-3.5 flex-shrink-0 text-gray-400" />
+            <div
+              className={`mt-1.5 flex items-center gap-1.5 text-[11px] leading-4 ${
+                isWithinNoticeWindow ? "text-primary" : "text-gray-500"
+              }`}
+            >
+              <Clock3
+                className={`h-3.5 w-3.5 flex-shrink-0 ${
+                  isWithinNoticeWindow ? "text-primary" : "text-gray-400"
+                }`}
+              />
               <span className="line-clamp-1">{advanceNoticeText}</span>
             </div>
           ) : null}
@@ -857,6 +924,16 @@ export default function RestaurantMenuBrowser({
   );
 
   if (selectedRestaurantId && selectedRestaurant) {
+    const selectedRestaurantAdvanceNoticeText =
+      getRestaurantAdvanceNoticeText(selectedRestaurant);
+    const selectedRestaurantNoticeDeadline = getRestaurantAdvanceNoticeDeadline(
+      selectedRestaurant,
+      sessionDate,
+      eventTime
+    );
+    const isSelectedRestaurantWithinNoticeWindow =
+      !!selectedRestaurantNoticeDeadline && new Date() > selectedRestaurantNoticeDeadline;
+
     return (
       <div style={{ contain: "inline-size" }}>
         <button
@@ -892,10 +969,22 @@ export default function RestaurantMenuBrowser({
                   Min order: {selectedRestaurant.minCateringOrderQuantity} items
                 </span>
               ) : null}
-              {getRestaurantAdvanceNoticeText(selectedRestaurant) ? (
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
-                  <Clock3 className="h-3.5 w-3.5 text-gray-400" />
-                  {getRestaurantAdvanceNoticeText(selectedRestaurant)}
+              {selectedRestaurantAdvanceNoticeText ? (
+                <span
+                  className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${
+                    isSelectedRestaurantWithinNoticeWindow
+                      ? "text-primary"
+                      : "text-gray-500"
+                  }`}
+                >
+                  <Clock3
+                    className={`h-3.5 w-3.5 ${
+                      isSelectedRestaurantWithinNoticeWindow
+                        ? "text-primary"
+                        : "text-gray-400"
+                    }`}
+                  />
+                  {selectedRestaurantAdvanceNoticeText}
                 </span>
               ) : null}
             </div>
