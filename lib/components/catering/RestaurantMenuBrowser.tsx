@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  Clock3,
   Info,
   Package,
 } from "lucide-react";
@@ -83,6 +84,61 @@ function enrichBundleItemAddons(
       groupTitle: matchedAddon?.groupTitle ?? "Options",
     };
   });
+}
+
+function formatAdvanceNoticeTime(value: string): string {
+  const [hours, minutes] = value.split(":").map(Number);
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return value;
+  }
+
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
+
+  return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
+}
+
+function getRestaurantAdvanceNoticeText(restaurant: Restaurant): string | null {
+  const advanceNotice = restaurant.advanceNoticeSettings;
+
+  if (
+    advanceNotice?.type === "hours" &&
+    typeof advanceNotice.hours === "number" &&
+    advanceNotice.hours > 0
+  ) {
+    return `${advanceNotice.hours}h notice`;
+  }
+
+  if (
+    advanceNotice?.type === "days_before_time" &&
+    typeof advanceNotice.days === "number"
+  ) {
+    if (advanceNotice.cutoffTime) {
+      if (advanceNotice.days === 0) {
+        return `Order by ${formatAdvanceNoticeTime(advanceNotice.cutoffTime)}`;
+      }
+
+      const label = advanceNotice.days === 1 ? "day" : "days";
+      return `${advanceNotice.days} ${label} notice by ${formatAdvanceNoticeTime(
+        advanceNotice.cutoffTime
+      )}`;
+    }
+
+    if (advanceNotice.days > 0) {
+      const label = advanceNotice.days === 1 ? "day" : "days";
+      return `${advanceNotice.days} ${label} notice`;
+    }
+  }
+
+  if (
+    typeof restaurant.minimumDeliveryNoticeHours === "number" &&
+    restaurant.minimumDeliveryNoticeHours > 0
+  ) {
+    return `${restaurant.minimumDeliveryNoticeHours}h notice`;
+  }
+
+  return null;
 }
 
 export default function RestaurantMenuBrowser({
@@ -665,6 +721,8 @@ export default function RestaurantMenuBrowser({
     restaurant: Restaurant,
     onClick?: () => void
   ) => {
+    const advanceNoticeText = getRestaurantAdvanceNoticeText(restaurant);
+
     const cardContent = (
       <>
         {restaurant.images && restaurant.images.length > 0 ? (
@@ -682,23 +740,31 @@ export default function RestaurantMenuBrowser({
             </span>
           </div>
         )}
-        <div className="p-2">
-          <p className="text-sm font-semibold text-gray-900 line-clamp-1">
+        <div className="p-3">
+          <p className="line-clamp-2 text-sm font-semibold leading-tight text-gray-900">
             {restaurant.restaurant_name}
           </p>
           {restaurant.minCateringOrderQuantity &&
-            restaurant.minCateringOrderQuantity > 0 && (
-              <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium">
+          restaurant.minCateringOrderQuantity > 0 ? (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">
                 Min {restaurant.minCateringOrderQuantity} items
               </span>
-            )}
+            </div>
+          ) : null}
+          {advanceNoticeText ? (
+            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] leading-4 text-gray-500">
+              <Clock3 className="h-3.5 w-3.5 flex-shrink-0 text-gray-400" />
+              <span className="line-clamp-1">{advanceNoticeText}</span>
+            </div>
+          ) : null}
         </div>
       </>
     );
 
     if (!onClick) {
       return (
-        <div className="w-full bg-white rounded-xl border border-base-300 overflow-hidden">
+        <div className="w-full overflow-hidden rounded-xl border border-base-300 bg-white shadow-sm">
           {cardContent}
         </div>
       );
@@ -707,7 +773,7 @@ export default function RestaurantMenuBrowser({
     return (
       <button
         onClick={onClick}
-        className="block w-full bg-white rounded-xl border border-base-300 overflow-hidden text-left hover:shadow-md transition-shadow"
+        className="block w-full overflow-hidden rounded-xl border border-base-300 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
       >
         {cardContent}
       </button>
@@ -819,12 +885,20 @@ export default function RestaurantMenuBrowser({
             <h2 className="text-lg font-bold text-gray-900">
               {selectedRestaurant.restaurant_name}
             </h2>
-            {selectedRestaurant.minCateringOrderQuantity &&
-              selectedRestaurant.minCateringOrderQuantity > 0 && (
-                <p className="text-xs text-gray-500">
+            <div className="mt-1 flex flex-wrap gap-2">
+              {selectedRestaurant.minCateringOrderQuantity &&
+              selectedRestaurant.minCateringOrderQuantity > 0 ? (
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
                   Min order: {selectedRestaurant.minCateringOrderQuantity} items
-                </p>
-              )}
+                </span>
+              ) : null}
+              {getRestaurantAdvanceNoticeText(selectedRestaurant) ? (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
+                  <Clock3 className="h-3.5 w-3.5 text-gray-400" />
+                  {getRestaurantAdvanceNoticeText(selectedRestaurant)}
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
 
