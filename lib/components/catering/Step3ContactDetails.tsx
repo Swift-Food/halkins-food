@@ -579,6 +579,11 @@ export default function Step3ContactInfo() {
       
       const { spaceSlug, orderData } = buildCoworkingOrderData();
       const createOrderResponse = await coworkingService.createOrder(spaceSlug, orderData);
+      console.log("COWORKING_CREATE_ORDER_RESPONSE", {
+        spaceSlug,
+        accessToken: createOrderResponse?.accessToken,
+        createOrderResponse,
+      });
 
       markOrderAsSubmitted();
       setSuccess(true);

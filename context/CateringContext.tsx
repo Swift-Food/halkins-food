@@ -351,6 +351,8 @@ export function CateringProvider({ children }: { children: ReactNode }) {
       if (orderSubmitted === "true") {
         // Clear all storage
         Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+        setMealSessionsState([createDefaultSession()]);
+        setActiveSessionIndexState(0);
         setIsHydrated(true);
         return;
       }
@@ -652,7 +654,7 @@ export function CateringProvider({ children }: { children: ReactNode }) {
     setCurrentStepState(1);
     setHighestVisitedStepState(1);
     setEventDetailsState(null);
-    setMealSessionsState([]);
+    setMealSessionsState([createDefaultSession()]);
     setActiveSessionIndexState(0);
     setContactInfoState(null);
     setBookingQuestionnaireState(null);
