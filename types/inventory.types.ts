@@ -30,7 +30,7 @@ export type SessionResetPeriod = 'daily' | 'lunch_dinner' | null;
  */
 export interface RestaurantInventorySettings {
   // Restaurant type flags
-  isCatering: boolean;
+  showOnSite: boolean;
   isCorporate: boolean;
 
   // Catering settings
