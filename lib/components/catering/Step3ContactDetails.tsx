@@ -796,11 +796,19 @@ export default function Step3ContactInfo() {
     if (generatingPdf) return;
     setGeneratingPdf(true);
     try {
+      const hasDeliveryQuote = Boolean(selectedVenue?.id);
+      const pricingSessions = (pricing as any)?.mealSessions as
+        | Array<{ deliveryFee?: number }>
+        | undefined;
+
       // Convert mealSessions to LocalMealSession format
-      const sessionsForPreview: LocalMealSession[] = mealSessions.map((session) => ({
+      const sessionsForPreview: LocalMealSession[] = mealSessions.map((session, index) => ({
         sessionName: session.sessionName,
         sessionDate: session.sessionDate,
         eventTime: session.eventTime,
+        deliveryFee: hasDeliveryQuote
+          ? pricingSessions?.[index]?.deliveryFee
+          : undefined,
         orderItems: session.orderItems.map((orderItem) => ({
           item: {
             id: orderItem.item.id,
@@ -827,7 +835,7 @@ export default function Step3ContactInfo() {
       const pdfData = await transformLocalSessionsToPdfData(
         sessionsForPreview,
         withPrices,
-        pricing?.deliveryFee
+        hasDeliveryQuote ? pricing?.deliveryFee : undefined
       );
       // Generate and download PDF
       const blob = await pdf(

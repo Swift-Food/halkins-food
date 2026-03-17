@@ -575,6 +575,7 @@ export interface LocalMealSession {
   sessionName: string;
   sessionDate: string;
   eventTime: string;
+  deliveryFee?: number;
   orderItems: Array<{
     item: {
       id: string;
@@ -1232,16 +1233,24 @@ export async function transformLocalSessionsToPdfData(
       time: session.eventTime || "",
       categories,
       subtotal: sessionTotal,
+      deliveryFee: session.deliveryFee,
     });
   }
 
+  const derivedDeliveryFee = sessions.reduce(
+    (sum, session) => sum + (session.deliveryFee || 0),
+    0
+  );
+  const resolvedDeliveryFee =
+    deliveryFee !== undefined ? deliveryFee : derivedDeliveryFee || undefined;
+
   // Calculate total including delivery fee
-  const totalWithDelivery = grandTotal + (deliveryFee || 0);
+  const totalWithDelivery = grandTotal + (resolvedDeliveryFee || 0);
 
   return {
     sessions,
     showPrices,
-    deliveryCharge: deliveryFee,
+    deliveryCharge: resolvedDeliveryFee,
     totalPrice: totalWithDelivery,
     logoUrl: "/Logo_Circle.png",
   };
