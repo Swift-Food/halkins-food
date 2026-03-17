@@ -904,7 +904,7 @@ export default function Step3ContactInfo() {
             </h2>
             <p className="text-base-content/70 text-lg">
               We&apos;ll get back to you within 24 hours via your preferred contact
-              method. You will receive a payment link once the order is confirmed by the restaurants. Trusted by 90+ London university societies.
+              method. You will receive a quote for the event hire fee, followed by a payment link once the order is confirmed.
             </p>
           </div>
 

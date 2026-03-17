@@ -160,6 +160,31 @@ class CoworkingDashboardService {
   }
 
   /**
+   * Set the venue hire fee for an order and send a quote email to the customer
+   */
+  async setVenueHireFee(
+    spaceId: string,
+    orderId: string,
+    venueHireFee: number
+  ): Promise<DashboardOrderDetailResponse> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_SET_VENUE_HIRE_FEE(spaceId, orderId)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ venueHireFee }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to set venue hire fee');
+    }
+
+    return response.json();
+  }
+
+  /**
    * Reject a pending order
    */
   async rejectOrder(

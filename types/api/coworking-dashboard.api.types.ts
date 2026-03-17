@@ -150,7 +150,7 @@ export interface DashboardOrderMember {
 export interface DashboardOrderTotal {
   subtotal: number;
   deliveryFee: number;
-  venueHireFee: number;
+  venueHireFee: number | null;
   total: number;
 }
 
