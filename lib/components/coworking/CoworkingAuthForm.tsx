@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useCoworking } from "@/context/CoworkingContext";
+import { useCatering } from "@/context/CateringContext";
 import { coworkingService } from "@/services/api/coworking.api";
 import { CoworkingVenue } from "@/types/api";
 import CoworkingBookingDetailsForm from "./CoworkingBookingDetailsForm";
@@ -17,6 +18,7 @@ export default function CoworkingAuthForm({
   submitLabel,
   onSuccess,
 }: CoworkingAuthFormProps) {
+  const { contactInfo, setContactInfo } = useCatering();
   const {
     isAuthenticated,
     member,
@@ -187,6 +189,19 @@ export default function CoworkingAuthForm({
 
       setVenueSelection(selectedVenue, startDate, startTime, endDate, endTime);
       setSession({ member: sessionMember });
+      setContactInfo({
+        organization: contactInfo?.organization || sessionMember.name || "",
+        fullName: contactInfo?.fullName || "",
+        email: contactInfo?.email || sessionMember.email || "",
+        phone: contactInfo?.phone || "",
+        addressLine1: contactInfo?.addressLine1 || "",
+        addressLine2: contactInfo?.addressLine2 || "",
+        city: contactInfo?.city || "",
+        zipcode: contactInfo?.zipcode || "",
+        billingAddress: contactInfo?.billingAddress,
+        ccEmails: contactInfo?.ccEmails || [],
+        specialInstructions: contactInfo?.specialInstructions || "",
+      });
       onSuccess?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start session.");

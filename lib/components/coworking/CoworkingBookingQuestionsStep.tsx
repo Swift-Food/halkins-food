@@ -279,16 +279,18 @@ export default function CoworkingBookingQuestionsStep() {
     setBookingQuestionnaire,
     setCurrentStep,
   } = useCatering();
-  const { selectedVenue } = useCoworking();
+  const { member, selectedVenue } = useCoworking();
   const [errors, setErrors] = useState<ValidationErrors>({});
   const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const currentContactInfo = useMemo(
     () => ({
       ...emptyContactInfo,
+      organization: member?.name || "",
+      email: member?.email || "",
       ...contactInfo,
     }),
-    [contactInfo]
+    [contactInfo, member?.email, member?.name]
   );
 
   const currentQuestionnaire = useMemo(

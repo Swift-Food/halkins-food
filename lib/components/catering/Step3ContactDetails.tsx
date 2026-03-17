@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, FormEvent, useEffect, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCatering } from "@/context/CateringContext";
 import { cateringService } from "@/services/api/catering.api";
 import { SessionExpiredError } from "@/services/api/coworking.api";
@@ -99,6 +99,7 @@ function formatEventTime(time: string) {
 }
 
 export default function Step3ContactInfo() {
+  const params = useParams<{ spaceSlug?: string }>();
   const router = useRouter();
   const topSectionRef = useRef<HTMLDivElement | null>(null);
   const orderDetailsRef = useRef<HTMLDivElement | null>(null);
@@ -125,6 +126,9 @@ export default function Step3ContactInfo() {
     eventEndTime,
     spaceSlug: coworkingSpaceSlug,
   } = useCoworking();
+  const resolvedSpaceSlug =
+    coworkingSpaceSlug ||
+    (typeof params?.spaceSlug === "string" ? params.spaceSlug : "");
 
   const deliveryAddress = selectedVenue?.name ?? FALLBACK_DELIVERY_ADDRESS;
   const deliveryLat = selectedVenue?.latitude ?? FALLBACK_DELIVERY_LAT;
@@ -471,7 +475,12 @@ export default function Step3ContactInfo() {
   };
 
   const buildCoworkingOrderData = (): { spaceSlug: string; orderData: CreateCoworkingOrderRequest } => {
-    const slug = coworkingSpaceSlug || 'halkin';
+    const slug = resolvedSpaceSlug;
+
+    if (!slug) {
+      throw new Error("Unable to determine coworking space for this order.");
+    }
+
     const firstSession = mealSessions[0];
     const sessionDate = firstSession?.sessionDate || '';
     const sessionTime = firstSession?.eventTime || eventDetails?.eventTime || '';
@@ -572,14 +581,13 @@ export default function Step3ContactInfo() {
       const createOrderResponse = await coworkingService.createOrder(spaceSlug, orderData);
 
       markOrderAsSubmitted();
+      setSuccess(true);
       clearCoworkingSessionStorage();
-
 
       const accessToken = createOrderResponse?.accessToken;
       if (accessToken) {
         router.push(`/coworking/${spaceSlug}/view/${accessToken}`);
-      } else {
-        setSuccess(true);
+        return;
       }
     } catch (error: unknown) {
       console.error("=== SUBMIT ORDER ERROR ===");
@@ -657,7 +665,11 @@ export default function Step3ContactInfo() {
   const calculatePricing = async () => {
     setCalculatingPricing(true);
     try {
-      const slug = coworkingSpaceSlug || 'halkin';
+      const slug = resolvedSpaceSlug;
+      if (!slug) {
+        setPricing(null);
+        return;
+      }
       console.log("calculating")
       const pricingResult = await coworkingService.calculateCartPricing(
         slug,
@@ -854,14 +866,6 @@ export default function Step3ContactInfo() {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen">
-        <CoworkingAuthForm spaceSlug={coworkingSpaceSlug || "halkin"} />
-      </div>
-    );
-  }
-
   if (success) {
     return (
       <div className="min-h-screen bg-base-100 py-8 px-4">
@@ -928,145 +932,37 @@ export default function Step3ContactInfo() {
             <h4 className="font-bold mb-4 text-base-content">Your List</h4>
 
             {promoCodes.length > 0 && (
-              <div className="mb-4 p-3 bg-success/10 border border-success/30 rounded-xl">
-                <p className="text-sm text-success font-medium">
-                  ✓ Promo codes applied: {promoCodes.join(", ")}
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-3 mb-6">
-              {selectedItems.map(({ item, quantity }, index) => {
-                const price = parseFloat(item.price?.toString() || "0");
-                const discountPrice = parseFloat(
-                  item.discountPrice?.toString() || "0"
-                );
-                const itemPrice =
-                  item.isDiscount && discountPrice > 0 ? discountPrice : price;
-
-                // USE ITEM'S OWN VALUES:
-                const BACKEND_QUANTITY_UNIT = item.cateringQuantityUnit || 7;
-                const displayFeeds = quantity / BACKEND_QUANTITY_UNIT;
-
-                // Addon total = sum of (addonPrice × addonQuantity) - no scaling multipliers
-                const addonTotal = (item.selectedAddons || []).reduce(
-                  (sum, { price, quantity }) => {
-                    return sum + (price || 0) * (quantity || 0);
-                  },
-                  0
-                );
-
-                const subtotal = itemPrice * quantity + addonTotal;
-
-                return (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 p-3 bg-base-100 rounded-xl"
-                  >
-                    {item.image && (
-                      <img
-                        src={item.image}
-                        alt={item.menuItemName}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-base-content truncate">
-                        {item.menuItemName}
-                      </p>
-                      {item.selectedAddons &&
-                        item.selectedAddons.length > 0 && (
-                          <p className="text-xs text-base-content/50 mb-1">
-                            {item.selectedAddons.map((addon, idx) => (
-                              <span key={idx}>
-                                + {addon.name}
-                                {addon.quantity > 1 && ` (×${addon.quantity})`}
-                                {idx < item.selectedAddons!.length - 1
-                                  ? ", "
-                                  : ""}
-                              </span>
-                            ))}
-                          </p>
-                        )}
-                      <p className="text-sm text-base-content/60">
-                        {displayFeeds} portions
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-primary">
-                        £{subtotal.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {pricing && (
-              <div className="space-y-2 pt-4 border-t border-base-300">
-                {/* Subtotal */}
-                <div className="flex justify-between text-sm text-base-content/70">
-                  <span>Subtotal</span>
-                  <span>£{pricing.subtotal.toFixed(2)}</span>
-                </div>
-
-                {/* Restaurant Promotion Discount - FROM BACKEND */}
-                {(pricing.restaurantPromotionDiscount ?? 0) > 0 && (
-                  <div className="flex justify-between text-sm text-green-600 font-semibold">
-                    <span>Restaurant Promotion</span>
-                    <span>
-                      -£{pricing.restaurantPromotionDiscount!.toFixed(2)}
+              <div className="mb-4">
+                <p className="text-xs text-base-content/60 mb-2">Promo Codes Applied</p>
+                <div className="flex flex-wrap gap-2">
+                  {promoCodes.map((code) => (
+                    <span
+                      key={code}
+                      className="px-3 py-1 bg-success/10 text-success rounded-full text-sm font-medium"
+                    >
+                      {code}
                     </span>
-                  </div>
-                )}
-
-                {/* Delivery fee */}
-                <div className="flex justify-between text-sm text-base-content/70">
-                  <span>Delivery Cost</span>
-                  <span>£{pricing.deliveryFee}</span>
-                </div>
-
-                {/* Promo code discount */}
-                {(pricing.promoDiscount ?? 0) > 2 && (
-                  <div className="flex justify-between text-sm text-success font-medium">
-                    <span>Promo Code Discount</span>
-                    <span>-£{pricing.promoDiscount!.toFixed(2)}</span>
-                  </div>
-                )}
-
-                {/* Total - Now correct from backend */}
-                <div className="flex justify-between text-lg font-bold text-base-content pt-3 border-t border-base-300">
-                  <span>Total</span>
-                  <div className="text-right">
-                    <p className="">£{pricing.total.toFixed(2)}</p>
-                    {(pricing.totalDiscount ?? 0) > 0 && (
-                      <p className="text-xs line-through text-base-content/50">
-                        £{(pricing.subtotal + pricing.deliveryFee).toFixed(2)}
-                      </p>
-                    )}
-                  </div>
+                  ))}
                 </div>
               </div>
             )}
-          </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={resetOrder}
-              className="bg-base-300 hover:opacity-90 text-base-content px-8 py-4 rounded-xl font-bold text-lg transition-all"
-            >
-              Back to Home
-            </button>
-            <a
-              href="https://www.instagram.com/swiftfood_uk?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all inline-block text-center"
-            >
-              Follow us on Instagram
-            </a>
+            <AllMealSessionsItems
+              mealSessions={mealSessions}
+              orderType={eventDetails?.eventType}
+              showPricing={true}
+              pricing={pricing || undefined}
+            />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen">
+        <CoworkingAuthForm spaceSlug={resolvedSpaceSlug || "halkin"} />
       </div>
     );
   }
