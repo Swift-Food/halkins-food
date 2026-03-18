@@ -240,12 +240,18 @@ export default function OrderDetailModal({
 
   const isPending = order?.adminReviewStatus === "pending";
 
-  // Pre-fill venue hire fee input when order loads
+  // Pre-fill venue hire fee input: use DB value if set, otherwise auto-calculate recommendation
   useEffect(() => {
-    if (order?.total.venueHireFee != null && order.total.venueHireFee > 0) {
+    if (!order) return;
+    if (order.total.venueHireFee != null && order.total.venueHireFee > 0) {
       setVenueHireFeeInput(order.total.venueHireFee.toString());
+    } else {
+      // Auto-calculate recommended fee: 1:1 with subtotal, rounded down to nearest £250, min £250
+      const subtotal = order.total.subtotal || 0;
+      const recommended = Math.max(250, Math.floor(subtotal / 250) * 250);
+      setVenueHireFeeInput(recommended.toString());
     }
-  }, [order?.total.venueHireFee]);
+  }, [order?.total.venueHireFee, order?.total.subtotal]);
   const sortedMealSessions = Array.isArray(order?.mealSessions)
     ? [...order.mealSessions].sort((a, b) => {
         const dateCompare = a.date.localeCompare(b.date);

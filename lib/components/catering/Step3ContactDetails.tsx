@@ -960,12 +960,7 @@ export default function Step3ContactInfo() {
               </div>
             )}
 
-            <AllMealSessionsItems
-              mealSessions={mealSessions}
-              orderType={eventDetails?.eventType}
-              showPricing={true}
-              pricing={pricing || undefined}
-            />
+            <AllMealSessionsItems />
           </div>
         </div>
       </div>
