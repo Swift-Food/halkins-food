@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageSquareText,
+  Info,
 } from "lucide-react";
 
 interface OrderDetailModalProps {
@@ -540,9 +541,25 @@ export default function OrderDetailModal({
                       </span>
                     </div>
                     <div className="space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
-                      <label className="block text-xs font-semibold text-indigo-700">
-                        Event Hire Fee
-                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <label className="block text-xs font-semibold text-indigo-700">
+                          Event Hire Fee
+                        </label>
+                        <div className="group relative">
+                          <Info className="h-3.5 w-3.5 cursor-help text-indigo-400" />
+                          <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-72 -translate-x-1/2 rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
+                            <p className="mb-2 font-semibold">How the event hire fee works:</p>
+                            <ul className="list-disc space-y-1 pl-3.5">
+                              <li>The pre-filled amount is an auto-calculated suggestion based on the catering subtotal.</li>
+                              <li>You can adjust it to any amount before sending.</li>
+                              <li>Clicking &quot;Send Quote&quot; saves the fee and emails the customer a breakdown of their order total including this fee.</li>
+                              <li>You can update the fee and resend the quote at any time.</li>
+                              <li>The fee will be included on the final payment invoice sent to the customer.</li>
+                            </ul>
+                            <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                          </div>
+                        </div>
+                      </div>
                       <div className="flex items-center gap-2">
                         <div className="relative flex-1">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">£</span>
@@ -564,8 +581,10 @@ export default function OrderDetailModal({
                           {actionLoading === "setFee" ? "Sending..." : "Send Quote"}
                         </button>
                       </div>
-                      <p className="text-xs text-indigo-600">
-                        Sets the fee and sends a quote email to the customer
+                      <p className="text-xs text-indigo-500">
+                        {order.total.venueHireFee != null && order.total.venueHireFee > 0
+                          ? "Quote previously sent. You can update the fee and resend."
+                          : "Auto-calculated suggestion. Adjust if needed, then send the quote to the customer."}
                       </p>
                     </div>
                     <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900">
