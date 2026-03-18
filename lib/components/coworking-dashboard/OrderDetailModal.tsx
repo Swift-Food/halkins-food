@@ -239,7 +239,13 @@ export default function OrderDetailModal({
   };
 
   const isPending = order?.adminReviewStatus === "pending";
-  const venueHireFeeIsSet = order?.total.venueHireFee != null && order.total.venueHireFee > 0;
+
+  // Pre-fill venue hire fee input when order loads
+  useEffect(() => {
+    if (order?.total.venueHireFee != null && order.total.venueHireFee > 0) {
+      setVenueHireFeeInput(order.total.venueHireFee.toString());
+    }
+  }, [order?.total.venueHireFee]);
   const sortedMealSessions = Array.isArray(order?.mealSessions)
     ? [...order.mealSessions].sort((a, b) => {
         const dateCompare = a.date.localeCompare(b.date);
@@ -527,44 +533,35 @@ export default function OrderDetailModal({
                         {formatCurrency(order.total.deliveryFee)}
                       </span>
                     </div>
-                    {venueHireFeeIsSet ? (
-                      <div className="flex justify-between text-sm text-gray-700">
-                        <span>Event Hire Fee</span>
-                        <span className="font-semibold">
-                          {formatCurrency(order.total.venueHireFee || 0)}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
-                        <label className="block text-xs font-semibold text-indigo-700">
-                          Set Event Hire Fee
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <div className="relative flex-1">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">£</span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={venueHireFeeInput}
-                              onChange={(e) => setVenueHireFeeInput(e.target.value)}
-                              placeholder="0.00"
-                              className="w-full rounded-lg border border-indigo-300 py-2 pl-7 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                            />
-                          </div>
-                          <button
-                            onClick={handleSetVenueHireFee}
-                            disabled={actionLoading !== null || !venueHireFeeInput}
-                            className="whitespace-nowrap rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {actionLoading === "setFee" ? "Sending..." : "Set & Send Quote"}
-                          </button>
+                    <div className="space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+                      <label className="block text-xs font-semibold text-indigo-700">
+                        Event Hire Fee
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">£</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={venueHireFeeInput}
+                            onChange={(e) => setVenueHireFeeInput(e.target.value)}
+                            placeholder="0.00"
+                            className="w-full rounded-lg border border-indigo-300 py-2 pl-7 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                          />
                         </div>
-                        <p className="text-xs text-indigo-600">
-                          A quote email will be sent to the customer
-                        </p>
+                        <button
+                          onClick={handleSetVenueHireFee}
+                          disabled={actionLoading !== null || !venueHireFeeInput}
+                          className="whitespace-nowrap rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {actionLoading === "setFee" ? "Sending..." : "Send Quote"}
+                        </button>
                       </div>
-                    )}
+                      <p className="text-xs text-indigo-600">
+                        Sets the fee and sends a quote email to the customer
+                      </p>
+                    </div>
                     <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900">
                       <span>Total</span>
                       <span className="text-primary">
