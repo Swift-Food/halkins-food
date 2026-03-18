@@ -552,9 +552,9 @@ export default function OrderDetailModal({
                             <ul className="list-disc space-y-1 pl-3.5">
                               <li>The pre-filled amount is an auto-calculated suggestion based on the catering subtotal.</li>
                               <li>You can adjust it to any amount before sending.</li>
-                              <li>Clicking &quot;Send Quote&quot; saves the fee and emails the customer a breakdown of their order total including this fee.</li>
-                              <li>You can update the fee and resend the quote at any time.</li>
-                              <li>The fee will be included on the final payment invoice sent to the customer.</li>
+                              <li>Clicking &quot;Send Quote&quot; saves the fee and emails the customer a full breakdown of their order total.</li>
+                              <li>You can update the fee and resend the quote at any time — the customer will receive an updated email.</li>
+                              <li>This fee will also be included as a line item on the final payment invoice.</li>
                             </ul>
                             <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
                           </div>
@@ -581,11 +581,6 @@ export default function OrderDetailModal({
                           {actionLoading === "setFee" ? "Sending..." : "Send Quote"}
                         </button>
                       </div>
-                      <p className="text-xs text-indigo-500">
-                        {order.total.venueHireFee != null && order.total.venueHireFee > 0
-                          ? "Quote previously sent. You can update the fee and resend."
-                          : "Auto-calculated suggestion. Adjust if needed, then send the quote to the customer."}
-                      </p>
                     </div>
                     <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900">
                       <span>Total</span>
