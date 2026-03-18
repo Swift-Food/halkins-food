@@ -86,7 +86,7 @@ const statusBadgeColor: Record<string, string> = {
   pending_review: "bg-yellow-100 text-yellow-800 border-yellow-300",
   pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
   confirmed: "bg-blue-100 text-blue-800 border-blue-300",
-  preparing: "bg-indigo-100 text-indigo-800 border-indigo-300",
+  preparing: "bg-indigo-100 text-indigo-800 border-primary/30",
   ready: "bg-purple-100 text-purple-800 border-purple-300",
   delivered: "bg-green-100 text-green-800 border-green-300",
   completed: "bg-gray-100 text-gray-800 border-gray-300",
@@ -549,13 +549,13 @@ export default function OrderDetailModal({
                         </span>
                       </div>
                     ) : (
-                      <div className="space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+                      <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
                         <div className="flex items-center gap-1.5">
-                          <label className="block text-xs font-semibold text-indigo-700">
+                          <label className="block text-xs font-semibold text-primary">
                             Event Hire Fee
                           </label>
                           <div className="group relative">
-                            <Info className="h-3.5 w-3.5 cursor-help text-indigo-400" />
+                            <Info className="h-3.5 w-3.5 cursor-help text-primary/50" />
                             <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-72 -translate-x-1/2 rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
                               <p className="mb-2 font-semibold">How the event hire fee works:</p>
                               <ul className="list-disc space-y-1 pl-3.5">
@@ -579,13 +579,13 @@ export default function OrderDetailModal({
                               value={venueHireFeeInput}
                               onChange={(e) => setVenueHireFeeInput(e.target.value)}
                               placeholder="0.00"
-                              className="w-full rounded-lg border border-indigo-300 py-2 pl-7 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                              className="w-full rounded-lg border border-primary/30 py-2 pl-7 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                             />
                           </div>
                           <button
                             onClick={handleSetVenueHireFee}
                             disabled={actionLoading !== null || !venueHireFeeInput}
-                            className="whitespace-nowrap rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="whitespace-nowrap rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {actionLoading === "setFee" ? "Sending..." : "Send Quote"}
                           </button>
