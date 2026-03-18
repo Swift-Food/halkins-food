@@ -590,7 +590,11 @@ export default function OrderDetailModal({
                     <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900">
                       <span>Total</span>
                       <span className="text-primary">
-                        {formatCurrency(order.total.total)}
+                        {formatCurrency(
+                          order.total.subtotal +
+                          order.total.deliveryFee +
+                          (parseFloat(venueHireFeeInput) || 0)
+                        )}
                       </span>
                     </div>
                   </div>
