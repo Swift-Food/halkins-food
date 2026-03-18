@@ -50,11 +50,16 @@ export default function PricingSummary({
           </div>
         )}
 
-        {/* Venue hire fee - set by venue admin after order */}
-        <div className="flex justify-between text-sm text-base-content/70">
-          <span>Event Hire Fee</span>
-          <span className="text-xs italic text-base-content/50">Quote sent separately</span>
-        </div>
+        {/* Estimated venue hire fee */}
+        {(pricing.venueHireFee ?? 0) > 0 && (
+          <div>
+            <div className="flex justify-between text-sm text-base-content/70">
+              <span>Estimated Hire Fee</span>
+              <span>£{pricing.venueHireFee!.toFixed(2)}</span>
+            </div>
+            <p className="text-xs italic text-base-content/40 mt-0.5">Subject to review by venue organiser</p>
+          </div>
+        )}
 
         {/* Delivery fee */}
         <div className="space-y-1">
