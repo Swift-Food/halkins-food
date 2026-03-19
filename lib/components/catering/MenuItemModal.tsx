@@ -946,42 +946,45 @@ export default function MenuItemModal({
                             <span className="text-error ml-1">*</span>
                           )}
                         </h4>
-                        {!viewOnly && (
-                          <span className="text-[10px] md:text-xs text-base-content/60 italic">
-                            {group.selectionType === "single"
-                              ? `Select portions (total: ${getSingleSelectionTotal(
-                                  groupTitle,
-                                )}/${itemQuantity})`
-                              : group.selectionType === "multiple_repeat"
-                              ? (() => {
-                                  const count = getMultipleSelectionCount(groupTitle);
-                                  const effectiveMax = group.maxSelections != null ? group.maxSelections * itemQuantity : null;
-                                  if (effectiveMax != null) {
-                                    return `Choose quantity per option (${count} / ${effectiveMax} selected)`;
-                                  }
-                                  return `Choose quantity per option (${count} selected)`;
-                                })()
-                              : (group.minSelections != null || group.maxSelections != null)
-                              ? (() => {
-                                  const count = getMultipleSelectionCount(groupTitle);
-                                  const effectiveMin = group.minSelections != null ? group.minSelections * itemQuantity : null;
-                                  const effectiveMax = group.maxSelections != null ? group.maxSelections * itemQuantity : null;
-                                  const target = effectiveMax ?? effectiveMin;
-                                  let label = "";
-                                  if (effectiveMin != null && effectiveMax != null && effectiveMin === effectiveMax) {
-                                    label = `Select ${effectiveMin}`;
-                                  } else if (effectiveMin != null && effectiveMax != null) {
-                                    label = `Select ${effectiveMin}–${effectiveMax}`;
-                                  } else if (effectiveMin != null) {
-                                    label = `Select at least ${effectiveMin}`;
-                                  } else {
-                                    label = `Select up to ${effectiveMax}`;
-                                  }
-                                  return `${label} (${count} / ${target} selected)`;
-                                })()
-                              : "Choose multiple (applies to all portions)"}
-                          </span>
-                        )}
+                        {!viewOnly && (() => {
+                          const ruleText = (() => {
+                            if (group.selectionType === "single") {
+                              const total = getSingleSelectionTotal(groupTitle);
+                              return `Pick one · ${total}/${itemQuantity} assigned`;
+                            }
+                            if (group.selectionType === "multiple_repeat") {
+                              const count = getMultipleSelectionCount(groupTitle);
+                              const effectiveMax = group.maxSelections != null ? group.maxSelections * itemQuantity : null;
+                              return effectiveMax != null
+                                ? `Pick many, repeats allowed · ${count}/${effectiveMax} selected`
+                                : `Pick many, repeats allowed · ${count} selected`;
+                            }
+                            // multiple_no_repeat
+                            if (group.minSelections != null || group.maxSelections != null) {
+                              const count = getMultipleSelectionCount(groupTitle);
+                              const effectiveMin = group.minSelections != null ? group.minSelections * itemQuantity : null;
+                              const effectiveMax = group.maxSelections != null ? group.maxSelections * itemQuantity : null;
+                              const target = effectiveMax ?? effectiveMin;
+                              let rule = "Pick many";
+                              if (effectiveMin != null && effectiveMax != null && effectiveMin === effectiveMax) {
+                                rule = `Choose exactly ${effectiveMin}`;
+                              } else if (effectiveMin != null && effectiveMax != null) {
+                                rule = `Choose ${effectiveMin}–${effectiveMax}`;
+                              } else if (effectiveMin != null) {
+                                rule = `Choose at least ${effectiveMin}`;
+                              } else if (effectiveMax != null) {
+                                rule = `Choose up to ${effectiveMax}`;
+                              }
+                              return `${rule} · ${count}/${target} selected`;
+                            }
+                            return "Pick many · included with each portion";
+                          })();
+                          return (
+                            <span className="text-[10px] md:text-xs text-base-content/60">
+                              {ruleText}
+                            </span>
+                          );
+                        })()}
                       </div>
                     </div>
 
