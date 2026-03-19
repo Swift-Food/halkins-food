@@ -141,10 +141,9 @@ export default function MenuItemModal({
       return;
     }
 
-    // Group addons by groupTitle
+    // Group addons by groupTitle — take the most restrictive / first non-null group-level values
     const grouped = item.addons.reduce(
       (acc, addon) => {
-        // console.log("Processing addon:", addon);
         const groupTitle = addon.groupTitle || "Default";
         if (!acc[groupTitle]) {
           acc[groupTitle] = {
@@ -154,6 +153,18 @@ export default function MenuItemModal({
             minSelections: addon.minSelections,
             maxSelections: addon.maxSelections,
           };
+        } else {
+          if (addon.isRequired) acc[groupTitle].isRequired = true;
+          if (addon.selectionType && acc[groupTitle].selectionType === 'multiple_no_repeat') {
+            const normalized = addon.selectionType === 'multiple' ? 'multiple_no_repeat' : addon.selectionType;
+            if (normalized !== 'multiple_no_repeat') acc[groupTitle].selectionType = normalized;
+          }
+          if (addon.minSelections != null && (acc[groupTitle].minSelections == null || addon.minSelections > acc[groupTitle].minSelections!)) {
+            acc[groupTitle].minSelections = addon.minSelections;
+          }
+          if (addon.maxSelections != null && (acc[groupTitle].maxSelections == null || addon.maxSelections < acc[groupTitle].maxSelections!)) {
+            acc[groupTitle].maxSelections = addon.maxSelections;
+          }
         }
         acc[groupTitle].items.push(addon);
         return acc;
@@ -579,8 +590,8 @@ export default function MenuItemModal({
         }
       }
 
-      // For multiple_repeat: also validate maxSelections on total quantity
-      if (group.selectionType === 'multiple_repeat' && group.maxSelections != null) {
+      // Validate maxSelections for all non-single groups
+      if (group.maxSelections != null) {
         const effectiveMax = group.maxSelections * itemQuantity;
         if (count > effectiveMax) {
           multipleSelectionErrors.push(

@@ -142,15 +142,35 @@ export function mapToMenuItem(item: MenuItemDetails): MenuItem {
     categoryName: item.categories?.[0]?.name,
     subcategoryId: item.subCategories?.[0]?.id || item.subcategoryIds?.[0],
     subcategoryName: item.subCategories?.[0]?.name,
-    addons: (item.addons || []).map((addon) => ({
-      name: addon.name,
-      price: addon.price?.toString() || "0",
-      allergens: addon.allergens?.join(", ") || "",
-      dietaryRestrictions: (addon as MenuItemAddonWithDietary).dietaryRestrictions,
-      groupTitle: addon.groupTitle || "",
-      isRequired: addon.isRequired || false,
-      selectionType: addon.selectionType === 'multiple' ? 'multiple_no_repeat' : (addon.selectionType || "single"),
-    })),
+    addons: (() => {
+      const rawAddons = item.addons || [];
+      // Handle grouped format (AddonGroup[]) — flatten to flat addon list
+      const flat = rawAddons.length > 0 && (rawAddons[0] as any)?.items
+        ? rawAddons.flatMap((group: any) =>
+            (group.items || []).map((addonItem: any) => ({
+              ...addonItem,
+              groupTitle: group.groupTitle,
+              selectionType: group.selectionType,
+              isRequired: group.isRequired,
+              minSelections: group.minSelections,
+              maxSelections: group.maxSelections,
+            }))
+          )
+        : rawAddons;
+      return flat.map((addon: any) => ({
+        name: addon.name,
+        price: addon.price?.toString() || "0",
+        allergens: addon.allergens?.join(", ") || "",
+        dietaryRestrictions: (addon as MenuItemAddonWithDietary).dietaryRestrictions,
+        groupTitle: addon.groupTitle || "",
+        isRequired: addon.isRequired || false,
+        selectionType: addon.selectionType === 'multiple' ? 'multiple_no_repeat' : (addon.selectionType || "single"),
+        minSelections: addon.minSelections,
+        maxSelections: addon.maxSelections,
+        isDefault: addon.isDefault,
+        displayOrder: addon.displayOrder,
+      }));
+    })(),
   };
 }
 
