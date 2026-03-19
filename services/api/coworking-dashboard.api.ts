@@ -144,11 +144,16 @@ class CoworkingDashboardService {
    */
   async approveOrder(
     spaceId: string,
-    orderId: string
+    orderId: string,
+    depositAmount?: number,
   ): Promise<DashboardOrderDetailResponse> {
+    const body = depositAmount !== undefined ? JSON.stringify({ depositAmount }) : undefined;
     const response = await fetchWithAuth(
       `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_APPROVE_ORDER(spaceId, orderId)}`,
-      { method: 'POST' }
+      {
+        method: 'POST',
+        ...(body ? { headers: { 'Content-Type': 'application/json' }, body } : {}),
+      }
     );
 
     if (!response.ok) {
