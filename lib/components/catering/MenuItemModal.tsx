@@ -44,7 +44,9 @@ interface MenuItemModalProps {
 interface AddonGroup {
   items: Addon[];
   isRequired: boolean;
-  selectionType: "single" | "multiple" | "multiple_no_repeat" | "multiple_repeat";
+  selectionType: "single" | "multiple_no_repeat" | "multiple_repeat";
+  minSelections?: number;
+  maxSelections?: number;
 }
 
 export default function MenuItemModal({
@@ -148,7 +150,9 @@ export default function MenuItemModal({
           acc[groupTitle] = {
             items: [],
             isRequired: addon.isRequired,
-            selectionType: addon.selectionType,
+            selectionType: addon.selectionType === 'multiple' ? 'multiple_no_repeat' : (addon.selectionType || 'multiple_no_repeat'),
+            minSelections: addon.minSelections,
+            maxSelections: addon.maxSelections,
           };
         }
         acc[groupTitle].items.push(addon);
@@ -169,10 +173,35 @@ export default function MenuItemModal({
       initialSelections[groupTitle] = {};
       initialQuantities[groupTitle] = {};
       initialQuantityInputs[groupTitle] = {};
+      const group = grouped[groupTitle];
+      let singleDefaultSet = false;
       grouped[groupTitle].items.forEach((addon) => {
-        initialSelections[groupTitle][addon.name] = false;
-        initialQuantities[groupTitle][addon.name] = 0;
-        initialQuantityInputs[groupTitle][addon.name] = "0";
+        const shouldPreSelect = addon.isDefault === true && !isEditMode;
+        if (shouldPreSelect && group.selectionType === 'single') {
+          if (!singleDefaultSet) {
+            initialSelections[groupTitle][addon.name] = true;
+            initialQuantities[groupTitle][addon.name] = itemQuantity;
+            initialQuantityInputs[groupTitle][addon.name] = itemQuantity.toString();
+            singleDefaultSet = true;
+          } else {
+            initialSelections[groupTitle][addon.name] = false;
+            initialQuantities[groupTitle][addon.name] = 0;
+            initialQuantityInputs[groupTitle][addon.name] = "0";
+          }
+        } else if (shouldPreSelect && (group.selectionType === 'multiple_no_repeat' || group.selectionType === 'multiple_repeat')) {
+          initialSelections[groupTitle][addon.name] = true;
+          if (group.selectionType === 'multiple_repeat') {
+            initialQuantities[groupTitle][addon.name] = 1;
+            initialQuantityInputs[groupTitle][addon.name] = "1";
+          } else {
+            initialQuantities[groupTitle][addon.name] = 0;
+            initialQuantityInputs[groupTitle][addon.name] = "0";
+          }
+        } else {
+          initialSelections[groupTitle][addon.name] = false;
+          initialQuantities[groupTitle][addon.name] = 0;
+          initialQuantityInputs[groupTitle][addon.name] = "0";
+        }
       });
     });
 
@@ -224,12 +253,21 @@ export default function MenuItemModal({
         if (selectedAddons[groupTitle]?.[addon.name]) {
           const addonPrice = parseFloat(addon.price) || 0;
           if (group.selectionType === "single") {
-            // For single selection: use the specific addon quantity
+            // Radio button: use specific addon quantity
+            const qty = addonQuantities[groupTitle]?.[addon.name] || 0;
+            addonCost += addonPrice * qty;
+          } else if (group.selectionType === "multiple_repeat") {
+            // User explicitly sets quantity per addon
             const qty = addonQuantities[groupTitle]?.[addon.name] || 0;
             addonCost += addonPrice * qty;
           } else {
-            // For multiple selection: use itemQuantity as the addon quantity
-            addonCost += addonPrice * itemQuantity;
+            // multiple_no_repeat: preserve existing behavior
+            if (group.minSelections != null || group.maxSelections != null) {
+              const qty = addonQuantities[groupTitle]?.[addon.name] || 0;
+              addonCost += addonPrice * qty;
+            } else {
+              addonCost += addonPrice * itemQuantity;
+            }
           }
         }
       });
@@ -261,7 +299,15 @@ export default function MenuItemModal({
       }
 
       const currentQty = newQuantities[groupTitle][addonName] || 0;
-      const newQty = Math.max(0, currentQty + change);
+      let newQty = Math.max(0, currentQty + change);
+
+      // Cap by maxSelections for the group (for min/max groups)
+      const group = addonGroups[groupTitle];
+      if (group?.maxSelections != null && change > 0) {
+        const totalWithoutCurrent = Object.values(newQuantities[groupTitle]).reduce((s, q) => s + q, 0) - currentQty;
+        const maxAllowed = group.maxSelections * itemQuantity - totalWithoutCurrent;
+        newQty = Math.min(newQty, Math.max(0, maxAllowed));
+      }
 
       newQuantities[groupTitle][addonName] = newQty;
 
@@ -413,7 +459,20 @@ export default function MenuItemModal({
       return; // Quantity controls handle this
     }
 
+    // For multiple_repeat groups, quantity steppers handle selection
+    if (group.selectionType === "multiple_repeat") {
+      return; // Quantity controls handle this
+    }
+
     // For multiple selection, toggle the clicked addon
+    const currentValue = selectedAddons[groupTitle]?.[addonName] || false;
+
+    // If toggling ON, check maxSelections constraint
+    if (!currentValue && group.maxSelections != null) {
+      const currentCount = getMultipleSelectionCount(groupTitle);
+      if (currentCount >= group.maxSelections) return;
+    }
+
     setSelectedAddons((prev) => {
       const newSelections: Record<string, Record<string, boolean>> = {};
       Object.keys(prev).forEach((key) => {
@@ -424,7 +483,6 @@ export default function MenuItemModal({
         newSelections[groupTitle] = {};
       }
 
-      const currentValue = prev[groupTitle]?.[addonName] || false;
       newSelections[groupTitle][addonName] = !currentValue;
 
       return newSelections;
@@ -435,6 +493,24 @@ export default function MenuItemModal({
   const getSingleSelectionTotal = (groupTitle: string) => {
     const quantities = addonQuantities[groupTitle] || {};
     return Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
+  };
+
+  // Helper to get total selected count for a multiple-selection group
+  const getMultipleSelectionCount = (groupTitle: string) => {
+    const group = addonGroups[groupTitle];
+    // For multiple_repeat: always sum quantities
+    if (group?.selectionType === 'multiple_repeat') {
+      const quantities = addonQuantities[groupTitle] || {};
+      return Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
+    }
+    // For min/max groups: sum quantities (allows multiple of the same addon)
+    if (group?.minSelections != null || group?.maxSelections != null) {
+      const quantities = addonQuantities[groupTitle] || {};
+      return Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
+    }
+    // For plain multiple_no_repeat: count boolean selections
+    const selections = selectedAddons[groupTitle] || {};
+    return Object.values(selections).filter(Boolean).length;
   };
 
   const validateRequiredAddons = () => {
@@ -487,6 +563,37 @@ export default function MenuItemModal({
       return;
     }
 
+    // Validate multiple-selection min/max constraints
+    const multipleSelectionErrors: string[] = [];
+    Object.entries(addonGroups).forEach(([groupTitle, group]) => {
+      if (group.selectionType === 'single') return; // single validated above
+
+      const count = getMultipleSelectionCount(groupTitle);
+
+      if (group.minSelections != null) {
+        const effectiveMin = group.minSelections * itemQuantity;
+        if (count < effectiveMin) {
+          multipleSelectionErrors.push(
+            `${groupTitle}: Please select at least ${effectiveMin} option${effectiveMin > 1 ? "s" : ""} (currently ${count})`
+          );
+        }
+      }
+
+      // For multiple_repeat: also validate maxSelections on total quantity
+      if (group.selectionType === 'multiple_repeat' && group.maxSelections != null) {
+        const effectiveMax = group.maxSelections * itemQuantity;
+        if (count > effectiveMax) {
+          multipleSelectionErrors.push(
+            `${groupTitle}: Please select at most ${effectiveMax} option${effectiveMax > 1 ? "s" : ""} (currently ${count})`
+          );
+        }
+      }
+    });
+    if (multipleSelectionErrors.length > 0) {
+      alert("Please adjust your selections:\n\n" + multipleSelectionErrors.join("\n"));
+      return;
+    }
+
     // Collect selected addons with their quantities and prices
     const addonsForCart: {
       name: string;
@@ -505,7 +612,21 @@ export default function MenuItemModal({
           const addonPrice = Number(addon.price) || 0;
 
           if (group.selectionType === "single") {
-            // For single selection: use the specific quantity
+            // Radio/quantity split: use the specific quantity
+            const qty = addonQuantities[groupTitle]?.[addon.name] || 0;
+            if (qty > 0) {
+              addonsForCart.push({
+                name: addon.name,
+                price: addonPrice,
+                quantity: qty,
+                groupTitle: groupTitle,
+                allergens: addon.allergens,
+                dietaryRestrictions: addon.dietaryRestrictions,
+              });
+              totalAddonPrice += addonPrice * qty;
+            }
+          } else if (group.selectionType === "multiple_repeat") {
+            // User explicitly sets quantity per addon
             const qty = addonQuantities[groupTitle]?.[addon.name] || 0;
             if (qty > 0) {
               addonsForCart.push({
@@ -519,16 +640,32 @@ export default function MenuItemModal({
               totalAddonPrice += addonPrice * qty;
             }
           } else {
-            // For multiple selection: quantity is always equal to itemQuantity
-            addonsForCart.push({
-              name: addon.name,
-              price: addonPrice,
-              quantity: itemQuantity,
-              groupTitle: groupTitle,
-              allergens: addon.allergens,
-              dietaryRestrictions: addon.dietaryRestrictions,
-            });
-            totalAddonPrice += addonPrice * itemQuantity;
+            // multiple_no_repeat: preserve existing behavior
+            if (group.minSelections != null || group.maxSelections != null) {
+              const qty = addonQuantities[groupTitle]?.[addon.name] || 0;
+              if (qty > 0) {
+                addonsForCart.push({
+                  name: addon.name,
+                  price: addonPrice,
+                  quantity: qty,
+                  groupTitle: groupTitle,
+                  allergens: addon.allergens,
+                  dietaryRestrictions: addon.dietaryRestrictions,
+                });
+                totalAddonPrice += addonPrice * qty;
+              }
+            } else {
+              // Plain multiple_no_repeat: quantity = itemQuantity
+              addonsForCart.push({
+                name: addon.name,
+                price: addonPrice,
+                quantity: itemQuantity,
+                groupTitle: groupTitle,
+                allergens: addon.allergens,
+                dietaryRestrictions: addon.dietaryRestrictions,
+              });
+              totalAddonPrice += addonPrice * itemQuantity;
+            }
           }
         }
       });
@@ -546,6 +683,13 @@ export default function MenuItemModal({
     onAddItem?.(itemWithAddons);
     onClose();
   };
+
+  // Check if any multiple-selection group has unmet minSelections
+  const isMinSelectionsUnmet = Object.entries(addonGroups).some(
+    ([groupTitle, group]) =>
+      group.minSelections != null &&
+      getMultipleSelectionCount(groupTitle) < group.minSelections * itemQuantity
+  );
 
   if (!isOpen) return null;
 
@@ -795,8 +939,35 @@ export default function MenuItemModal({
                           <span className="text-[10px] md:text-xs text-base-content/60 italic">
                             {group.selectionType === "single"
                               ? `Select portions (total: ${getSingleSelectionTotal(
-                                groupTitle,
-                              )}/${itemQuantity})`
+                                  groupTitle,
+                                )}/${itemQuantity})`
+                              : group.selectionType === "multiple_repeat"
+                              ? (() => {
+                                  const count = getMultipleSelectionCount(groupTitle);
+                                  const effectiveMax = group.maxSelections != null ? group.maxSelections * itemQuantity : null;
+                                  if (effectiveMax != null) {
+                                    return `Choose quantity per option (${count} / ${effectiveMax} selected)`;
+                                  }
+                                  return `Choose quantity per option (${count} selected)`;
+                                })()
+                              : (group.minSelections != null || group.maxSelections != null)
+                              ? (() => {
+                                  const count = getMultipleSelectionCount(groupTitle);
+                                  const effectiveMin = group.minSelections != null ? group.minSelections * itemQuantity : null;
+                                  const effectiveMax = group.maxSelections != null ? group.maxSelections * itemQuantity : null;
+                                  const target = effectiveMax ?? effectiveMin;
+                                  let label = "";
+                                  if (effectiveMin != null && effectiveMax != null && effectiveMin === effectiveMax) {
+                                    label = `Select ${effectiveMin}`;
+                                  } else if (effectiveMin != null && effectiveMax != null) {
+                                    label = `Select ${effectiveMin}–${effectiveMax}`;
+                                  } else if (effectiveMin != null) {
+                                    label = `Select at least ${effectiveMin}`;
+                                  } else {
+                                    label = `Select up to ${effectiveMax}`;
+                                  }
+                                  return `${label} (${count} / ${target} selected)`;
+                                })()
                               : "Choose multiple (applies to all portions)"}
                           </span>
                         )}
@@ -999,24 +1170,205 @@ export default function MenuItemModal({
                               </button>
                             </div>
                           </div>
+                        ) : (group.selectionType === "multiple_repeat") ? (
+                          // Multiple repeat: Checkbox + quantity stepper per addon
+                          (() => {
+                            const addonQtyMR = addonQuantities[groupTitle]?.[addon.name] || 0;
+                            const addonQtyInputMR = addonQuantityInputs[groupTitle]?.[addon.name] || "0";
+                            const groupTotal = getMultipleSelectionCount(groupTitle);
+                            const isMaxReached = group.maxSelections != null && groupTotal >= group.maxSelections * itemQuantity;
+                            return (
+                              <div
+                                key={index}
+                                className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
+                                  addonQtyMR > 0
+                                    ? "border-primary bg-primary/5"
+                                    : "border-base-300 bg-base-100"
+                                }`}
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-base-content">{addon.name}</span>
+                                    {addon.dietaryRestrictions && addon.dietaryRestrictions.length > 0 && (
+                                      <div className="flex items-center gap-0.5">
+                                        {addon.dietaryRestrictions.map((restriction) => {
+                                          const iconInfo = DIETARY_ICON_MAP[restriction];
+                                          if (!iconInfo) return null;
+                                          return (
+                                            <div key={restriction} className="relative w-4 h-4" title={iconInfo.label}>
+                                              <Image src={`/dietary-icons/unfilled/${iconInfo.file}`} alt={iconInfo.label} fill className="object-contain" />
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {parseFloat(addon.price) > 0 && (
+                                    <span className="text-xs font-medium text-primary">
+                                      +£{parseFloat(addon.price).toFixed(2)} each
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => updateAddonQuantity(groupTitle, addon.name, -1)}
+                                    disabled={addonQtyMR === 0}
+                                    className="w-7 h-7 bg-base-100 border border-base-300 rounded hover:bg-base-200 flex items-center justify-center text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-base-100"
+                                  >
+                                    −
+                                  </button>
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={addonQtyInputMR}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (val === "" || /^\d+$/.test(val)) {
+                                        setAddonQuantityInputs((prev) => {
+                                          const newInputs: Record<string, Record<string, string>> = {};
+                                          Object.keys(prev).forEach((key) => { newInputs[key] = { ...prev[key] }; });
+                                          if (!newInputs[groupTitle]) newInputs[groupTitle] = {};
+                                          newInputs[groupTitle][addon.name] = val;
+                                          return newInputs;
+                                        });
+                                        if (val !== "" && !isNaN(parseInt(val))) {
+                                          const requested = parseInt(val);
+                                          const totalWithoutCurrent = getMultipleSelectionCount(groupTitle) - addonQtyMR;
+                                          const maxAllowed = group.maxSelections != null ? group.maxSelections * itemQuantity - totalWithoutCurrent : Infinity;
+                                          const finalQty = Math.min(requested, Math.max(0, maxAllowed));
+                                          setAddonQuantityDirect(groupTitle, addon.name, finalQty);
+                                        }
+                                      }
+                                    }}
+                                    onBlur={(e) => {
+                                      if (e.target.value === "" || parseInt(e.target.value) < 0) {
+                                        setAddonQuantityDirect(groupTitle, addon.name, 0);
+                                      }
+                                    }}
+                                    className="w-12 text-center text-sm font-medium text-base-content bg-base-100 border border-base-300 rounded px-1 py-0.5"
+                                  />
+                                  <button
+                                    onClick={() => updateAddonQuantity(groupTitle, addon.name, 1)}
+                                    disabled={isMaxReached}
+                                    className="w-7 h-7 bg-base-100 border border-base-300 rounded hover:bg-base-200 flex items-center justify-center text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-base-100"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })()
+                        ) : (group.minSelections != null || group.maxSelections != null) ? (
+                          // multiple_no_repeat with min/max: Show quantity controls (allows multiple of the same addon)
+                          (() => {
+                            const addonQtyMM = addonQuantities[groupTitle]?.[addon.name] || 0;
+                            const addonQtyInputMM = addonQuantityInputs[groupTitle]?.[addon.name] || "0";
+                            const groupTotal = getMultipleSelectionCount(groupTitle);
+                            const isMaxReached = group.maxSelections != null && groupTotal >= group.maxSelections * itemQuantity;
+                            return (
+                              <div
+                                key={index}
+                                className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
+                                  addonQtyMM > 0
+                                    ? "border-primary bg-primary/5"
+                                    : "border-base-300 bg-base-100"
+                                }`}
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-base-content">{addon.name}</span>
+                                    {addon.dietaryRestrictions && addon.dietaryRestrictions.length > 0 && (
+                                      <div className="flex items-center gap-0.5">
+                                        {addon.dietaryRestrictions.map((restriction) => {
+                                          const iconInfo = DIETARY_ICON_MAP[restriction];
+                                          if (!iconInfo) return null;
+                                          return (
+                                            <div key={restriction} className="relative w-4 h-4" title={iconInfo.label}>
+                                              <Image src={`/dietary-icons/unfilled/${iconInfo.file}`} alt={iconInfo.label} fill className="object-contain" />
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {parseFloat(addon.price) > 0 && (
+                                    <span className="text-xs font-medium text-primary">
+                                      +£{parseFloat(addon.price).toFixed(2)} each
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => updateAddonQuantity(groupTitle, addon.name, -1)}
+                                    disabled={addonQtyMM === 0}
+                                    className="w-7 h-7 bg-base-100 border border-base-300 rounded hover:bg-base-200 flex items-center justify-center text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-base-100"
+                                  >
+                                    −
+                                  </button>
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={addonQtyInputMM}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (val === "" || /^\d+$/.test(val)) {
+                                        setAddonQuantityInputs((prev) => {
+                                          const newInputs: Record<string, Record<string, string>> = {};
+                                          Object.keys(prev).forEach((key) => { newInputs[key] = { ...prev[key] }; });
+                                          if (!newInputs[groupTitle]) newInputs[groupTitle] = {};
+                                          newInputs[groupTitle][addon.name] = val;
+                                          return newInputs;
+                                        });
+                                        if (val !== "" && !isNaN(parseInt(val))) {
+                                          const requested = parseInt(val);
+                                          const totalWithoutCurrent = getMultipleSelectionCount(groupTitle) - addonQtyMM;
+                                          const maxAllowed = group.maxSelections != null ? group.maxSelections * itemQuantity - totalWithoutCurrent : Infinity;
+                                          const finalQty = Math.min(requested, Math.max(0, maxAllowed));
+                                          setAddonQuantityDirect(groupTitle, addon.name, finalQty);
+                                        }
+                                      }
+                                    }}
+                                    onBlur={(e) => {
+                                      if (e.target.value === "" || parseInt(e.target.value) < 0) {
+                                        setAddonQuantityDirect(groupTitle, addon.name, 0);
+                                      }
+                                    }}
+                                    className="w-12 text-center text-sm font-medium text-base-content bg-base-100 border border-base-300 rounded px-1 py-0.5"
+                                  />
+                                  <button
+                                    onClick={() => updateAddonQuantity(groupTitle, addon.name, 1)}
+                                    disabled={isMaxReached}
+                                    className="w-7 h-7 bg-base-100 border border-base-300 rounded hover:bg-base-200 flex items-center justify-center text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-base-100"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })()
                         ) : (
-                          // Multiple selection: Show checkbox
+                          // Plain multiple_no_repeat: Show checkbox (toggleable once, qty = itemQuantity)
+                          (() => {
+                            const isSelected = selectedAddons[groupTitle]?.[addon.name] || false;
+                            return (
                           <button
                             key={index}
                             onClick={() => toggleAddon(groupTitle, addon.name)}
-                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${selectedAddons[groupTitle]?.[addon.name]
-                              ? "border-primary bg-primary/5"
-                              : "border-base-300 bg-base-100 hover:border-primary/50"
-                              }`}
+                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
+                              isSelected
+                                ? "border-primary bg-primary/5"
+                                : "border-base-300 bg-base-100 hover:border-primary/50"
+                            }`}
                           >
                             <div className="flex items-center gap-3">
                               <div
-                                className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedAddons[groupTitle]?.[addon.name]
-                                  ? "border-primary bg-primary"
-                                  : "border-base-300"
-                                  }`}
+                                className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                  isSelected
+                                    ? "border-primary bg-primary"
+                                    : "border-base-300"
+                                }`}
                               >
-                                {selectedAddons[groupTitle]?.[addon.name] && (
+                                {isSelected && (
                                   <svg
                                     className="w-3 h-3 text-white"
                                     fill="none"
@@ -1064,13 +1416,12 @@ export default function MenuItemModal({
                             </div>
                             {parseFloat(addon.price) > 0 && (
                               <span className="text-sm font-medium text-primary">
-                                +£
-                                {(
-                                  parseFloat(addon.price) * itemQuantity
-                                ).toFixed(2)}
+                                +£{(parseFloat(addon.price) * itemQuantity).toFixed(2)}
                               </span>
                             )}
                           </button>
+                            );
+                          })()
                         );
                       })}
                     </div>
@@ -1109,11 +1460,28 @@ export default function MenuItemModal({
           )
         ) : (
           <div className="sticky bottom-0 p-4 pt-3 md:p-6 md:pt-4 bg-base-100 border-t border-base-300 rounded-b-xl">
-            {isEditMode ? (
+            {forceAddMode ? (
+              <button
+                onClick={handleAddToCart}
+                disabled={isMinSelectionsUnmet}
+                className={`w-full py-2 md:py-3 rounded-lg font-medium transition-all text-sm md:text-base ${
+                  isMinSelectionsUnmet
+                    ? "bg-base-300 text-base-content/50 cursor-not-allowed"
+                    : "bg-primary hover:opacity-90 text-white"
+                }`}
+              >
+                {addButtonLabel ?? "Add to Order"}
+              </button>
+            ) : isEditMode ? (
               <div className="space-y-1.5 md:space-y-2">
                 <button
                   onClick={handleAddToCart}
-                  className="w-full bg-primary hover:opacity-90 text-white py-2 md:py-3 rounded-lg font-medium transition-all text-sm md:text-base"
+                  disabled={isMinSelectionsUnmet}
+                  className={`w-full py-2 md:py-3 rounded-lg font-medium transition-all text-sm md:text-base ${
+                    isMinSelectionsUnmet
+                      ? "bg-base-300 text-base-content/50 cursor-not-allowed"
+                      : "bg-primary hover:opacity-90 text-white"
+                  }`}
                 >
                   Save Changes
                 </button>
@@ -1129,9 +1497,7 @@ export default function MenuItemModal({
                   Remove from Order
                 </button>
               </div>
-            ) : quantity > 0 &&
-              (!item.addons || item.addons.length === 0) &&
-              !forceAddMode ? (
+            ) : quantity > 0 && (!item.addons || item.addons.length === 0) ? (
               <div className="space-y-1.5 md:space-y-2">
                 {hasModifiedQuantity && (
                   <button
@@ -1159,9 +1525,14 @@ export default function MenuItemModal({
             ) : (
               <button
                 onClick={handleAddToCart}
-                className="w-full bg-primary hover:opacity-90 text-white py-2 md:py-3 rounded-lg font-medium transition-all text-sm md:text-base"
+                disabled={isMinSelectionsUnmet}
+                className={`w-full py-2 md:py-3 rounded-lg font-medium transition-all text-sm md:text-base ${
+                  isMinSelectionsUnmet
+                    ? "bg-base-300 text-base-content/50 cursor-not-allowed"
+                    : "bg-primary hover:opacity-90 text-white"
+                }`}
               >
-                {addButtonLabel}
+                Add to Order
               </button>
             )}
           </div>
