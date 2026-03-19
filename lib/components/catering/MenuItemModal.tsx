@@ -950,34 +950,34 @@ export default function MenuItemModal({
                           const ruleText = (() => {
                             if (group.selectionType === "single") {
                               const total = getSingleSelectionTotal(groupTitle);
-                              return `Pick one · ${total}/${itemQuantity} assigned`;
+                              return `Choose one option · ${total} of ${itemQuantity}`;
                             }
                             if (group.selectionType === "multiple_repeat") {
                               const count = getMultipleSelectionCount(groupTitle);
                               const effectiveMax = group.maxSelections != null ? group.maxSelections * itemQuantity : null;
                               return effectiveMax != null
-                                ? `Pick many, repeats allowed · ${count}/${effectiveMax} selected`
-                                : `Pick many, repeats allowed · ${count} selected`;
+                                ? `Add as many as you like · ${count} of ${effectiveMax} added`
+                                : `Add as many as you like · ${count} added`;
                             }
                             // multiple_no_repeat
                             if (group.minSelections != null || group.maxSelections != null) {
                               const count = getMultipleSelectionCount(groupTitle);
                               const effectiveMin = group.minSelections != null ? group.minSelections * itemQuantity : null;
                               const effectiveMax = group.maxSelections != null ? group.maxSelections * itemQuantity : null;
-                              const target = effectiveMax ?? effectiveMin;
-                              let rule = "Pick many";
+                              let rule = "Select your choices";
                               if (effectiveMin != null && effectiveMax != null && effectiveMin === effectiveMax) {
-                                rule = `Choose exactly ${effectiveMin}`;
+                                rule = `Select ${effectiveMin} option${effectiveMin > 1 ? "s" : ""}`;
                               } else if (effectiveMin != null && effectiveMax != null) {
-                                rule = `Choose ${effectiveMin}–${effectiveMax}`;
+                                rule = `Select ${effectiveMin}–${effectiveMax} options`;
                               } else if (effectiveMin != null) {
-                                rule = `Choose at least ${effectiveMin}`;
+                                rule = `Select at least ${effectiveMin}`;
                               } else if (effectiveMax != null) {
-                                rule = `Choose up to ${effectiveMax}`;
+                                rule = `Select up to ${effectiveMax}`;
                               }
-                              return `${rule} · ${count}/${target} selected`;
+                              const target = effectiveMax ?? effectiveMin;
+                              return `${rule} · ${count} of ${target} selected`;
                             }
-                            return "Pick many · included with each portion";
+                            return "Select your choices · included with each portion";
                           })();
                           return (
                             <span className="text-[10px] md:text-xs text-base-content/60">
