@@ -65,7 +65,11 @@ export interface Addon {
   dietaryRestrictions?: string[];
   groupTitle: string;
   isRequired: boolean;
-  selectionType: "single" | "multiple";
+  selectionType: "single" | "multiple" | "multiple_no_repeat" | "multiple_repeat";
+  minSelections?: number;
+  maxSelections?: number;
+  isDefault?: boolean;
+  displayOrder?: number;
 }
 
 export interface MenuItem {

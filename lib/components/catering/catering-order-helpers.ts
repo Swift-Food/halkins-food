@@ -149,7 +149,7 @@ export function mapToMenuItem(item: MenuItemDetails): MenuItem {
       dietaryRestrictions: (addon as MenuItemAddonWithDietary).dietaryRestrictions,
       groupTitle: addon.groupTitle || "",
       isRequired: addon.isRequired || false,
-      selectionType: addon.selectionType || "single",
+      selectionType: addon.selectionType === 'multiple' ? 'multiple_no_repeat' : (addon.selectionType || "single"),
     })),
   };
 }

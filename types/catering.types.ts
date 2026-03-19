@@ -42,6 +42,7 @@ export interface SearchResult {
   groupTitle?: string;
   cateringQuantityUnit?: number;
   feedsPerUnit?: number;
+  minOrderQuantity?: number;
   rating?: number;
   reviews?: number;
   isOpen?: boolean;
@@ -686,8 +687,12 @@ export interface MenuItemAddon {
   allergens: string[];
   dietaryRestrictions?: string[];
   groupTitle?: string;
-  selectionType?: "single" | "multiple";
+  selectionType?: "single" | "multiple" | "multiple_no_repeat" | "multiple_repeat";
   isRequired?: boolean;
+  isDefault?: boolean;
+  displayOrder?: number;
+  minSelections?: number;
+  maxSelections?: number;
 }
 
 export enum MenuItemStatus {
