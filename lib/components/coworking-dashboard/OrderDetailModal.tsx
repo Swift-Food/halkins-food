@@ -93,7 +93,10 @@ const statusBadgeColor: Record<string, string> = {
   cancelled: "bg-red-100 text-red-800 border-red-300",
 };
 
-function formatStatus(status: string) {
+function formatStatus(status: string, adminReviewStatus?: string) {
+  if (status === "pending_review" && adminReviewStatus === "approved") {
+    return "Awaiting Swift Food Review";
+  }
   return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
@@ -397,7 +400,7 @@ export default function OrderDetailModal({
                       "border-gray-300 bg-gray-100 text-gray-700"
                     }`}
                   >
-                    {formatStatus(order.status)}
+                    {formatStatus(order.status, order.adminReviewStatus)}
                   </span>
                   {order.adminReviewStatus === "pending" && (
                     <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">

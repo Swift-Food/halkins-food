@@ -196,8 +196,9 @@ export default function OrdersList({
                         "bg-gray-100 text-gray-700 border-gray-300"
                       }`}
                     >
-                      {order.status.charAt(0).toUpperCase() +
-                        order.status.slice(1)}
+                      {order.status === "pending_review" && order.adminReviewStatus === "approved"
+                        ? "Awaiting Swift Food Review"
+                        : order.status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                     </span>
                     {needsReview && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-amber-100 text-amber-800 border-amber-300">
