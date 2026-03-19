@@ -13,6 +13,7 @@ import {
   MapPin,
   PlayCircle,
   User,
+  XCircle,
 } from "lucide-react";
 
 interface OrdersListProps {
@@ -60,6 +61,12 @@ const statusTabs: {
     label: "Completed",
     icon: CheckCircle,
     color: "bg-green-100 text-green-700",
+  },
+  {
+    value: "cancelled",
+    label: "Cancelled",
+    icon: XCircle,
+    color: "bg-red-100 text-red-700",
   },
 ];
 
