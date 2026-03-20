@@ -42,6 +42,7 @@ interface MenuItemModalProps {
 }
 
 interface AddonGroup {
+  groupTitle: string;
   items: Addon[];
   isRequired: boolean;
   selectionType: "single" | "multiple_no_repeat" | "multiple_repeat";
@@ -64,190 +65,104 @@ export default function MenuItemModal({
   viewOnly = false,
   onAddToOrder,
 }: MenuItemModalProps) {
-  // console.log("Item: ", item);
   const [itemQuantity, setItemQuantity] = useState(1);
-  const [itemQuantityInput, setItemQuantityInput] = useState("1"); // String for input field
-  const [selectedAddons, setSelectedAddons] = useState<
-    Record<string, Record<string, boolean>>
-  >({});
-  const [addonQuantities, setAddonQuantities] = useState<
-    Record<string, Record<string, number>>
-  >({}); // For single-selection groups: tracks quantity per addon
-  const [addonQuantityInputs, setAddonQuantityInputs] = useState<
-    Record<string, Record<string, string>>
-  >({}); // String values for input fields
-  const [addonGroups, setAddonGroups] = useState<Record<string, AddonGroup>>(
-    {},
-  );
+  const [itemQuantityInput, setItemQuantityInput] = useState("1");
+  const [selectedAddons, setSelectedAddons] = useState<Record<string, Record<string, boolean>>>({});
+  const [addonQuantities, setAddonQuantities] = useState<Record<string, Record<string, number>>>({});
+  const [addonQuantityInputs, setAddonQuantityInputs] = useState<Record<string, Record<string, string>>>({});
+  const [addonGroups, setAddonGroups] = useState<Record<string, AddonGroup>>({});
   const [totalPrice, setTotalPrice] = useState(0);
   const [isAllergenExpanded, setIsAllergenExpanded] = useState(false);
-
-  const price = parseFloat(item.price?.toString() || "0");
-  const discountPrice = parseFloat(item.discountPrice?.toString() || "0");
-  const displayPrice =
-    item.isDiscount && discountPrice > 0 ? discountPrice : price;
-  const BACKEND_QUANTITY_UNIT = item.cateringQuantityUnit || 1;
-  const DISPLAY_FEEDS_PER_UNIT = item.feedsPerUnit || 1;
-
-  // const numUnits = quantity / BACKEND_QUANTITY_UNIT;
-  // const displayQuantity = numUnits * DISPLAY_FEEDS_PER_UNIT;
-
-  // Track if user has modified the quantity for items without addons
   const [hasModifiedQuantity, setHasModifiedQuantity] = useState(false);
   const [initialModalQuantity, setInitialModalQuantity] = useState(0);
 
-  // Reset state when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      console.log("[MenuItemModal] Modal opened with data:", {
-        item,
-        addons: item.addons,
-        selectedAddons: item.selectedAddons,
-        isEditMode,
-        quantity,
-      });
-      // Calculate initial quantity in portions
-      const initialPortions =
-        quantity > 0 ? quantity / BACKEND_QUANTITY_UNIT : 1;
-      setItemQuantity(initialPortions);
-      setItemQuantityInput(initialPortions.toString());
-      setInitialModalQuantity(initialPortions);
-      setHasModifiedQuantity(false);
-      setIsAllergenExpanded(false);
+  const price = parseFloat(item.price?.toString() || "0");
+  const discountPrice = parseFloat(item.discountPrice?.toString() || "0");
+  const displayPrice = item.isDiscount && discountPrice > 0 ? discountPrice : price;
+  const BACKEND_QUANTITY_UNIT = item.cateringQuantityUnit || 1;
+  const DISPLAY_FEEDS_PER_UNIT = item.feedsPerUnit || 1;
 
-      // If in edit mode, pre-populate the selected addons
-      if (isEditMode && item.selectedAddons && item.selectedAddons.length > 0) {
-        // We'll set these after addon groups are initialized
-        // This is handled in the next useEffect
-      } else {
-        setSelectedAddons({});
-        setAddonQuantities({});
-        setAddonQuantityInputs({});
-      }
-    }
-  }, [
-    isOpen,
-    quantity,
-    BACKEND_QUANTITY_UNIT,
-    isEditMode,
-    item.selectedAddons,
-  ]);
-
-  // Group addons and initialize selections
+  // Single useEffect: initialize everything when modal opens
   useEffect(() => {
+    if (!isOpen) return;
+
+    // 1. Calculate portions
+    const portions = quantity > 0 ? quantity / BACKEND_QUANTITY_UNIT : 1;
+    setItemQuantity(portions);
+    setItemQuantityInput(portions.toString());
+    setInitialModalQuantity(portions);
+    setHasModifiedQuantity(false);
+    setIsAllergenExpanded(false);
+
+    // 2. Build addon groups
     if (!item?.addons || item.addons.length === 0) {
       setAddonGroups({});
       setSelectedAddons({});
+      setAddonQuantities({});
+      setAddonQuantityInputs({});
       return;
     }
 
-    // Handle both grouped format (AddonGroup[]) and flat format (Addon[])
-    let grouped: Record<string, AddonGroup>;
     const rawAddons = item.addons as any[];
+    const grouped: Record<string, AddonGroup> = {};
+
     if (rawAddons.length > 0 && rawAddons[0]?.items) {
-      // Already grouped format from API — use group-level fields directly
-      grouped = {};
+      // Grouped format from API
       for (const group of rawAddons) {
         const selType = group.selectionType === 'multiple' ? 'multiple_no_repeat' : (group.selectionType || 'multiple_no_repeat');
         grouped[group.groupTitle || "Default"] = {
-          items: (group.items || []).map((addonItem: any) => ({
-            ...addonItem,
-            groupTitle: group.groupTitle,
-            selectionType: selType,
-            isRequired: group.isRequired,
-          })),
-          isRequired: !!group.isRequired,
+          ...group,
           selectionType: selType,
-          minSelections: group.minSelections,
-          maxSelections: group.maxSelections,
         };
       }
     } else {
-      // Flat format — group by groupTitle
-      grouped = rawAddons.reduce((acc: Record<string, AddonGroup>, addon: any) => {
-        const groupTitle = addon.groupTitle || "Default";
-        const normalizedType = addon.selectionType === 'multiple' ? 'multiple_no_repeat' : (addon.selectionType || 'multiple_no_repeat');
-        if (!acc[groupTitle]) {
-          acc[groupTitle] = {
-            items: [],
-            isRequired: !!addon.isRequired,
-            selectionType: normalizedType,
-            minSelections: addon.minSelections,
-            maxSelections: addon.maxSelections,
-          };
-        } else {
-          if (addon.isRequired) acc[groupTitle].isRequired = true;
-          if (normalizedType !== 'multiple_no_repeat' && acc[groupTitle].selectionType === 'multiple_no_repeat') {
-            acc[groupTitle].selectionType = normalizedType;
-          }
+      // Flat format fallback
+      for (const addon of rawAddons) {
+        const title = addon.groupTitle || "Default";
+        const selType = addon.selectionType === 'multiple' ? 'multiple_no_repeat' : (addon.selectionType || 'multiple_no_repeat');
+        if (!grouped[title]) {
+          grouped[title] = { groupTitle: title, items: [], isRequired: !!addon.isRequired, selectionType: selType, minSelections: addon.minSelections, maxSelections: addon.maxSelections };
         }
-        acc[groupTitle].items.push(addon);
-        return acc;
-      }, {});
+        grouped[title].items.push(addon);
+      }
     }
-
-    // console.log("Grouped addons:", grouped);
     setAddonGroups(grouped);
 
-    // Initialize selected addons state
-    const initialSelections: Record<string, Record<string, boolean>> = {};
-    const initialQuantities: Record<string, Record<string, number>> = {};
-    const initialQuantityInputs: Record<string, Record<string, string>> = {};
+    // 3. Initialize addon selections
+    const selections: Record<string, Record<string, boolean>> = {};
+    const quantities: Record<string, Record<string, number>> = {};
+    const quantityInputs: Record<string, Record<string, string>> = {};
 
-    Object.keys(grouped).forEach((groupTitle) => {
-      initialSelections[groupTitle] = {};
-      initialQuantities[groupTitle] = {};
-      initialQuantityInputs[groupTitle] = {};
-      const group = grouped[groupTitle];
+    for (const [groupTitle, group] of Object.entries(grouped)) {
+      selections[groupTitle] = {};
+      quantities[groupTitle] = {};
+      quantityInputs[groupTitle] = {};
       let singleDefaultSet = false;
 
-      grouped[groupTitle].items.forEach((addon) => {
-        const shouldPreSelect = !!addon.isDefault && !isEditMode;
-        if (shouldPreSelect && group.selectionType === 'single') {
-          if (!singleDefaultSet) {
-            initialSelections[groupTitle][addon.name] = true;
-            initialQuantities[groupTitle][addon.name] = itemQuantity;
-            initialQuantityInputs[groupTitle][addon.name] = itemQuantity.toString();
-            singleDefaultSet = true;
-          } else {
-            initialSelections[groupTitle][addon.name] = false;
-            initialQuantities[groupTitle][addon.name] = 0;
-            initialQuantityInputs[groupTitle][addon.name] = "0";
-          }
-        } else {
-          initialSelections[groupTitle][addon.name] = false;
-          initialQuantities[groupTitle][addon.name] = 0;
-          initialQuantityInputs[groupTitle][addon.name] = "0";
-        }
-      });
-    });
-
-    // If in edit mode, pre-populate with existing selections
-    if (isEditMode && item.selectedAddons && item.selectedAddons.length > 0) {
-      item.selectedAddons.forEach((selectedAddon) => {
-        const groupTitle = selectedAddon.groupTitle;
-        const addonName = selectedAddon.name;
-
-        if (
-          initialSelections[groupTitle] &&
-          initialSelections[groupTitle][addonName] !== undefined
-        ) {
-          initialSelections[groupTitle][addonName] = true;
-          initialQuantities[groupTitle][addonName] =
-            selectedAddon.quantity || 0;
-          initialQuantityInputs[groupTitle][addonName] = (
-            selectedAddon.quantity || 0
-          ).toString();
-        }
-      });
+      for (const addon of group.items) {
+        const preSelect = !!addon.isDefault && !isEditMode && group.selectionType === 'single' && !singleDefaultSet;
+        selections[groupTitle][addon.name] = preSelect;
+        quantities[groupTitle][addon.name] = preSelect ? portions : 0;
+        quantityInputs[groupTitle][addon.name] = preSelect ? portions.toString() : "0";
+        if (preSelect) singleDefaultSet = true;
+      }
     }
 
-    // console.log("Initial selections:", initialSelections);
-    // console.log("Initial quantities:", initialQuantities);
-    setSelectedAddons(initialSelections);
-    setAddonQuantities(initialQuantities);
-    setAddonQuantityInputs(initialQuantityInputs);
-  }, [item, isEditMode]);
+    // 4. Override with existing selections in edit mode
+    if (isEditMode && item.selectedAddons?.length) {
+      for (const sa of item.selectedAddons) {
+        if (selections[sa.groupTitle]?.[sa.name] !== undefined) {
+          selections[sa.groupTitle][sa.name] = true;
+          quantities[sa.groupTitle][sa.name] = sa.quantity || 0;
+          quantityInputs[sa.groupTitle][sa.name] = (sa.quantity || 0).toString();
+        }
+      }
+    }
+
+    setSelectedAddons(selections);
+    setAddonQuantities(quantities);
+    setAddonQuantityInputs(quantityInputs);
+  }, [isOpen, item, quantity, BACKEND_QUANTITY_UNIT, isEditMode]);
 
   // Calculate total price when quantity or selected addons change
   useEffect(() => {
