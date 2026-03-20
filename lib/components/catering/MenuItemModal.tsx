@@ -139,12 +139,16 @@ export default function MenuItemModal({
       quantityInputs[groupTitle] = {};
       let singleDefaultSet = false;
 
+      // Auto-select all when minSelections >= item count (no real choice to make)
+      const autoSelectAll = !isEditMode && group.minSelections != null && group.minSelections >= group.items.length;
+
       for (const addon of group.items) {
-        const preSelect = !!addon.isDefault && !isEditMode && group.selectionType === 'single' && !singleDefaultSet;
+        const preSelectDefault = !!addon.isDefault && !isEditMode && group.selectionType === 'single' && !singleDefaultSet;
+        const preSelect = autoSelectAll || preSelectDefault;
         selections[groupTitle][addon.name] = preSelect;
         quantities[groupTitle][addon.name] = preSelect ? portions : 0;
         quantityInputs[groupTitle][addon.name] = preSelect ? portions.toString() : "0";
-        if (preSelect) singleDefaultSet = true;
+        if (preSelectDefault) singleDefaultSet = true;
       }
     }
 
