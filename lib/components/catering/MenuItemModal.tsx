@@ -141,36 +141,50 @@ export default function MenuItemModal({
       return;
     }
 
-    // Group addons by groupTitle — take the most restrictive / first non-null group-level values
-    const grouped = item.addons.reduce(
-      (acc, addon) => {
+    // Handle both grouped format (AddonGroup[]) and flat format (Addon[])
+    let grouped: Record<string, AddonGroup>;
+    const rawAddons = item.addons as any[];
+    if (rawAddons.length > 0 && rawAddons[0]?.items) {
+      // Already grouped format from API — use group-level fields directly
+      grouped = {};
+      for (const group of rawAddons) {
+        const selType = group.selectionType === 'multiple' ? 'multiple_no_repeat' : (group.selectionType || 'multiple_no_repeat');
+        grouped[group.groupTitle || "Default"] = {
+          items: (group.items || []).map((addonItem: any) => ({
+            ...addonItem,
+            groupTitle: group.groupTitle,
+            selectionType: selType,
+            isRequired: group.isRequired,
+          })),
+          isRequired: !!group.isRequired,
+          selectionType: selType,
+          minSelections: group.minSelections,
+          maxSelections: group.maxSelections,
+        };
+      }
+    } else {
+      // Flat format — group by groupTitle
+      grouped = rawAddons.reduce((acc: Record<string, AddonGroup>, addon: any) => {
         const groupTitle = addon.groupTitle || "Default";
+        const normalizedType = addon.selectionType === 'multiple' ? 'multiple_no_repeat' : (addon.selectionType || 'multiple_no_repeat');
         if (!acc[groupTitle]) {
           acc[groupTitle] = {
             items: [],
-            isRequired: addon.isRequired,
-            selectionType: addon.selectionType === 'multiple' ? 'multiple_no_repeat' : (addon.selectionType || 'multiple_no_repeat'),
+            isRequired: !!addon.isRequired,
+            selectionType: normalizedType,
             minSelections: addon.minSelections,
             maxSelections: addon.maxSelections,
           };
         } else {
           if (addon.isRequired) acc[groupTitle].isRequired = true;
-          if (addon.selectionType && acc[groupTitle].selectionType === 'multiple_no_repeat') {
-            const normalized = addon.selectionType === 'multiple' ? 'multiple_no_repeat' : addon.selectionType;
-            if (normalized !== 'multiple_no_repeat') acc[groupTitle].selectionType = normalized;
-          }
-          if (addon.minSelections != null && (acc[groupTitle].minSelections == null || addon.minSelections > acc[groupTitle].minSelections!)) {
-            acc[groupTitle].minSelections = addon.minSelections;
-          }
-          if (addon.maxSelections != null && (acc[groupTitle].maxSelections == null || addon.maxSelections < acc[groupTitle].maxSelections!)) {
-            acc[groupTitle].maxSelections = addon.maxSelections;
+          if (normalizedType !== 'multiple_no_repeat' && acc[groupTitle].selectionType === 'multiple_no_repeat') {
+            acc[groupTitle].selectionType = normalizedType;
           }
         }
         acc[groupTitle].items.push(addon);
         return acc;
-      },
-      {} as Record<string, AddonGroup>,
-    );
+      }, {});
+    }
 
     // console.log("Grouped addons:", grouped);
     setAddonGroups(grouped);
