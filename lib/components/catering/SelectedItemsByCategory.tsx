@@ -1,18 +1,24 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { Package, ArrowLeftRight, Pencil, Trash2, Store } from "lucide-react";
 import { useCatering } from "@/context/CateringContext";
 import { SelectedMenuItem } from "@/types/catering.types";
 import { categoryService } from "@/services/api/category.api";
 import { ALLERGENS } from "@/lib/constants/allergens";
-import { Package } from "lucide-react";
 
 interface GroupedItem {
-  item: any;
+  item: SelectedMenuItem["item"];
   quantity: number;
   originalIndex: number;
-  allergenExpanded?: boolean;
 }
+
+type SelectedAddon = {
+  groupTitle: string;
+  name: string;
+  quantity: number;
+  price?: number;
+};
 
 interface CategoryGroup {
   items: GroupedItem[];
@@ -29,6 +35,8 @@ interface SelectedItemsByCategoryProps {
   onToggleCategory?: (categoryName: string) => void;
   showActions?: boolean;
   onViewMenu?: () => void;
+  compactLayout?: boolean;
+  restaurants?: { id: string; restaurant_name: string; images: string[] }[];
 }
 
 export default function SelectedItemsByCategory({
@@ -40,458 +48,361 @@ export default function SelectedItemsByCategory({
   collapsedCategories: externalCollapsedCategories,
   onToggleCategory: externalOnToggleCategory,
   showActions = true,
-  // onViewMenu,
+  compactLayout = false,
+  restaurants,
 }: SelectedItemsByCategoryProps) {
   const { mealSessions, activeSessionIndex } = useCatering();
-
-  // Use provided sessionIndex or fall back to activeSessionIndex
   const currentSessionIndex = sessionIndex ?? activeSessionIndex;
-  const orderItems = mealSessions[currentSessionIndex]?.orderItems || [];
+  const orderItems = useMemo(
+    () => mealSessions[currentSessionIndex]?.orderItems || [],
+    [mealSessions, currentSessionIndex]
+  );
 
-  // Fetch categories for ordering
   const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
+  const [internalCollapsedCategories, setInternalCollapsedCategories] =
+    useState<Set<string>>(new Set());
+  const [collapsedRestaurants, setCollapsedRestaurants] = useState<Set<string>>(new Set());
+  const [expandedAllergens, setExpandedAllergens] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const categories =
-          await categoryService.getCategoriesWithSubcategories();
+        const categories = await categoryService.getCategoriesWithSubcategories();
         setCategoryOrder(categories.map((c) => c.name));
       } catch (error) {
         console.error("Failed to fetch categories for ordering:", error);
       }
     };
+
     fetchCategories();
   }, []);
 
-  // Internal collapsed state if not provided externally
-  const [internalCollapsedCategories, setInternalCollapsedCategories] =
-    useState<Set<string>>(new Set());
-
-  // Track expanded allergen sections by item index
-  const [expandedAllergens, setExpandedAllergens] = useState<Set<number>>(new Set());
-
-  const collapsedCategories =
-    externalCollapsedCategories ?? internalCollapsedCategories;
+  const collapsedCategories = externalCollapsedCategories ?? internalCollapsedCategories;
 
   const toggleAllergen = (index: number) => {
-    setExpandedAllergens(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(index)) {
-        newSet.delete(index);
-      } else {
-        newSet.add(index);
-      }
-      return newSet;
+    setExpandedAllergens((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
     });
   };
 
   const handleToggleCategory = (categoryName: string) => {
     if (externalOnToggleCategory) {
       externalOnToggleCategory(categoryName);
-    } else {
-      // Use internal state
-      setInternalCollapsedCategories((prev) => {
-        const newSet = new Set(prev);
-        if (newSet.has(categoryName)) {
-          newSet.delete(categoryName);
-        } else {
-          newSet.add(categoryName);
-        }
-        return newSet;
-      });
+      return;
     }
+
+    setInternalCollapsedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryName)) next.delete(categoryName);
+      else next.add(categoryName);
+      return next;
+    });
   };
 
-  // Group items by category -> subcategory
-  const grouped = useMemo(() => {
-    const map = new Map<string, CategoryGroup>();
+  const restaurantGrouped = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        name: string;
+        image?: string;
+        bundles: Map<string, { name: string; items: GroupedItem[] }>;
+        categories: Map<string, CategoryGroup>;
+      }
+    >();
 
     orderItems.forEach((orderItem: SelectedMenuItem, index: number) => {
-      if (orderItem.bundleId) return; // Skip bundle items, rendered separately
-      const catName = orderItem.item.categoryName || (orderItem.item as any).groupTitle || "Uncategorized";
-      const subName = orderItem.item.subcategoryName || "";
+      const restaurantNameFromItem =
+        "restaurantName" in orderItem.item ? orderItem.item.restaurantName : undefined;
+      const restaurantName =
+        restaurantNameFromItem ||
+        orderItem.item.restaurant?.name ||
+        "Unknown Restaurant";
+      const restaurantId =
+        orderItem.item.restaurantId || orderItem.item.restaurant?.restaurantId;
+      const matchedRestaurant = restaurants?.find((restaurant) => restaurant.id === restaurantId);
+      const restaurantImage = matchedRestaurant?.images?.[0];
 
-      if (!map.has(catName)) {
-        map.set(catName, { items: [], subcategories: new Map() });
+      if (!map.has(restaurantName)) {
+        map.set(restaurantName, {
+          name: restaurantName,
+          image: restaurantImage,
+          bundles: new Map(),
+          categories: new Map(),
+        });
       }
 
-      const category = map.get(catName)!;
+      const restaurant = map.get(restaurantName)!;
       const groupedItem: GroupedItem = {
         item: orderItem.item,
         quantity: orderItem.quantity,
         originalIndex: index,
       };
 
-      if (subName) {
-        if (!category.subcategories.has(subName)) {
-          category.subcategories.set(subName, []);
+      if (orderItem.bundleId) {
+        if (!restaurant.bundles.has(orderItem.bundleId)) {
+          restaurant.bundles.set(orderItem.bundleId, {
+            name: orderItem.bundleName ?? "Bundle",
+            items: [],
+          });
         }
-        category.subcategories.get(subName)!.push(groupedItem);
+        restaurant.bundles.get(orderItem.bundleId)!.items.push(groupedItem);
+        return;
+      }
+
+      const categoryName =
+        orderItem.item.categoryName ||
+        orderItem.item.groupTitle ||
+        "Uncategorized";
+      const subcategoryName = orderItem.item.subcategoryName || "";
+
+      if (!restaurant.categories.has(categoryName)) {
+        restaurant.categories.set(categoryName, { items: [], subcategories: new Map() });
+      }
+
+      const category = restaurant.categories.get(categoryName)!;
+      if (subcategoryName) {
+        if (!category.subcategories.has(subcategoryName)) {
+          category.subcategories.set(subcategoryName, []);
+        }
+        category.subcategories.get(subcategoryName)!.push(groupedItem);
       } else {
         category.items.push(groupedItem);
       }
     });
 
-    // Sort categories by the order from the API
     if (categoryOrder.length > 0) {
-      const sortedMap = new Map<string, CategoryGroup>();
-      const entries = Array.from(map.entries());
-
-      entries.sort((a, b) => {
-        const indexA = categoryOrder.indexOf(a[0]);
-        const indexB = categoryOrder.indexOf(b[0]);
-        // Put unknown categories at the end
-        const orderA = indexA === -1 ? 999 : indexA;
-        const orderB = indexB === -1 ? 999 : indexB;
-        return orderA - orderB;
+      map.forEach((restaurant) => {
+        const entries = Array.from(restaurant.categories.entries());
+        entries.sort((a, b) => {
+          const orderA = categoryOrder.indexOf(a[0]);
+          const orderB = categoryOrder.indexOf(b[0]);
+          return (orderA === -1 ? 999 : orderA) - (orderB === -1 ? 999 : orderB);
+        });
+        restaurant.categories = new Map(entries);
       });
-
-      entries.forEach(([key, value]) => sortedMap.set(key, value));
-      return sortedMap;
     }
 
     return map;
-  }, [orderItems, categoryOrder]);
-
-  // Group bundle items separately
-  const bundleGroups = useMemo(() => {
-    const bundles = new Map<string, { name: string; items: GroupedItem[] }>();
-
-    orderItems.forEach((orderItem: SelectedMenuItem, index: number) => {
-      if (orderItem.bundleId) {
-        if (!bundles.has(orderItem.bundleId)) {
-          bundles.set(orderItem.bundleId, {
-            name: orderItem.bundleName || "Bundle",
-            items: [],
-          });
-        }
-        bundles.get(orderItem.bundleId)!.items.push({
-          item: orderItem.item,
-          quantity: orderItem.quantity,
-          originalIndex: index,
-        });
-      }
-    });
-
-    return bundles;
-  }, [orderItems]);
+  }, [orderItems, categoryOrder, restaurants]);
 
   if (orderItems.length === 0) return null;
 
+  const renderAddons = (selectedAddons: SelectedAddon[]) => {
+    const addonsByGroup = selectedAddons.reduce(
+      (
+        acc: Record<string, { name: string; quantity: number }[]>,
+        addon: { groupTitle: string; name: string; quantity: number }
+      ) => {
+        const group = addon.groupTitle || "Options";
+        if (!acc[group]) acc[group] = [];
+        acc[group].push({ name: addon.name, quantity: addon.quantity });
+        return acc;
+      },
+      {}
+    );
+
+    return Object.entries(addonsByGroup).map(([groupTitle, addons]) => (
+      <p key={groupTitle} className="text-gray-500">
+        <span className="font-medium text-gray-700">{groupTitle}:</span>{" "}
+        {addons.map((addon, index) => (
+          <span key={`${groupTitle}-${addon.name}-${index}`}>
+            {addon.name}
+            {addon.quantity > 1 && ` (×${addon.quantity})`}
+            {index < addons.length - 1 && ", "}
+          </span>
+        ))}
+      </p>
+    ));
+  };
+
+  const renderAllergens = (item: SelectedMenuItem["item"], originalIndex: number) => {
+    if (!item.allergens || item.allergens.length === 0) return null;
+
+    return (
+      <div className="mt-2">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleAllergen(originalIndex);
+          }}
+          className="flex items-center gap-1 text-xs font-medium text-orange-700 transition-colors hover:text-orange-800"
+        >
+          <span className={compactLayout ? "text-orange-600" : ""}>
+            {compactLayout ? "⚠️" : null}
+          </span>
+          <span>Allergens ({item.allergens.length})</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className={`h-3 w-3 transition-transform ${
+              expandedAllergens.has(originalIndex) ? "rotate-180" : ""
+            }`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+        {expandedAllergens.has(originalIndex) && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {item.allergens.map((allergenValue: string) => {
+              const allergen = ALLERGENS.find((entry) => entry.value === allergenValue);
+              return (
+                <span
+                  key={allergenValue}
+                  className="inline-flex items-center rounded bg-orange-100 px-2 py-0.5 text-xs text-orange-800"
+                >
+                  {allergen?.label || allergenValue}
+                </span>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderItemRow = (groupedItem: GroupedItem) => {
     const { item, quantity, originalIndex } = groupedItem;
-    const restaurantName = item.restaurantName || item.restaurant?.name;
     const price = parseFloat(item.price?.toString() || "0");
     const discountPrice = parseFloat(item.discountPrice?.toString() || "0");
-    const itemPrice =
-      item.isDiscount && discountPrice > 0 ? discountPrice : price;
-    const BACKEND_QUANTITY_UNIT = item.cateringQuantityUnit || 7;
-    const portions = quantity / BACKEND_QUANTITY_UNIT;
-
-    // Calculate addon total
+    const itemPrice = item.isDiscount && discountPrice > 0 ? discountPrice : price;
+    const backendQuantityUnit = item.cateringQuantityUnit || 7;
+    const portions = quantity / backendQuantityUnit;
     const addonTotal = (item.selectedAddons || []).reduce(
       (sum: number, addon: { price: number; quantity: number }) =>
         sum + (addon.price || 0) * (addon.quantity || 0),
       0
     );
     const subtotal = itemPrice * quantity + addonTotal;
-  
+
+    const showMobile = compactLayout ? "" : " sm:hidden";
+    const showDesktop = compactLayout ? " hidden" : " hidden sm:flex";
+    const showDesktopBlock = compactLayout ? " hidden" : " hidden sm:block";
+    const rootLayout = compactLayout
+      ? "flex flex-col gap-3 rounded-xl bg-base-100 p-4 min-w-0 overflow-hidden"
+      : "flex flex-col gap-3 rounded-xl bg-base-100 p-4 min-w-0 overflow-hidden sm:flex-row sm:items-center";
+
     return (
-      <div
-        key={originalIndex}
-        className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-base-100 rounded-xl min-w-0 overflow-hidden"
-      >
-        {/* Mobile Layout */}
-        <div className="flex gap-3 sm:hidden">
-          {/* Image */}
+      <div key={originalIndex} className={rootLayout}>
+        <div className={`flex gap-3${showMobile}`}>
           {item.image && (
             <img
               src={item.image}
               alt={item.menuItemName}
-              className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+              className="h-16 w-16 flex-shrink-0 rounded-lg object-cover"
             />
           )}
-          {/* Name + Addons */}
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-gray-800 italic">
-              {item.menuItemName}
-            </p>
-            {restaurantName && (
-              <p className="mt-0.5 text-xs text-gray-500">
-                From: {restaurantName}
-              </p>
-            )}
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold italic text-gray-800">{item.menuItemName}</p>
             {item.selectedAddons && item.selectedAddons.length > 0 && (
-              <div className="text-sm text-gray-600 mt-1">
-                {(() => {
-                  // Group addons by groupTitle
-                  const addonsByGroup = item.selectedAddons.reduce(
-                    (
-                      acc: Record<string, { name: string; quantity: number }[]>,
-                      addon: {
-                        groupTitle: string;
-                        name: string;
-                        quantity: number;
-                      }
-                    ) => {
-                      const group = addon.groupTitle || "Options";
-                      if (!acc[group]) acc[group] = [];
-                      acc[group].push({
-                        name: addon.name,
-                        quantity: addon.quantity,
-                      });
-                      return acc;
-                    },
-                    {}
-                  );
-                  return Object.entries(addonsByGroup).map(
-                    ([groupTitle, addons]) => (
-                      <p key={groupTitle} className="text-gray-500">
-                        <span className="font-medium text-gray-700">
-                          {groupTitle}:
-                        </span>{" "}
-                        {(addons as { name: string; quantity: number }[]).map(
-                          (a, i) => (
-                            <span key={i}>
-                              {a.name}
-                              {a.quantity > 1 && ` (×${a.quantity})`}
-                              {i <
-                                (addons as { name: string; quantity: number }[])
-                                  .length -
-                                  1 && ", "}
-                            </span>
-                          )
-                        )}
-                      </p>
-                    )
-                  );
-                })()}
-              </div>
+              <div className="mt-1 text-sm text-gray-600">{renderAddons(item.selectedAddons)}</div>
             )}
-            {item.allergens && item.allergens.length > 0 && (
-              <div className="mt-2">
+            {renderAllergens(item, originalIndex)}
+          </div>
+        </div>
+
+        <div className={`items-center justify-between${showMobile} flex`}>
+          <div>
+            <p className="text-lg font-bold text-primary">£{subtotal.toFixed(2)}</p>
+            <p className="text-sm text-gray-600">
+              {portions} portion{portions !== 1 ? "s" : ""}
+            </p>
+          </div>
+          {showActions && onEdit && onRemove && (
+            <div className={`flex items-center gap-2${showMobile}`}>
+              {onSwapItem && orderItems[originalIndex]?.bundleId && (
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleAllergen(originalIndex);
-                  }}
-                  className="flex items-center gap-1 text-xs font-medium text-orange-700 hover:text-orange-800 transition-colors"
+                  onClick={() => onSwapItem(originalIndex)}
+                  className={`rounded-lg border border-amber-500 p-2 text-amber-600 transition-colors hover:bg-amber-50${
+                    compactLayout ? "" : " sm:px-3 sm:py-2"
+                  }`}
+                  title="Swap"
                 >
-                  <span className="text-orange-600">⚠️</span>
-                  <span>Allergens ({item.allergens.length})</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={`h-3 w-3 transition-transform ${
-                      expandedAllergens.has(originalIndex) ? "rotate-180" : ""
-                    }`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
+                  <ArrowLeftRight className={`h-4 w-4${compactLayout ? "" : " sm:hidden"}`} />
+                  <span className={compactLayout ? "hidden" : "hidden text-sm font-medium sm:inline"}>
+                    Swap
+                  </span>
                 </button>
-                {expandedAllergens.has(originalIndex) && (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {item.allergens.map((allergenValue: string) => {
-                      const allergen = ALLERGENS.find((a) => a.value === allergenValue);
-                      return (
-                        <span
-                          key={allergenValue}
-                          className="inline-flex items-center bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-xs"
-                        >
-                          {allergen?.label || allergenValue}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile Price & Portions */}
-        <div className="sm:hidden">
-          <p className="font-bold text-primary text-lg">
-            £{subtotal.toFixed(2)}
-          </p>
-          <p className="text-sm text-gray-600">
-            {portions} portion{portions !== 1 ? "s" : ""}
-          </p>
-        </div>
-
-        {/* Mobile Actions */}
-        {showActions && onEdit && onRemove && (
-          <div className="flex items-center gap-2 sm:hidden">
-            {onSwapItem && orderItems[originalIndex]?.bundleId && (
+              )}
               <button
-                onClick={() => onSwapItem(originalIndex)}
-                className="px-3 py-2 border border-amber-500 text-amber-600 rounded-lg hover:bg-amber-50 transition-colors text-sm font-medium"
+                onClick={() => onEdit(originalIndex)}
+                className={`rounded-lg border border-primary p-2 text-primary transition-colors hover:bg-primary/5${
+                  compactLayout ? "" : " sm:px-4 sm:py-2"
+                }`}
+                title="Edit"
               >
-                Swap
+                <Pencil className={`h-4 w-4${compactLayout ? "" : " sm:hidden"}`} />
+                <span className={compactLayout ? "hidden" : "hidden text-sm font-medium sm:inline"}>
+                  Edit
+                </span>
               </button>
-            )}
-            <button
-              onClick={() => onEdit(originalIndex)}
-              className="px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors text-sm font-medium"
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => onRemove(originalIndex)}
-              className="px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors text-sm font-medium"
-            >
-              Remove
-            </button>
-          </div>
-        )}
+              <button
+                onClick={() => onRemove(originalIndex)}
+                className={`rounded-lg border border-primary p-2 text-primary transition-colors hover:bg-primary/5${
+                  compactLayout ? "" : " sm:px-4 sm:py-2"
+                }`}
+                title="Remove"
+              >
+                <Trash2 className={`h-4 w-4${compactLayout ? "" : " sm:hidden"}`} />
+                <span className={compactLayout ? "hidden" : "hidden text-sm font-medium sm:inline"}>
+                  Remove
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
 
-        {/* Desktop Layout */}
-        {/* Image */}
         {item.image && (
           <img
             src={item.image}
             alt={item.menuItemName}
-            className="hidden sm:block w-16 h-16 rounded-lg object-cover flex-shrink-0"
+            className={`${showDesktopBlock} h-16 w-16 flex-shrink-0 rounded-lg object-cover`}
           />
         )}
 
-        {/* Name + Addons */}
-        <div className="hidden sm:block flex-1 min-w-0">
+        <div className={`${showDesktopBlock} min-w-0 flex-1`}>
           <p className="font-semibold text-gray-800">{item.menuItemName}</p>
-          {restaurantName && (
-            <p className="mt-0.5 text-xs text-gray-500">
-              From: {restaurantName}
-            </p>
-          )}
           {item.selectedAddons && item.selectedAddons.length > 0 && (
-            <div className="text-sm text-gray-600 mt-1">
-              {(() => {
-                // Group addons by groupTitle
-                const addonsByGroup = item.selectedAddons.reduce(
-                  (
-                    acc: Record<string, { name: string; quantity: number }[]>,
-                    addon: {
-                      groupTitle: string;
-                      name: string;
-                      quantity: number;
-                    }
-                  ) => {
-                    const group = addon.groupTitle || "Options";
-                    if (!acc[group]) acc[group] = [];
-                    acc[group].push({
-                      name: addon.name,
-                      quantity: addon.quantity,
-                    });
-                    return acc;
-                  },
-                  {}
-                );
-                return Object.entries(addonsByGroup).map(
-                  ([groupTitle, addons]) => (
-                    <p key={groupTitle}>
-                      <span className="font-medium">{groupTitle}:</span>{" "}
-                      {(addons as { name: string; quantity: number }[]).map(
-                        (a, i) => (
-                          <span key={i}>
-                            {a.name}
-                            {a.quantity > 1 && ` (×${a.quantity})`}
-                            {i <
-                              (addons as { name: string; quantity: number }[])
-                                .length -
-                                1 && ", "}
-                          </span>
-                        )
-                      )}
-                    </p>
-                  )
-                );
-              })()}
-            </div>
+            <div className="mt-1 text-sm text-gray-600">{renderAddons(item.selectedAddons)}</div>
           )}
-          {item.allergens && item.allergens.length > 0 && (
-            <div className="mt-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleAllergen(originalIndex);
-                }}
-                className="flex items-center gap-1 text-xs font-medium text-orange-700 hover:text-orange-800 transition-colors"
-              >
-                <span>Allergens ({item.allergens.length})</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className={`h-3 w-3 transition-transform ${
-                    expandedAllergens.has(originalIndex) ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-              {expandedAllergens.has(originalIndex) && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {item.allergens.map((allergenValue: string) => {
-                    const allergen = ALLERGENS.find((a) => a.value === allergenValue);
-                    return (
-                      <span
-                        key={allergenValue}
-                        className="inline-flex items-center bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-xs"
-                      >
-                        {allergen?.label || allergenValue}
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
+          {renderAllergens(item, originalIndex)}
         </div>
 
-        {/* Price & Portions */}
-        <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
-          <p className="font-bold text-primary text-lg">
-            £{subtotal.toFixed(2)}
-          </p>
-          <p className="text-sm text-gray-600 whitespace-nowrap">
+        <div className={`${showDesktop} flex-shrink-0 items-center gap-4`}>
+          <p className="text-lg font-bold text-primary">£{subtotal.toFixed(2)}</p>
+          <p className="whitespace-nowrap text-sm text-gray-600">
             {portions} portion{portions !== 1 ? "s" : ""}
           </p>
         </div>
 
-        {/* Actions */}
         {showActions && onEdit && onRemove && (
-          <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+          <div className={`${showDesktop} flex-shrink-0 items-center gap-2`}>
             {onSwapItem && orderItems[originalIndex]?.bundleId && (
               <button
                 onClick={() => onSwapItem(originalIndex)}
-                className="px-3 py-2 border border-amber-500 text-amber-600 rounded-lg hover:bg-amber-50 transition-colors text-sm font-medium"
+                className="rounded-lg border border-amber-500 px-3 py-2 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-50"
               >
                 Swap
               </button>
             )}
             <button
               onClick={() => onEdit(originalIndex)}
-              className="px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors text-sm font-medium"
+              className="rounded-lg border border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
             >
               Edit
             </button>
             <button
               onClick={() => onRemove(originalIndex)}
-              className="px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors text-sm font-medium"
+              className="rounded-lg border border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
             >
               Remove
             </button>
@@ -502,111 +413,55 @@ export default function SelectedItemsByCategory({
   };
 
   return (
-    <div className="mb-6 overflow-hidden min-w-0">
-      {/* Header */}
-      {/* <div className="px-6 py-4 bg-base-100 border-b border-base-200 flex items-center justify-between">
-        <h2 className="text-xl sm:text-3xl font-bold text-gray-800">Your List</h2>
-        {onViewMenu && (
-          <button
-            onClick={onViewMenu}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <span className="hidden sm:inline">View Downloadable Menu</span>
-            <span className="sm:hidden">PDF</span>
-          </button>
-        )}
-      </div> */}
-
-      <div className="space-y-4">
-        {/* Bundle Groups */}
-        {Array.from(bundleGroups.entries()).map(([bundleId, { name, items }]) => (
-          <div
-            key={bundleId}
-            className="border-2 border-dashed border-primary/30 rounded-2xl overflow-hidden bg-primary/[0.02]"
-          >
-            <div className="flex items-center gap-2 px-4 py-3 bg-primary/10 border-b border-primary/20">
-              <Package className="w-4 h-4 text-primary" />
-              <span className="font-semibold text-primary text-sm">{name}</span>
-              <span className="text-xs text-primary/60">
-                ({items.length} item{items.length !== 1 ? "s" : ""})
-              </span>
-              <div className="flex-1" />
-              {onRemoveBundle && (
-                <>
-                  {/* Mobile: X only */}
-                  <button
-                    onClick={() => onRemoveBundle(bundleId)}
-                    className="sm:hidden w-7 h-7 flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  {/* Desktop: X + text */}
-                  <button
-                    onClick={() => onRemoveBundle(bundleId)}
-                    className="hidden sm:flex items-center gap-1 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                    Remove Bundle
-                  </button>
-                </>
-              )}
-            </div>
-            <div className="p-2 space-y-3">
-              {items.map(renderItemRow)}
-            </div>
-          </div>
-        ))}
-
-        {/* Categories */}
-        {Array.from(grouped.entries()).map(([categoryName, categoryGroup]) => {
-          const isCollapsed = collapsedCategories.has(categoryName);
-          const totalItems =
-            categoryGroup.items.length +
-            Array.from(categoryGroup.subcategories.values()).reduce(
-              (sum, items) => sum + items.length,
+    <div className="mb-6 min-w-0 overflow-hidden">
+      <div className="space-y-5">
+        {Array.from(restaurantGrouped.entries()).map(([restaurantName, restaurant]) => {
+          const isRestaurantCollapsed = collapsedRestaurants.has(restaurantName);
+          const totalRestaurantItems =
+            Array.from(restaurant.bundles.values()).reduce(
+              (sum, bundle) => sum + bundle.items.length,
+              0
+            ) +
+            Array.from(restaurant.categories.values()).reduce(
+              (sum, category) =>
+                sum +
+                category.items.length +
+                Array.from(category.subcategories.values()).reduce(
+                  (subcategorySum, items) => subcategorySum + items.length,
+                  0
+                ),
               0
             );
 
           return (
-            <div
-              key={categoryName}
-              className="border-2 border-base-200 rounded-xl overflow-hidden"
-            >
-              {/* Category Header */}
+            <div key={restaurantName}>
               <button
-                onClick={() => handleToggleCategory(categoryName)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-base-200 hover:bg-base-200 transition-colors"
+                onClick={() =>
+                  setCollapsedRestaurants((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(restaurantName)) next.delete(restaurantName);
+                    else next.add(restaurantName);
+                    return next;
+                  })
+                }
+                className="mb-2 flex w-full items-center gap-3 rounded-lg px-1 py-1 transition-colors hover:bg-base-100"
               >
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-800">
-                    {categoryName}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    ({totalItems} item{totalItems !== 1 ? "s" : ""})
-                  </span>
-                </div>
+                {restaurant.image ? (
+                  <img
+                    src={restaurant.image}
+                    alt={restaurantName}
+                    className="h-9 w-9 flex-shrink-0 rounded-lg object-cover"
+                  />
+                ) : (
+                  <Store className="h-5 w-5 flex-shrink-0 text-gray-500" />
+                )}
+                <span className="text-base font-bold text-gray-800">{restaurantName}</span>
+                <span className="text-sm text-gray-400">({totalRestaurantItems})</span>
+                <div className="flex-1" />
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className={`h-5 w-5 text-gray-500 transition-transform ${
-                    isCollapsed ? "" : "rotate-180"
+                  className={`h-5 w-5 text-gray-400 transition-transform ${
+                    isRestaurantCollapsed ? "" : "rotate-180"
                   }`}
                   fill="none"
                   viewBox="0 0 24 24"
@@ -621,25 +476,101 @@ export default function SelectedItemsByCategory({
                 </svg>
               </button>
 
-              {/* Category Content */}
-              {!isCollapsed && (
-                <div className="p-2 space-y-3 min-w-0 overflow-hidden">
-                  {/* Items without subcategory */}
-                  {categoryGroup.items.map(renderItemRow)}
-
-                  {/* Subcategories */}
-                  {Array.from(categoryGroup.subcategories.entries()).map(
-                    ([subName, items]) => (
-                      <div key={subName}>
-                        <p className="text-sm font-medium text-gray-600 mb-2 pl-2">
-                          {subName}
-                        </p>
-                        <div className="space-y-3">
-                          {items.map(renderItemRow)}
+              {!isRestaurantCollapsed && (
+                <div className="space-y-4">
+                  {Array.from(restaurant.bundles.entries()).map(([bundleId, bundle]) => (
+                    <div
+                      key={bundleId}
+                      className="overflow-hidden rounded-2xl border-2 border-dashed border-primary/30 bg-primary/[0.02]"
+                    >
+                      <div className="flex items-center gap-2 border-b border-primary/20 bg-primary/10 px-4 py-3">
+                        <Package className="h-4 w-4 flex-shrink-0 text-primary" />
+                        <div className="min-w-0">
+                          <span className="text-sm font-semibold text-primary">
+                            {bundle.name}
+                          </span>
+                          <span className="block text-xs text-primary/60 sm:ml-1 sm:inline">
+                            ({bundle.items.length} item{bundle.items.length !== 1 ? "s" : ""})
+                          </span>
                         </div>
+                        <div className="flex-1" />
+                        {onRemoveBundle && (
+                          <>
+                            <button
+                              onClick={() => onRemoveBundle(bundleId)}
+                              className={`${compactLayout ? "" : "sm:hidden"} flex h-7 w-7 items-center justify-center rounded-full text-red-500 transition-colors hover:bg-red-50 hover:text-red-700`}
+                            >
+                              <XIcon />
+                            </button>
+                            <button
+                              onClick={() => onRemoveBundle(bundleId)}
+                              className={`${compactLayout ? "hidden" : "hidden sm:flex"} items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-700`}
+                            >
+                              <XIcon className="h-3.5 w-3.5" />
+                              Remove Bundle
+                            </button>
+                          </>
+                        )}
                       </div>
-                    )
-                  )}
+                      <div className="space-y-3 p-2">{bundle.items.map(renderItemRow)}</div>
+                    </div>
+                  ))}
+
+                  {Array.from(restaurant.categories.entries()).map(([categoryName, categoryGroup]) => {
+                    const isCollapsed = collapsedCategories.has(categoryName);
+                    const totalItems =
+                      categoryGroup.items.length +
+                      Array.from(categoryGroup.subcategories.values()).reduce(
+                        (sum, items) => sum + items.length,
+                        0
+                      );
+
+                    return (
+                      <div
+                        key={categoryName}
+                        className="overflow-hidden rounded-xl border-2 border-base-200"
+                      >
+                        <button
+                          onClick={() => handleToggleCategory(categoryName)}
+                          className="flex w-full items-center justify-between bg-base-200 px-4 py-3 transition-colors hover:bg-base-200"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-800">{categoryName}</span>
+                            <span className="text-sm text-gray-500">
+                              ({totalItems} item{totalItems !== 1 ? "s" : ""})
+                            </span>
+                          </div>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className={`h-5 w-5 text-gray-500 transition-transform ${
+                              isCollapsed ? "" : "rotate-180"
+                            }`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+
+                        {!isCollapsed && (
+                          <div className="min-w-0 overflow-hidden p-2 space-y-3">
+                            {categoryGroup.items.map(renderItemRow)}
+                            {Array.from(categoryGroup.subcategories.values()).map((items, index) => (
+                              <div key={`${categoryName}-${index}`} className="space-y-3">
+                                {items.map(renderItemRow)}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -647,5 +578,17 @@ export default function SelectedItemsByCategory({
         })}
       </div>
     </div>
+  );
+}
+
+function XIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path
+        fillRule="evenodd"
+        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+        clipRule="evenodd"
+      />
+    </svg>
   );
 }

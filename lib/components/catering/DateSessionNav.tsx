@@ -33,7 +33,7 @@ export default function DateSessionNav({
         isNavSticky ? "shadow-sm border-b border-base-200" : ""
       }`}
     >
-      <div className="max-w-6xl mx-auto px-2 py-2">
+      <div className="max-w-7xl mx-auto px-2 py-2">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {navMode === "dates" ? (
             <>

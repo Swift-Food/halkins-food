@@ -2,50 +2,36 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import { pdf } from "@react-pdf/renderer";
+import { Package, ShoppingBag, X } from "lucide-react";
 import { useCatering } from "@/context/CateringContext";
 import { useCoworking } from "@/context/CoworkingContext";
 import { MealSessionState } from "@/types/catering.types";
+import { MenuItem } from "@/types/restaurant.types";
+import { CateringBundleItem } from "@/types/api/catering.api.types";
 import { cateringService } from "@/services/api/catering.api";
-import MenuItemModal from "./MenuItemModal";
-import { MenuItem, Restaurant } from "@/types/restaurant.types";
-import TutorialTooltip from "./TutorialTooltip";
-import SelectedItemsByCategory from "./SelectedItemsByCategory";
+import { CateringMenuPdf } from "@/lib/components/pdf/CateringMenuPdf";
 import {
   LocalMealSession,
   transformLocalSessionsToPdfData,
 } from "@/lib/utils/menuPdfUtils";
-import { pdf } from "@react-pdf/renderer";
-import { CateringMenuPdf } from "@/lib/components/pdf/CateringMenuPdf";
 import { validateSessionMinOrders } from "@/lib/utils/catering-min-order-validation";
-
-// Extracted components
+import MenuItemModal from "./MenuItemModal";
+import TutorialTooltip from "./TutorialTooltip";
 import SessionEditor from "./SessionEditor";
-import SessionAccordion from "./SessionAccordion";
 import DateSessionNav from "./DateSessionNav";
-import CheckoutBar from "./CheckoutBar";
-import RestaurantMenuBrowser from "./RestaurantMenuBrowser";
-import BundleBrowser from "./BundleBrowser";
+import ActiveSessionPanel from "./ActiveSessionPanel";
+import ViewOrderModal from "./ViewOrderModal";
+import MenuBrowserColumn from "./MenuBrowserColumn";
 import AddDayModal from "./modals/AddDayModal";
 import EmptySessionWarningModal from "./modals/EmptySessionWarningModal";
 import RemoveSessionConfirmModal from "./modals/RemoveSessionConfirmModal";
 import MinOrderModal from "./modals/MinOrderModal";
 import PdfDownloadModal from "./modals/PdfDownloadModal";
 import SwapItemModal from "./modals/SwapItemModal";
-
-// Hooks
 import { useCateringTutorial } from "./hooks/useCateringTutorial";
 import { useCateringData } from "./hooks/useCateringData";
-
-// Helpers
-import {
-  groupSessionsByDay,
-  formatTimeDisplay,
-  mapToMenuItem,
-} from "./catering-order-helpers";
-import { CateringBundleItem } from "@/types/api/catering.api.types";
-
-// Icons
-import { Plus, Clock, Package } from "lucide-react";
+import { groupSessionsByDay, formatTimeDisplay, mapToMenuItem } from "./catering-order-helpers";
 
 const CATERING_TIME_SLOTS = ["11:00", "13:00", "18:00"] as const;
 const TUTORIAL_HINT_DISABLED_KEY = "catering_tutorial_hint_disabled";
@@ -57,18 +43,10 @@ const toMinutes = (time: string) => {
 
 const getNextCateringTime = (time: string) => {
   const requestedMinutes = toMinutes(time);
-  const nextSlot = CATERING_TIME_SLOTS.find(
-    (slot) => toMinutes(slot) >= requestedMinutes
-  );
-
+  const nextSlot = CATERING_TIME_SLOTS.find((slot) => toMinutes(slot) >= requestedMinutes);
   return nextSlot ?? CATERING_TIME_SLOTS[CATERING_TIME_SLOTS.length - 1];
 };
 
-type CateringHourSlot = NonNullable<Restaurant["cateringOperatingHours"]>[number];
-type PopulatedCateringHourSlot = CateringHourSlot & {
-  open: string;
-  close: string;
-};
 type PdfPreviewItem = LocalMealSession["orderItems"][number]["item"];
 
 interface CateringOrderBuilderProps {
@@ -79,8 +57,7 @@ export default function CateringOrderBuilder({
   nextStep = 2,
 }: CateringOrderBuilderProps) {
   const searchParams = useSearchParams();
-  const { eventStartDate, eventStartTime, eventEndDate, eventEndTime } =
-    useCoworking();
+  const { eventStartDate, eventStartTime, eventEndDate, eventEndTime } = useCoworking();
   const {
     mealSessions,
     activeSessionIndex,
@@ -93,80 +70,49 @@ export default function CateringOrderBuilder({
     removeMenuItemByIndex,
     updateMenuItemByIndex,
     getSessionTotal,
+    getSessionDiscount,
     getTotalPrice,
     setCurrentStep,
     eventDetails,
   } = useCatering();
 
-  // Session editing state
   const [editingSessionIndex, setEditingSessionIndex] = useState<number | null>(null);
   const [isNewSession, setIsNewSession] = useState(false);
-
-  // Navigation state
   const [navMode, setNavMode] = useState<"dates" | "sessions">("dates");
   const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
-  const [expandedSessionIndex, setExpandedSessionIndex] = useState<number | null>(0);
-
-  // Add day modal state
   const [isAddDayModalOpen, setIsAddDayModalOpen] = useState(false);
   const [newDayDate, setNewDayDate] = useState("");
   const [addDayError, setAddDayError] = useState<string | null>(null);
-
-  // Refs for scroll-to behavior
-  const sessionAccordionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  const dayRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const lastAutoSelectedSessionTime = useRef<string | null>(null);
-
-  // Sticky nav detection
   const [isNavSticky, setIsNavSticky] = useState(false);
-
-  // Menu items state
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
-
-  // Edit item state
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  // Pending item modal state
   const [pendingItem, setPendingItem] = useState<MenuItem | null>(null);
-
-  // Collapsed categories state
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [tutorialResetKey, setTutorialResetKey] = useState(0);
   const [isTutorialHintVisible, setIsTutorialHintVisible] = useState(false);
   const [isTutorialHintDisabled, setIsTutorialHintDisabled] = useState(false);
-
-  // Bundle browsing state
   const [showBundleBrowser, setShowBundleBrowser] = useState(false);
-
-  // Swap item state
   const [swapItemIndex, setSwapItemIndex] = useState<number | null>(null);
   const [swapAlternatives, setSwapAlternatives] = useState<MenuItem[]>([]);
-
-  // Remove bundle confirmation state
-  const [bundleToRemove, setBundleToRemove] = useState<{ id: string; name: string } | null>(null);
-
-  // PDF generation state
+  const [bundleToRemove, setBundleToRemove] = useState<{ id: string; name: string } | null>(
+    null
+  );
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
-
-  // Empty session warning modal state
   const [emptySessionIndex, setEmptySessionIndex] = useState<number | null>(null);
-
-  // Remove session confirmation modal state
   const [sessionToRemove, setSessionToRemove] = useState<number | null>(null);
-
-  // Min order modal state
   const [minOrderModalSession, setMinOrderModalSession] = useState<{
     index: number;
-    validation: typeof validationStatus;
+    validation: ReturnType<typeof validateSessionMinOrders>;
   } | null>(null);
+  const [sessionValidationErrors, setSessionValidationErrors] = useState<Record<number, string>>(
+    {}
+  );
+  const [isViewOrderOpen, setIsViewOrderOpen] = useState(false);
+  const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
 
-  // Catering hours validation errors
-  const [sessionValidationErrors, setSessionValidationErrors] = useState<Record<number, string>>({});
-
-  // Tutorial refs
-  const addDayButtonRef = useRef<HTMLButtonElement>(null);
+  const lastAutoSelectedSessionTime = useRef<string | null>(null);
   const addDayNavButtonRef = useRef<HTMLButtonElement>(null);
   const backButtonRef = useRef<HTMLButtonElement>(null);
   const firstDayTabRef = useRef<HTMLButtonElement>(null);
@@ -176,7 +122,6 @@ export default function CateringOrderBuilder({
   const restaurantListRef = useRef<HTMLDivElement>(null);
   const firstMenuItemRef = useRef<HTMLDivElement>(null);
 
-  // Use custom hooks
   const {
     categories,
     selectedCategory,
@@ -189,7 +134,7 @@ export default function CateringOrderBuilder({
     toggleDietaryFilter,
     allMenuItems,
     fetchAllMenuItems,
-  } = useCateringData({ expandedSessionIndex });
+  } = useCateringData({ expandedSessionIndex: activeSessionIndex });
 
   const {
     tutorialStep,
@@ -217,7 +162,6 @@ export default function CateringOrderBuilder({
 
   useEffect(() => {
     if (currentTutorialStep?.id !== "add-day-nav" || navMode === "dates") return;
-
     setNavMode("dates");
     setSelectedDayDate(null);
   }, [currentTutorialStep, navMode]);
@@ -227,16 +171,14 @@ export default function CateringOrderBuilder({
       typeof window !== "undefined"
         ? window.localStorage.getItem(TUTORIAL_HINT_DISABLED_KEY)
         : null;
-    const isDisabled = storedPreference === "true";
-
-    setIsTutorialHintDisabled(isDisabled);
-    setIsTutorialHintVisible(!isDisabled);
+    const disabled = storedPreference === "true";
+    setIsTutorialHintDisabled(disabled);
+    setIsTutorialHintVisible(!disabled);
   }, []);
 
   const handleTutorialHintDisabledChange = (checked: boolean) => {
     setIsTutorialHintDisabled(checked);
     setIsTutorialHintVisible(!checked);
-
     if (typeof window !== "undefined") {
       window.localStorage.setItem(TUTORIAL_HINT_DISABLED_KEY, checked ? "true" : "false");
     }
@@ -253,7 +195,6 @@ export default function CateringOrderBuilder({
     }
   };
 
-  // Get quantity for an item in the current session
   const getItemQuantity = (itemId: string): number => {
     const session = mealSessions[activeSessionIndex];
     if (!session) return 0;
@@ -261,11 +202,10 @@ export default function CateringOrderBuilder({
     return orderItem?.quantity || 0;
   };
 
-  // Handle adding item to cart
   const handleAddItem = (item: MenuItem) => {
-    const BACKEND_QUANTITY_UNIT = item.cateringQuantityUnit || 7;
+    const backendQuantityUnit = item.cateringQuantityUnit || 7;
     const portionQuantity = item.portionQuantity || 1;
-    const quantity = portionQuantity * BACKEND_QUANTITY_UNIT;
+    const quantity = portionQuantity * backendQuantityUnit;
 
     addMenuItem(activeSessionIndex, {
       item: {
@@ -296,27 +236,19 @@ export default function CateringOrderBuilder({
     setExpandedItemId(null);
   };
 
-  // Handle updating item quantity
   const handleUpdateQuantity = (itemId: string, quantity: number) => {
     updateItemQuantity(activeSessionIndex, itemId, quantity);
   };
 
-  const hasDefinedHours = (
-    slot: CateringHourSlot
-  ): slot is PopulatedCateringHourSlot => {
-    return Boolean(slot.open && slot.close);
-  };
-
-  // Handle opening modal for add/edit
   const handleAddOrderPress = (item: MenuItem) => {
     setExpandedItemId(item.id);
   };
 
-  // Detect when sticky nav becomes stuck
   useEffect(() => {
     const handleScroll = () => {
       setIsNavSticky(window.scrollY > 10);
     };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
@@ -324,7 +256,6 @@ export default function CateringOrderBuilder({
 
   useEffect(() => {
     if (!eventStartTime || mealSessions.length === 0) return;
-
     const firstSession = mealSessions[0];
     if (!firstSession) return;
 
@@ -346,7 +277,6 @@ export default function CateringOrderBuilder({
     lastAutoSelectedSessionTime.current = nextCateringTime;
   }, [eventStartTime, mealSessions, updateMealSession]);
 
-  // Prefill cart from bundle query parameter
   useEffect(() => {
     const bundleId = searchParams.get("bundleId");
     if (!bundleId) return;
@@ -358,12 +288,10 @@ export default function CateringOrderBuilder({
       try {
         const bundle = await cateringService.getBundleById(bundleId);
         const response = await cateringService.getMenuItems();
-        const allMenuItems = (response || []).map(mapToMenuItem);
+        const menuItems = (response || []).map(mapToMenuItem);
 
         bundle.items.forEach((bundleItem: CateringBundleItem) => {
-          const menuItem = allMenuItems.find(
-            (item: MenuItem) => item.id === bundleItem.menuItemId
-          );
+          const menuItem = menuItems.find((item: MenuItem) => item.id === bundleItem.menuItemId);
           if (menuItem) {
             addMenuItem(activeSessionIndex, {
               item: { ...menuItem, selectedAddons: bundleItem.selectedAddons },
@@ -384,13 +312,12 @@ export default function CateringOrderBuilder({
     };
 
     prefillFromBundle();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [searchParams, addMenuItem, activeSessionIndex, updateMealSession]);
 
-  // Check for pending item from menu view
   useEffect(() => {
     const pendingItemJson = localStorage.getItem("catering_pending_item");
     if (!pendingItemJson) return;
+
     try {
       const item = JSON.parse(pendingItemJson) as MenuItem;
       localStorage.removeItem("catering_pending_item");
@@ -401,105 +328,106 @@ export default function CateringOrderBuilder({
     }
   }, []);
 
-  // Validate minimum order requirements for current session
   const validationStatus = useMemo(() => {
     const activeSession = mealSessions[activeSessionIndex];
     if (!activeSession || restaurants.length === 0) return [];
     return validateSessionMinOrders(activeSession, restaurants);
   }, [mealSessions, activeSessionIndex, restaurants]);
 
-  const isCurrentSessionValid = useMemo(() => {
-    return validationStatus.every((status) => status.isValid);
-  }, [validationStatus]);
+  const isCurrentSessionValid = useMemo(
+    () => validationStatus.every((status) => status.isValid),
+    [validationStatus]
+  );
 
-  // Group sessions by day
-  const dayGroups = useMemo(() => {
-    return groupSessionsByDay(mealSessions, getSessionTotal);
-  }, [mealSessions, getSessionTotal]);
+  const dayGroups = useMemo(
+    () => groupSessionsByDay(mealSessions, getSessionTotal),
+    [mealSessions, getSessionTotal]
+  );
 
   const currentDayGroup = useMemo(() => {
     if (!selectedDayDate) return null;
-    return dayGroups.find((g) => g.date === selectedDayDate) || null;
+    return dayGroups.find((group) => group.date === selectedDayDate) || null;
   }, [dayGroups, selectedDayDate]);
 
-  // Handle clicking a date tab
+  useEffect(() => {
+    if (navMode !== "sessions" || activeSessionIndex === null) return;
+    const activeSession = mealSessions[activeSessionIndex];
+    if (!activeSession?.sessionDate) return;
+    if (selectedDayDate !== activeSession.sessionDate) {
+      setSelectedDayDate(activeSession.sessionDate);
+    }
+  }, [navMode, activeSessionIndex, mealSessions, selectedDayDate]);
+
   const handleDateClick = (dayDate: string) => {
     setSelectedDayDate(dayDate);
     setNavMode("sessions");
-    setTimeout(() => {
-      const element = dayRefs.current.get(dayDate);
-      if (element) {
-        const offsetPosition =
-          element.getBoundingClientRect().top + window.pageYOffset - 60;
-        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-      }
-    }, 150);
+    const dayGroup = dayGroups.find((group) => group.date === dayDate);
+    if (dayGroup?.sessions.length) {
+      setActiveSessionIndex(dayGroup.sessions[0].index);
+    }
   };
 
-  // Handle back to dates view
   const handleBackToDates = () => {
     if (selectedDayDate && currentDayGroup) {
       const sessionsToRemove = currentDayGroup.sessions
         .filter(({ session }) => session.orderItems.length === 0 && !session.eventTime)
         .map(({ index }) => index)
         .sort((a, b) => b - a);
+
       sessionsToRemove.forEach((index) => removeMealSession(index));
     }
+
     setNavMode("dates");
     setSelectedDayDate(null);
   };
 
-  // Handle session pill click
   const handleSessionPillClick = (sessionIndex: number) => {
-    setExpandedSessionIndex(sessionIndex);
-    setActiveSessionIndex(sessionIndex);
-    setTimeout(() => {
-      const element = sessionAccordionRefs.current.get(sessionIndex);
-      if (element) {
-        const offsetPosition =
-          element.getBoundingClientRect().top + window.pageYOffset - 60;
-        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-      }
-    }, 150);
-  };
-
-  // Toggle session accordion
-  const toggleSessionExpand = (sessionIndex: number) => {
-    setExpandedSessionIndex((prev) => (prev === sessionIndex ? null : sessionIndex));
-    setActiveSessionIndex(sessionIndex);
-  };
-
-  // Handle navigation from min order modal
-  const handleMinOrderNavigate = (_restaurantId: string, section: string) => {
-    if (!minOrderModalSession) return;
-    const sessionIndex = minOrderModalSession.index;
     const session = mealSessions[sessionIndex];
-    setMinOrderModalSession(null);
-    setExpandedSessionIndex(sessionIndex);
-    setActiveSessionIndex(sessionIndex);
     if (session?.sessionDate) {
       setSelectedDayDate(session.sessionDate);
       setNavMode("sessions");
     }
-    const matchingCategory = categories.find(
-      (cat) => cat.name.toLowerCase() === section.toLowerCase()
-    );
-    if (matchingCategory) handleCategoryClick(matchingCategory);
-    setTimeout(() => {
-      const element = sessionAccordionRefs.current.get(sessionIndex);
-      if (element) {
-        const offsetPosition =
-          element.getBoundingClientRect().top + window.pageYOffset - 60;
-        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-      }
-    }, 150);
+    setActiveSessionIndex(sessionIndex);
+    setShowBundleBrowser(false);
   };
 
-  // Handle adding a new day
+  const handleMinOrderNavigate = (_restaurantId: string, section: string) => {
+    if (!minOrderModalSession) return;
+    const sessionIndex = minOrderModalSession.index;
+    setMinOrderModalSession(null);
+    setActiveSessionIndex(sessionIndex);
+
+    const session = mealSessions[sessionIndex];
+    if (session?.sessionDate) {
+      setSelectedDayDate(session.sessionDate);
+      setNavMode("sessions");
+    }
+
+    const matchingCategory = categories.find(
+      (category) => category.name.toLowerCase() === section.toLowerCase()
+    );
+    if (matchingCategory) {
+      handleCategoryClick(matchingCategory);
+    }
+  };
+
   const handleAddDay = () => {
     setNewDayDate("");
     setAddDayError(null);
     setIsAddDayModalOpen(true);
+  };
+
+  const isUnconfiguredDefaultSession = (session: MealSessionState | undefined) => {
+    if (!session) return false;
+
+    return (
+      session.sessionName === "Main Event" &&
+      !session.sessionDate &&
+      !session.eventTime &&
+      !session.guestCount &&
+      !session.specialRequirements?.trim() &&
+      session.orderItems.length === 0
+    );
   };
 
   const handleConfirmAddDay = () => {
@@ -507,6 +435,7 @@ export default function CateringOrderBuilder({
       setAddDayError("Please select a date.");
       return;
     }
+
     if (
       eventStartDate &&
       eventEndDate &&
@@ -517,26 +446,35 @@ export default function CateringOrderBuilder({
       );
       return;
     }
-    if (dayGroups.find((g) => g.date === newDayDate)) {
-      setAddDayError(
-        "This date already has sessions. Please select a different date."
-      );
+
+    if (dayGroups.find((group) => group.date === newDayDate)) {
+      setAddDayError("This date already has sessions. Please select a different date.");
       return;
     }
+
     const newSession: MealSessionState = {
       sessionName: "New Session",
       sessionDate: newDayDate,
       eventTime: "",
       orderItems: [],
     };
-    addMealSession(newSession);
-    const newIndex = mealSessions.length;
+
+    const shouldReuseDefaultSession =
+      mealSessions.length === 1 && isUnconfiguredDefaultSession(mealSessions[0]);
+    const newIndex = shouldReuseDefaultSession ? 0 : mealSessions.length;
+
+    if (shouldReuseDefaultSession) {
+      updateMealSession(0, newSession);
+    } else {
+      addMealSession(newSession);
+    }
+
     setAddDayError(null);
     setIsAddDayModalOpen(false);
     setSelectedDayDate(newDayDate);
     setNavMode("sessions");
-    setExpandedSessionIndex(newIndex);
     selectMainsCategory();
+
     setTimeout(() => {
       setEditingSessionIndex(newIndex);
       setActiveSessionIndex(newIndex);
@@ -544,7 +482,6 @@ export default function CateringOrderBuilder({
     }, 100);
   };
 
-  // Handle adding session to a day
   const handleAddSessionToDay = (dayDate: string) => {
     const newSession: MealSessionState = {
       sessionName: `Session ${mealSessions.length + 1}`,
@@ -552,29 +489,35 @@ export default function CateringOrderBuilder({
       eventTime: "",
       orderItems: [],
     };
-    addMealSession(newSession);
-    const newIndex = mealSessions.length;
+
+    const shouldReuseDefaultSession =
+      mealSessions.length === 1 && isUnconfiguredDefaultSession(mealSessions[0]);
+    const newIndex = shouldReuseDefaultSession ? 0 : mealSessions.length;
+
+    if (shouldReuseDefaultSession) {
+      updateMealSession(0, newSession);
+    } else {
+      addMealSession(newSession);
+    }
+
+    setSelectedDayDate(dayDate);
+    setNavMode("sessions");
     setActiveSessionIndex(newIndex);
-    setExpandedSessionIndex(newIndex);
     selectMainsCategory();
+
     setTimeout(() => {
       setEditingSessionIndex(newIndex);
       setIsNewSession(true);
-      const element = sessionAccordionRefs.current.get(newIndex);
-      if (element) {
-        const offsetPosition =
-          element.getBoundingClientRect().top + window.pageYOffset - 80;
-        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-      }
     }, 150);
   };
 
-  // Totals
-  const totalDays = dayGroups.filter((g) => g.date !== "unscheduled").length;
+  const totalDays = dayGroups.filter((group) => group.date !== "unscheduled").length;
   const totalSessions = mealSessions.length;
-  const totalItems = mealSessions.reduce((acc, s) => acc + s.orderItems.length, 0);
+  const totalItems = mealSessions.reduce(
+    (acc, session) => acc + session.orderItems.reduce((sum, item) => sum + item.quantity, 0),
+    0
+  );
 
-  // Handle editor close
   const handleEditorClose = (cancelled: boolean) => {
     const sessionIndex = editingSessionIndex;
     const wasNewSession = isNewSession;
@@ -582,6 +525,7 @@ export default function CateringOrderBuilder({
     if (cancelled && isNewSession && sessionIndex !== null) {
       removeMealSession(sessionIndex);
     }
+
     if (sessionIndex !== null && !cancelled) {
       setSessionValidationErrors((prev) => {
         const next = { ...prev };
@@ -594,36 +538,46 @@ export default function CateringOrderBuilder({
     setIsNewSession(false);
 
     if (sessionIndex !== null && !cancelled) {
-      setExpandedSessionIndex(sessionIndex);
-      setTimeout(() => {
-        const element = sessionAccordionRefs.current.get(sessionIndex);
-        if (element) {
-          const offsetPosition =
-            element.getBoundingClientRect().top + window.pageYOffset - 80;
-          window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-        }
-      }, 150);
+      const session = mealSessions[sessionIndex];
+      if (session?.sessionDate) {
+        setSelectedDayDate(session.sessionDate);
+        setNavMode("sessions");
+      }
+      setActiveSessionIndex(sessionIndex);
+
       if (wasNewSession && tutorialPhase === "initial") {
         triggerNavigationTutorial();
       }
     }
   };
 
-  // Handle remove session
   const handleRemoveSession = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setSessionToRemove(index);
   };
 
   const confirmRemoveSession = () => {
-    if (sessionToRemove !== null) {
-      removeMealSession(sessionToRemove);
-      setEditingSessionIndex(null);
-      setSessionToRemove(null);
+    if (sessionToRemove === null) return;
+
+    const remainingSessions = mealSessions.filter((_, index) => index !== sessionToRemove);
+    removeMealSession(sessionToRemove);
+
+    if (remainingSessions.length === 0) {
+      setSelectedDayDate(null);
+      setNavMode("dates");
+      setActiveSessionIndex(0);
+    } else {
+      const nextSessionIndex = Math.min(sessionToRemove, remainingSessions.length - 1);
+      const nextSession = remainingSessions[nextSessionIndex];
+      setActiveSessionIndex(nextSessionIndex);
+      setSelectedDayDate(nextSession?.sessionDate || null);
+      setNavMode(nextSession?.sessionDate ? "sessions" : "dates");
     }
+
+    setEditingSessionIndex(null);
+    setSessionToRemove(null);
   };
 
-  // Toggle collapsed category
   const handleToggleCategory = (categoryName: string) => {
     setCollapsedCategories((prev) => {
       const next = new Set(prev);
@@ -633,23 +587,30 @@ export default function CateringOrderBuilder({
     });
   };
 
-  // Handle edit item from cart
   const handleEditItem = (itemIndex: number) => {
     setEditingItemIndex(itemIndex);
     setIsEditModalOpen(true);
   };
 
   const handleRemoveItem = (itemIndex: number) => {
-    removeMenuItemByIndex(activeSessionIndex, itemIndex);
+    setRemoveItemIndex(itemIndex);
+  };
+
+  const confirmRemoveItem = () => {
+    if (removeItemIndex !== null) {
+      removeMenuItemByIndex(activeSessionIndex, removeItemIndex);
+      setRemoveItemIndex(null);
+    }
   };
 
   const handleSaveEditedItem = (updatedItem: MenuItem) => {
     if (editingItemIndex === null) return;
-    const BACKEND_QUANTITY_UNIT = updatedItem.cateringQuantityUnit || 7;
-    const quantity = (updatedItem.portionQuantity || 1) * BACKEND_QUANTITY_UNIT;
-    const originalOrderItem =
-      mealSessions[activeSessionIndex].orderItems[editingItemIndex];
+
+    const backendQuantityUnit = updatedItem.cateringQuantityUnit || 7;
+    const quantity = (updatedItem.portionQuantity || 1) * backendQuantityUnit;
+    const originalOrderItem = mealSessions[activeSessionIndex].orderItems[editingItemIndex];
     const originalItem = originalOrderItem.item;
+
     updateMenuItemByIndex(activeSessionIndex, editingItemIndex, {
       item: {
         ...updatedItem,
@@ -666,15 +627,15 @@ export default function CateringOrderBuilder({
       bundleId: originalOrderItem.bundleId,
       bundleName: originalOrderItem.bundleName,
     });
+
     setIsEditModalOpen(false);
     setEditingItemIndex(null);
   };
 
-  // Handle remove entire bundle
   const handleRemoveBundle = (bundleId: string) => {
     const session = mealSessions[activeSessionIndex];
     if (!session) return;
-    const bundleItem = session.orderItems.find((oi) => oi.bundleId === bundleId);
+    const bundleItem = session.orderItems.find((item) => item.bundleId === bundleId);
     setBundleToRemove({ id: bundleId, name: bundleItem?.bundleName || "Bundle" });
   };
 
@@ -682,17 +643,16 @@ export default function CateringOrderBuilder({
     if (!bundleToRemove) return;
     const session = mealSessions[activeSessionIndex];
     if (!session) return;
-    const indicesToRemove = session.orderItems
-      .map((oi, idx) => (oi.bundleId === bundleToRemove.id ? idx : -1))
-      .filter((idx) => idx !== -1)
-      .reverse();
-    for (const idx of indicesToRemove) {
-      removeMenuItemByIndex(activeSessionIndex, idx);
-    }
+
+    const indices = session.orderItems
+      .map((item, index) => (item.bundleId === bundleToRemove.id ? index : -1))
+      .filter((index) => index !== -1)
+      .sort((a, b) => b - a);
+
+    indices.forEach((index) => removeMenuItemByIndex(activeSessionIndex, index));
     setBundleToRemove(null);
   };
 
-  // Handle swap item (for bundle items)
   const handleSwapItem = (itemIndex: number) => {
     const session = mealSessions[activeSessionIndex];
     if (!session) return;
@@ -703,11 +663,10 @@ export default function CateringOrderBuilder({
     const restaurantId = item.restaurantId;
     const groupTitle = item.groupTitle;
 
-    // Find alternatives: same restaurant + same groupTitle
     let alternatives: MenuItem[] = [];
     if (allMenuItems && restaurantId && groupTitle) {
       alternatives = allMenuItems.filter(
-        (mi) => mi.restaurantId === restaurantId && mi.groupTitle === groupTitle
+        (menuItem) => menuItem.restaurantId === restaurantId && menuItem.groupTitle === groupTitle
       );
     }
 
@@ -744,30 +703,27 @@ export default function CateringOrderBuilder({
     setSwapAlternatives([]);
   };
 
-  // Handle checkout
   const handleCheckout = () => {
     if (mealSessions.length > 1) {
-      const emptyIndex = mealSessions.findIndex(
-        (session) => session.orderItems.length === 0
-      );
+      const emptyIndex = mealSessions.findIndex((session) => session.orderItems.length === 0);
       if (emptyIndex !== -1) {
         setEmptySessionIndex(emptyIndex);
         return;
       }
     }
 
-    for (let i = 0; i < mealSessions.length; i++) {
+    for (let i = 0; i < mealSessions.length; i += 1) {
       const session = mealSessions[i];
       if (session.orderItems.length === 0) continue;
       const sessionValidation = validateSessionMinOrders(session, restaurants);
-      if (sessionValidation.some((s) => !s.isValid)) {
+      if (sessionValidation.some((status) => !status.isValid)) {
         setActiveSessionIndex(i);
         setMinOrderModalSession({ index: i, validation: sessionValidation });
         return;
       }
     }
 
-    for (let i = 0; i < mealSessions.length; i++) {
+    for (let i = 0; i < mealSessions.length; i += 1) {
       const session = mealSessions[i];
       if (session.orderItems.length > 0 && (!session.sessionDate || !session.eventTime)) {
         setActiveSessionIndex(i);
@@ -777,51 +733,99 @@ export default function CateringOrderBuilder({
     }
 
     const errors: Record<number, string> = {};
-    for (let i = 0; i < mealSessions.length; i++) {
+
+    for (let i = 0; i < mealSessions.length; i += 1) {
       const session = mealSessions[i];
       if (session.orderItems.length === 0) continue;
-      const restaurantIds = new Set(session.orderItems.map((oi) => oi.item.restaurantId));
+
+      const restaurantIds = new Set(session.orderItems.map((orderItem) => orderItem.item.restaurantId));
+
       for (const restaurantId of restaurantIds) {
-        const restaurant = restaurants.find((r) => r.id === restaurantId);
+        const restaurant = restaurants.find((candidate) => candidate.id === restaurantId);
         if (!restaurant) continue;
+
         const cateringHours = restaurant.cateringOperatingHours;
         if (!cateringHours || cateringHours.length === 0) continue;
 
-        const dayOfWeek = new Date(session.sessionDate + "T00:00:00")
-          .toLocaleDateString("en-US", { weekday: "long" })
-          .toLowerCase();
-
-        const formatTimeRange = (h: number, m: number) => {
-          const period = h >= 12 ? "PM" : "AM";
-          return `${h % 12 || 12}:${m.toString().padStart(2, "0")} ${period}`;
+        const formatTimeRange = (hour: number, minute: number) => {
+          const period = hour >= 12 ? "PM" : "AM";
+          const hour12 = hour % 12 || 12;
+          return `${hour12}:${minute.toString().padStart(2, "0")} ${period}`;
         };
 
-        {
-          const daySlots = cateringHours.filter(
-            (s: CateringHourSlot) => s.day.toLowerCase() === dayOfWeek && s.enabled
-          );
-          if (daySlots.length === 0) {
-            errors[i] = `${restaurant.restaurant_name} does not accept event orders on ${dayOfWeek}s.`;
+        const dateString = session.sessionDate;
+        const dateOverride = restaurant.dateOverrides?.find((override) => override.date === dateString);
+
+        if (dateOverride) {
+          if (dateOverride.isClosed) {
+            errors[i] = `${restaurant.restaurant_name} is closed on ${dateString}${
+              dateOverride.reason ? ` (${dateOverride.reason})` : ""
+            }. Please select a different date.`;
             break;
           }
-          const enabledSlots = daySlots.filter(hasDefinedHours);
-          if (enabledSlots.length > 0 && session.eventTime) {
-            const [eh, em] = session.eventTime.split(":").map(Number);
-            const eventMins = eh * 60 + em;
-            const inSlot = enabledSlots.some((slot) => {
-              const [oh, om] = slot.open.split(":").map(Number);
-              const [ch, cm] = slot.close.split(":").map(Number);
-              return eventMins >= oh * 60 + om && eventMins <= ch * 60 + cm;
+
+          if (dateOverride.timeSlots?.length && session.eventTime) {
+            const [eventHour, eventMinute] = session.eventTime.split(":").map(Number);
+            const eventMinutes = eventHour * 60 + eventMinute;
+            const inAnySlot = dateOverride.timeSlots.some((slot) => {
+              const [openHour, openMinute] = slot.open.split(":").map(Number);
+              const [closeHour, closeMinute] = slot.close.split(":").map(Number);
+              return eventMinutes >= openHour * 60 + openMinute && eventMinutes <= closeHour * 60 + closeMinute;
             });
-            if (!inSlot) {
-              const descs = enabledSlots
-                .map((s) => {
-                  const [oh, om] = s.open.split(":").map(Number);
-                  const [ch, cm] = s.close.split(":").map(Number);
-                  return `${formatTimeRange(oh, om)} - ${formatTimeRange(ch, cm)}`;
+
+            if (!inAnySlot) {
+              const slotDescriptions = dateOverride.timeSlots
+                .map((slot) => {
+                  const [openHour, openMinute] = slot.open.split(":").map(Number);
+                  const [closeHour, closeMinute] = slot.close.split(":").map(Number);
+                  return `${formatTimeRange(openHour, openMinute)} - ${formatTimeRange(
+                    closeHour,
+                    closeMinute
+                  )}`;
                 })
                 .join(", ");
-              errors[i] = `${restaurant.restaurant_name} accepts orders on ${dayOfWeek}s between ${descs}.`;
+              errors[i] = `${restaurant.restaurant_name} only accepts orders between ${slotDescriptions} on ${dateString}.`;
+              break;
+            }
+          }
+        } else {
+          const selectedDateTime = new Date(`${session.sessionDate}T00:00:00`);
+          const dayOfWeek = selectedDateTime
+            .toLocaleDateString("en-US", { weekday: "long" })
+            .toLowerCase();
+
+          const daySlots = cateringHours.filter(
+            (schedule) => schedule.day.toLowerCase() === dayOfWeek && schedule.enabled
+          );
+
+          if (daySlots.length === 0) {
+            errors[i] = `${restaurant.restaurant_name} does not accept event orders on ${dayOfWeek}s. Please select a different date for this session.`;
+            break;
+          }
+
+          const enabledSlots = daySlots.filter((slot) => slot.open && slot.close);
+          if (enabledSlots.length > 0 && session.eventTime) {
+            const [eventHour, eventMinute] = session.eventTime.split(":").map(Number);
+            const eventMinutes = eventHour * 60 + eventMinute;
+
+            const inAnySlot = enabledSlots.some((slot) => {
+              const [openHour, openMinute] = slot.open!.split(":").map(Number);
+              const [closeHour, closeMinute] = slot.close!.split(":").map(Number);
+              return eventMinutes >= openHour * 60 + openMinute && eventMinutes <= closeHour * 60 + closeMinute;
+            });
+
+            if (!inAnySlot) {
+              const slotDescriptions = enabledSlots
+                .map((slot) => {
+                  const [openHour, openMinute] = slot.open!.split(":").map(Number);
+                  const [closeHour, closeMinute] = slot.close!.split(":").map(Number);
+                  return `${formatTimeRange(openHour, openMinute)} - ${formatTimeRange(
+                    closeHour,
+                    closeMinute
+                  )}`;
+                })
+                .join(", ");
+              errors[i] = `${restaurant.restaurant_name} accepts event orders on ${dayOfWeek}s between ${slotDescriptions}. Please select a time within these hours for this session.`;
               break;
             }
           }
@@ -831,17 +835,13 @@ export default function CateringOrderBuilder({
 
     if (Object.keys(errors).length > 0) {
       setSessionValidationErrors(errors);
-      const first = parseInt(Object.keys(errors)[0]);
-      setActiveSessionIndex(first);
-      setExpandedSessionIndex(first);
-      setTimeout(() => {
-        const element = sessionAccordionRefs.current.get(first);
-        if (element) {
-          const offsetPosition =
-            element.getBoundingClientRect().top + window.pageYOffset - 80;
-          window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-        }
-      }, 150);
+      const firstErrorSessionIndex = parseInt(Object.keys(errors)[0], 10);
+      setActiveSessionIndex(firstErrorSessionIndex);
+      const errorSession = mealSessions[firstErrorSessionIndex];
+      if (errorSession?.sessionDate) {
+        setSelectedDayDate(errorSession.sessionDate);
+        setNavMode("sessions");
+      }
       return;
     }
 
@@ -849,7 +849,6 @@ export default function CateringOrderBuilder({
     setCurrentStep(nextStep);
   };
 
-  // Handle empty session actions
   const handleRemoveEmptySession = () => {
     if (emptySessionIndex !== null) {
       removeMealSession(emptySessionIndex);
@@ -858,58 +857,51 @@ export default function CateringOrderBuilder({
   };
 
   const handleAddItemsToEmptySession = () => {
-    if (emptySessionIndex !== null) {
-      const session = mealSessions[emptySessionIndex];
-      setActiveSessionIndex(emptySessionIndex);
-      if (session?.sessionDate) {
-        setSelectedDayDate(session.sessionDate);
-        setNavMode("sessions");
-      }
-      setExpandedSessionIndex(emptySessionIndex);
-      setEmptySessionIndex(null);
-      setTimeout(() => {
-        const element = sessionAccordionRefs.current.get(emptySessionIndex);
-        if (element) {
-          const offsetPosition =
-            element.getBoundingClientRect().top + window.pageYOffset - 80;
-          window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-        }
-      }, 150);
+    if (emptySessionIndex === null) return;
+    const session = mealSessions[emptySessionIndex];
+    setActiveSessionIndex(emptySessionIndex);
+    if (session?.sessionDate) {
+      setSelectedDayDate(session.sessionDate);
+      setNavMode("sessions");
     }
+    setEmptySessionIndex(null);
   };
 
-  // PDF
-  const handleViewMenu = () => setShowPdfModal(true);
+  const handleViewMenu = () => {
+    setShowPdfModal(true);
+  };
 
   const handlePdfDownload = async (withPrices: boolean) => {
     if (generatingPdf) return;
     setGeneratingPdf(true);
+
     try {
-      const sessionsForPreview: LocalMealSession[] = mealSessions.map((s) => ({
-        sessionName: s.sessionName,
-        sessionDate: s.sessionDate,
-        eventTime: s.eventTime,
-        orderItems: s.orderItems.map((oi) => ({
+      const sessionsForPreview: LocalMealSession[] = mealSessions.map((session) => ({
+        sessionName: session.sessionName,
+        sessionDate: session.sessionDate,
+        eventTime: session.eventTime,
+        orderItems: session.orderItems.map((orderItem) => ({
           item: {
-            id: oi.item.id,
-            menuItemName: oi.item.menuItemName,
-            price: oi.item.price,
-            discountPrice: oi.item.discountPrice,
-            isDiscount: oi.item.isDiscount,
-            image: oi.item.image,
-            restaurantId: oi.item.restaurantId,
-            cateringQuantityUnit: oi.item.cateringQuantityUnit,
-            feedsPerUnit: oi.item.feedsPerUnit,
-            categoryName: oi.item.categoryName,
-            subcategoryName: oi.item.subcategoryName,
-            selectedAddons: oi.item.selectedAddons,
-            description: (oi.item as PdfPreviewItem).description,
-            allergens: (oi.item as PdfPreviewItem).allergens,
-            dietaryFilters: (oi.item as PdfPreviewItem).dietaryFilters,
+            id: orderItem.item.id,
+            menuItemName: orderItem.item.menuItemName,
+            price: orderItem.item.price,
+            discountPrice: orderItem.item.discountPrice,
+            isDiscount: orderItem.item.isDiscount,
+            image: orderItem.item.image,
+            restaurantId: orderItem.item.restaurantId,
+            cateringQuantityUnit: orderItem.item.cateringQuantityUnit,
+            feedsPerUnit: orderItem.item.feedsPerUnit,
+            categoryName: orderItem.item.categoryName,
+            subcategoryName: orderItem.item.subcategoryName,
+            selectedAddons: orderItem.item.selectedAddons,
+            description: (orderItem.item as PdfPreviewItem).description,
+            allergens: (orderItem.item as PdfPreviewItem).allergens,
+            dietaryFilters: (orderItem.item as PdfPreviewItem).dietaryFilters,
           } satisfies PdfPreviewItem,
-          quantity: oi.quantity,
+          quantity: orderItem.quantity,
         })),
       }));
+
       const pdfData = await transformLocalSessionsToPdfData(sessionsForPreview, withPrices);
       const blob = await pdf(
         <CateringMenuPdf
@@ -920,6 +912,7 @@ export default function CateringOrderBuilder({
           logoUrl={pdfData.logoUrl}
         />
       ).toBlob();
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -937,117 +930,16 @@ export default function CateringOrderBuilder({
     }
   };
 
-  // Render validation error banner
-  const renderValidationErrorBanner = (index: number) => {
-    if (!sessionValidationErrors[index]) return null;
-    return (
-      <div className="mb-4 p-4 bg-red-50 border-2 border-red-500 rounded-xl flex items-start gap-3">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-        </svg>
-        <div className="flex-1">
-          <p className="text-sm font-semibold text-red-800 mb-1">Catering Hours Conflict</p>
-          <p className="text-sm text-red-700">{sessionValidationErrors[index]}</p>
-          <button
-            onClick={(e) => { e.stopPropagation(); setEditingSessionIndex(index); }}
-            className="mt-3 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-          >
-            Edit Session Time
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  // Render categories and menu items section (inside a session accordion)
-  // Render session content
-  const renderSessionContent = (
-    session: MealSessionState,
-    index: number,
-    isUnscheduled: boolean = false
-  ) => (
-    <SessionAccordion
-      key={index}
-      session={session}
-      isExpanded={expandedSessionIndex === index}
-      onToggle={() => toggleSessionExpand(index)}
-      sessionTotal={getSessionTotal(index)}
-      accordionRef={(el) => {
-        if (el) sessionAccordionRefs.current.set(index, el);
-        else sessionAccordionRefs.current.delete(index);
-      }}
-      onEditSession={() => setEditingSessionIndex(index)}
-      onRemoveSession={(e) => handleRemoveSession(index, e)}
-      canRemove={isUnscheduled ? mealSessions.length > 1 : true}
-    >
-      {renderValidationErrorBanner(index)}
-      {session.orderItems.length > 0 && (
-        <div className="mb-4 min-w-0 overflow-hidden">
-          <SelectedItemsByCategory
-            sessionIndex={index}
-            onEdit={handleEditItem}
-            onRemove={handleRemoveItem}
-            onSwapItem={handleSwapItem}
-            onRemoveBundle={handleRemoveBundle}
-            collapsedCategories={collapsedCategories}
-            onToggleCategory={handleToggleCategory}
-            onViewMenu={handleViewMenu}
-          />
-        </div>
-      )}
-
-      {showBundleBrowser ? (
-        <BundleBrowser
-          sessionIndex={index}
-          allMenuItems={allMenuItems}
-          fetchAllMenuItems={fetchAllMenuItems}
-          onBack={() => setShowBundleBrowser(false)}
-          defaultGuestCount={eventDetails?.guestCount || 1}
-        />
-      ) : (
-        <RestaurantMenuBrowser
-          restaurants={restaurants}
-          restaurantsLoading={restaurantsLoading}
-          sessionDate={session.sessionDate}
-          eventTime={session.eventTime}
-          defaultBundleGuestCount={session.guestCount || 1}
-          onOpenBundles={() => {
-            setShowBundleBrowser(true);
-            if (!allMenuItems) fetchAllMenuItems();
-          }}
-          allMenuItems={allMenuItems}
-          fetchAllMenuItems={fetchAllMenuItems}
-          onAddItem={handleAddItem}
-          onUpdateQuantity={handleUpdateQuantity}
-          onAddOrderPress={handleAddOrderPress}
-          getItemQuantity={getItemQuantity}
-          expandedItemId={expandedItemId}
-          setExpandedItemId={setExpandedItemId}
-          selectedDietaryFilters={selectedDietaryFilters}
-          toggleDietaryFilter={toggleDietaryFilter}
-          categoriesRowRef={categoriesRowRef}
-          restaurantListRef={restaurantListRef}
-          firstMenuItemRef={firstMenuItemRef}
-          sessionIndex={index}
-          expandedSessionIndex={expandedSessionIndex}
-          autoOpenFirstRestaurant={currentTutorialStep?.id === "menu-item"}
-          tutorialResetKey={tutorialResetKey}
-        />
-      )}
-    </SessionAccordion>
-  );
-
   const activeSession = mealSessions[activeSessionIndex];
 
   return (
     <div className="min-h-screen bg-base-100">
-      {/* Sticky Navigation */}
       <DateSessionNav
         navMode={navMode}
         dayGroups={dayGroups}
         selectedDayDate={selectedDayDate}
         currentDayGroup={currentDayGroup}
-        expandedSessionIndex={expandedSessionIndex}
+        expandedSessionIndex={activeSessionIndex}
         isNavSticky={isNavSticky}
         onDateClick={handleDateClick}
         onBackToDates={handleBackToDates}
@@ -1062,7 +954,6 @@ export default function CateringOrderBuilder({
         addSessionNavButtonRef={addSessionNavButtonRef}
       />
 
-      {/* Session Editor Modal */}
       {editingSessionIndex !== null && (
         <SessionEditor
           session={mealSessions[editingSessionIndex]}
@@ -1077,23 +968,20 @@ export default function CateringOrderBuilder({
         />
       )}
 
-      <div className="max-w-6xl mx-auto p-2">
-        {/* Summary Card */}
-        <div className="flex gap-3 mb-6">
-          <div className="flex-1 bg-white rounded-xl shadow-sm border border-base-200 p-3 md:p-4 flex items-center justify-between">
+      <div className="mx-auto max-w-7xl p-2">
+        <div className="mb-6 flex gap-3">
+          <div className="flex flex-1 items-center justify-between rounded-xl border border-base-200 bg-white p-3 shadow-sm md:p-4">
             <div>
-              <p className="text-xs md:text-sm text-gray-500">
-                {totalDays > 0
-                  ? `${totalDays} day${totalDays !== 1 ? "s" : ""}`
-                  : "No days scheduled"}{" "}
+              <p className="text-xs text-gray-500 md:text-sm">
+                {totalDays > 0 ? `${totalDays} day${totalDays !== 1 ? "s" : ""}` : "No days scheduled"}{" "}
                 • {totalSessions} session{totalSessions !== 1 ? "s" : ""}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xl md:text-2xl font-bold text-primary">
+              <p className="text-xl font-bold text-primary md:text-2xl">
                 £{getTotalPrice().toFixed(2)}
               </p>
-              <p className="text-xs md:text-sm text-gray-500">{totalItems} items total</p>
+              <p className="text-xs text-gray-500 md:text-sm">{totalItems} items total</p>
             </div>
           </div>
 
@@ -1101,19 +989,30 @@ export default function CateringOrderBuilder({
             <button
               onClick={handleViewMenu}
               disabled={generatingPdf}
-              className="flex-shrink-0 bg-white rounded-xl shadow-sm border border-base-200 p-4 flex flex-col items-center justify-center hover:border-primary hover:bg-primary/5 transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group flex flex-shrink-0 flex-col items-center justify-center rounded-xl border border-base-200 bg-white p-4 shadow-sm transition-colors hover:border-primary hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {generatingPdf ? (
                 <>
                   <span className="loading loading-spinner loading-sm text-primary" />
-                  <span className="hidden md:block text-xs text-gray-500 mt-1">Generating...</span>
+                  <span className="mt-1 hidden text-xs text-gray-500 md:block">Generating...</span>
                 </>
               ) : (
                 <>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-primary"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
                   </svg>
-                  <span className="hidden md:block text-xs text-gray-500 mt-1 group-hover:text-primary transition-colors">
+                  <span className="mt-1 hidden text-xs text-gray-500 transition-colors group-hover:text-primary md:block">
                     Download Menu
                   </span>
                 </>
@@ -1122,102 +1021,167 @@ export default function CateringOrderBuilder({
           )}
         </div>
 
-        {/* Timeline */}
-        <div className="relative mb-8">
-          <div className="absolute left-[23px] top-8 bottom-8 w-0.5 bg-primary/20 hidden md:block" />
+        <div className="flex flex-col gap-6 md:flex-row">
+          <div className="min-w-0 flex-1">
+            <MenuBrowserColumn
+              showBundleBrowser={showBundleBrowser}
+              onToggleBundleBrowser={setShowBundleBrowser}
+              sessionIndex={activeSessionIndex}
+              sessionDate={mealSessions[activeSessionIndex]?.sessionDate}
+              eventTime={mealSessions[activeSessionIndex]?.eventTime}
+              allMenuItems={allMenuItems}
+              fetchAllMenuItems={fetchAllMenuItems}
+              defaultGuestCount={mealSessions[activeSessionIndex]?.guestCount ?? eventDetails?.guestCount ?? 1}
+              restaurants={restaurants}
+              restaurantsLoading={restaurantsLoading}
+              onAddItem={handleAddItem}
+              onUpdateQuantity={handleUpdateQuantity}
+              onAddOrderPress={handleAddOrderPress}
+              getItemQuantity={getItemQuantity}
+              expandedItemId={expandedItemId}
+              setExpandedItemId={setExpandedItemId}
+              selectedDietaryFilters={selectedDietaryFilters}
+              toggleDietaryFilter={toggleDietaryFilter}
+              categoriesRowRef={categoriesRowRef}
+              restaurantListRef={restaurantListRef}
+              firstMenuItemRef={firstMenuItemRef}
+              expandedSessionIndex={activeSessionIndex}
+              autoOpenFirstRestaurant={currentTutorialStep?.id === "menu-item"}
+              tutorialResetKey={tutorialResetKey}
+            />
+          </div>
 
-          {/* Unscheduled Sessions */}
-          {dayGroups.find((day) => day.date === "unscheduled") && (
-            <div className="relative mb-8">
-              <div className="flex flex-col md:flex-row md:gap-4">
-                <div className="hidden md:flex flex-shrink-0 w-12 h-12 rounded-xl bg-amber-500 flex-col items-center justify-center z-10 shadow-lg">
-                  <Clock className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1 md:bg-amber-50 md:rounded-2xl md:p-4 md:border md:border-amber-200">
-                  <div className="mb-3 flex items-start gap-3 p-3 md:p-0">
-                    <div className="md:hidden flex-shrink-0 w-11 h-11 rounded-xl bg-amber-500 text-white flex items-center justify-center">
-                      <Clock className="w-5 h-5" />
+          <div className="hidden h-[calc(100vh-7rem)] flex-shrink-0 self-start md:block md:w-[50%] md:sticky md:top-24 xl:w-[40%]">
+            {activeSession && (
+              <div className="flex h-full flex-col gap-3 overflow-hidden">
+                <ActiveSessionPanel
+                  session={activeSession}
+                  sessionIndex={activeSessionIndex}
+                  sessionTotal={getSessionTotal(activeSessionIndex)}
+                  sessionDiscount={getSessionDiscount(activeSessionIndex).discount}
+                  sessionPromotion={getSessionDiscount(activeSessionIndex).promotion}
+                  validationError={sessionValidationErrors[activeSessionIndex] || null}
+                  isUnscheduled={!activeSession.sessionDate}
+                  canRemove={mealSessions.length > 1}
+                  onEditSession={() => setEditingSessionIndex(activeSessionIndex)}
+                  onRemoveSession={(e) => handleRemoveSession(activeSessionIndex, e)}
+                  onEditItem={handleEditItem}
+                  onRemoveItem={handleRemoveItem}
+                  onSwapItem={handleSwapItem}
+                  onRemoveBundle={handleRemoveBundle}
+                  collapsedCategories={collapsedCategories}
+                  onToggleCategory={handleToggleCategory}
+                  onViewMenu={handleViewMenu}
+                  isCurrentSessionValid={isCurrentSessionValid}
+                  totalPrice={getTotalPrice()}
+                  onCheckout={handleCheckout}
+                  showCheckoutButton={false}
+                  restaurants={restaurants}
+                />
+                <div className="flex-shrink-0">
+                  <button
+                    onClick={handleCheckout}
+                    className={`flex w-full items-center justify-between rounded-xl px-5 py-3 font-semibold text-white transition-colors ${
+                      isCurrentSessionValid
+                        ? "bg-primary hover:bg-primary/90"
+                        : "bg-warning hover:bg-warning/90"
+                    }`}
+                  >
+                    <div>
+                      <span className="text-sm opacity-90">Total</span>
+                      <span className="ml-2 text-lg font-bold">£{getTotalPrice().toFixed(2)}</span>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-800">Unscheduled Sessions</h3>
-                      <p className="text-sm text-amber-600">Set date & time to continue</p>
-                    </div>
-                  </div>
-                  <div className="space-y-3 px-3 pb-3 md:px-0 md:pb-0">
-                    {dayGroups
-                      .find((day) => day.date === "unscheduled")
-                      ?.sessions.map(({ session, index }) =>
-                        renderSessionContent(session, index, true)
-                      )}
-                  </div>
+                    <span>{isCurrentSessionValid ? "Checkout" : "Min. Order Not Met"}</span>
+                  </button>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Scheduled Days */}
-          {dayGroups
-            .filter((day) => day.date !== "unscheduled")
-            .map((day) => (
-              <div
-                key={day.date}
-                ref={(el) => {
-                  if (el) dayRefs.current.set(day.date, el);
-                  else dayRefs.current.delete(day.date);
-                }}
-                className="relative mb-8 last:mb-0"
-              >
-                <div className="flex flex-col md:flex-row md:gap-4">
-                  <div className="hidden md:flex flex-shrink-0 w-12 h-12 rounded-xl bg-primary flex-col items-center justify-center z-10 shadow-lg">
-                    <span className="text-xs font-medium text-white/80">{day.dayName}</span>
-                    <span className="text-sm font-bold text-white">{day.displayDate.split(" ")[0]}</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="mb-3 flex items-start gap-3">
-                      <div className="md:hidden flex-shrink-0 w-11 h-11 rounded-xl bg-primary text-white flex flex-col items-center justify-center">
-                        <span className="text-xs font-medium leading-none">{day.dayName}</span>
-                        <span className="text-sm font-bold leading-none">{day.displayDate.split(" ")[0]}</span>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-800">{day.fullDate}</h3>
-                        <p className="text-sm text-gray-500">
-                          {day.sessions.length} session{day.sessions.length !== 1 ? "s" : ""} •{" "}
-                          £{day.total.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      {day.sessions.map(({ session, index }) =>
-                        renderSessionContent(session, index)
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-          {/* Add Day button (dates view) */}
-          {navMode === "dates" && (
-            <div className="flex justify-center mt-4">
-              <button
-                ref={addDayButtonRef}
-                onClick={handleAddDay}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-dashed border-primary/40 text-primary hover:border-primary hover:bg-primary/5 transition-all text-sm font-medium"
-              >
-                <Plus className="w-4 h-4" />
-                Add Another Day
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Edit Item Modal */}
+      {mealSessions.some((session) => session.orderItems.length > 0) && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+          <div className="flex justify-center px-4 pb-2">
+            <div className="flex flex-col items-center rounded-2xl border border-base-200 bg-white/50 px-3 py-1.5 shadow-sm backdrop-blur-sm">
+              <span className="text-xs font-semibold text-gray-800">
+                {mealSessions[activeSessionIndex]?.sessionName}
+              </span>
+              <span className="text-[10px] text-gray-500">
+                {mealSessions[activeSessionIndex]?.sessionDate
+                  ? new Date(mealSessions[activeSessionIndex].sessionDate).toLocaleDateString(
+                      "en-GB",
+                      { weekday: "short", day: "numeric", month: "short" }
+                    )
+                  : "Date not set"}
+                {mealSessions[activeSessionIndex]?.eventTime &&
+                  ` · ${formatTimeDisplay(mealSessions[activeSessionIndex].eventTime)}`}
+              </span>
+            </div>
+          </div>
+          <div className="bg-primary p-4">
+            <button
+              onClick={() => setIsViewOrderOpen(true)}
+              className="flex w-full items-center justify-between text-white"
+            >
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5" />
+                <span className="font-semibold">View Order</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold">£{getTotalPrice().toFixed(2)}</span>
+                <span className="text-sm opacity-80">{totalItems} items</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <ViewOrderModal
+        isOpen={isViewOrderOpen}
+        onClose={() => setIsViewOrderOpen(false)}
+        mealSessions={mealSessions}
+        activeSessionIndex={activeSessionIndex}
+        onSessionChange={setActiveSessionIndex}
+        getSessionTotal={getSessionTotal}
+        getSessionDiscount={getSessionDiscount}
+        validationErrors={sessionValidationErrors}
+        onEditSession={(index) => {
+          setIsViewOrderOpen(false);
+          setEditingSessionIndex(index);
+        }}
+        onRemoveSession={(index, e) => handleRemoveSession(index, e)}
+        onEditItem={handleEditItem}
+        onRemoveItem={handleRemoveItem}
+        onSwapItem={handleSwapItem}
+        onRemoveBundle={handleRemoveBundle}
+        collapsedCategories={collapsedCategories}
+        onToggleCategory={handleToggleCategory}
+        onViewMenu={handleViewMenu}
+        isCurrentSessionValid={isCurrentSessionValid}
+        totalPrice={getTotalPrice()}
+        onCheckout={handleCheckout}
+        canRemoveSession={() => mealSessions.length > 1}
+        formatTimeDisplay={formatTimeDisplay}
+        navMode={navMode}
+        dayGroups={dayGroups}
+        selectedDayDate={selectedDayDate}
+        currentDayGroup={currentDayGroup}
+        onDateClick={handleDateClick}
+        onBackToDates={handleBackToDates}
+        onAddDay={handleAddDay}
+        onAddSessionToDay={handleAddSessionToDay}
+        restaurants={restaurants}
+      />
+
       {isEditModalOpen && editingItemIndex !== null && activeSession && (
         <MenuItemModal
           item={activeSession.orderItems[editingItemIndex].item as MenuItem}
           isOpen={isEditModalOpen}
-          onClose={() => { setIsEditModalOpen(false); setEditingItemIndex(null); }}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingItemIndex(null);
+          }}
           quantity={activeSession.orderItems[editingItemIndex].quantity}
           isEditMode={true}
           editingIndex={editingItemIndex}
@@ -1230,30 +1194,86 @@ export default function CateringOrderBuilder({
         />
       )}
 
-      {/* Swap Item Modal */}
-      {swapItemIndex !== null && activeSession && (
-        <SwapItemModal
-          currentItem={activeSession.orderItems[swapItemIndex].item as MenuItem}
-          currentQuantity={activeSession.orderItems[swapItemIndex].quantity}
-          alternatives={swapAlternatives}
-          isOpen={true}
-          onClose={() => { setSwapItemIndex(null); setSwapAlternatives([]); }}
-          onSwap={handleConfirmSwap}
-        />
-      )}
-
-      {/* Pending Item Modal */}
       {pendingItem && (
         <MenuItemModal
           item={pendingItem}
           isOpen={true}
           onClose={() => setPendingItem(null)}
           quantity={0}
-          onAddItem={(item) => { handleAddItem(item); setPendingItem(null); }}
+          onAddItem={(item) => {
+            handleAddItem(item);
+            setPendingItem(null);
+          }}
         />
       )}
 
-      {/* Min Order Modal */}
+      <AddDayModal
+        isOpen={isAddDayModalOpen}
+        newDayDate={newDayDate}
+        errorMessage={addDayError}
+        onDateChange={(date) => {
+          setNewDayDate(date);
+          setAddDayError(null);
+        }}
+        onConfirm={handleConfirmAddDay}
+        onClose={() => {
+          setIsAddDayModalOpen(false);
+          setAddDayError(null);
+        }}
+      />
+
+      {emptySessionIndex !== null && (
+        <EmptySessionWarningModal
+          sessionName={mealSessions[emptySessionIndex]?.sessionName || "Session"}
+          onRemove={handleRemoveEmptySession}
+          onAddItems={handleAddItemsToEmptySession}
+        />
+      )}
+
+      {removeItemIndex !== null && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                <X className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Remove Item</h3>
+                <p className="text-sm text-gray-500">
+                  {mealSessions[activeSessionIndex]?.orderItems[removeItemIndex]?.item
+                    .menuItemName || "Item"}
+                </p>
+              </div>
+            </div>
+            <p className="mb-6 text-gray-600">
+              Are you sure you want to remove this item from your order?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRemoveItemIndex(null)}
+                className="flex-1 rounded-xl border border-base-300 px-4 py-3 font-medium text-gray-600 transition-colors hover:bg-base-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRemoveItem}
+                className="flex-1 rounded-xl bg-red-500 px-4 py-3 font-medium text-white transition-colors hover:bg-red-600"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {sessionToRemove !== null && (
+        <RemoveSessionConfirmModal
+          sessionName={mealSessions[sessionToRemove]?.sessionName || "Session"}
+          onConfirm={confirmRemoveSession}
+          onCancel={() => setSessionToRemove(null)}
+        />
+      )}
+
       {minOrderModalSession !== null && (
         <MinOrderModal
           sessionName={mealSessions[minOrderModalSession.index]?.sessionName || "Session"}
@@ -1263,59 +1283,6 @@ export default function CateringOrderBuilder({
         />
       )}
 
-      {/* Empty Session Warning Modal */}
-      {emptySessionIndex !== null && (
-        <EmptySessionWarningModal
-          sessionName={mealSessions[emptySessionIndex]?.sessionName || "Session"}
-          onRemove={handleRemoveEmptySession}
-          onAddItems={handleAddItemsToEmptySession}
-        />
-      )}
-
-      {/* Remove Session Confirmation Modal */}
-      {sessionToRemove !== null && (
-        <RemoveSessionConfirmModal
-          sessionName={mealSessions[sessionToRemove]?.sessionName || "Session"}
-          onConfirm={confirmRemoveSession}
-          onCancel={() => setSessionToRemove(null)}
-        />
-      )}
-
-      {/* Remove Bundle Confirmation Modal */}
-      {bundleToRemove !== null && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                <Package className="h-6 w-6 text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Remove Bundle</h3>
-                <p className="text-sm text-gray-500">{bundleToRemove.name}</p>
-              </div>
-            </div>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to remove this bundle? All items from this bundle will be removed from the session.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setBundleToRemove(null)}
-                className="flex-1 px-4 py-3 border border-base-300 text-gray-600 rounded-xl hover:bg-base-100 transition-colors font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmRemoveBundle}
-                className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-medium"
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* PDF Download Modal */}
       {showPdfModal && (
         <PdfDownloadModal
           onDownload={handlePdfDownload}
@@ -1324,30 +1291,51 @@ export default function CateringOrderBuilder({
         />
       )}
 
-      {/* Add Day Modal */}
-      {isAddDayModalOpen && (
-        <AddDayModal
-          isOpen={isAddDayModalOpen}
-          newDayDate={newDayDate}
-          errorMessage={addDayError}
-          onDateChange={(date) => {
-            setNewDayDate(date);
-            setAddDayError(null);
-          }}
-          onConfirm={handleConfirmAddDay}
-          onClose={() => {
-            setIsAddDayModalOpen(false);
-            setAddDayError(null);
-          }}
-        />
+      {bundleToRemove !== null && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                <Package className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Remove Bundle</h3>
+                <p className="text-sm text-gray-500">{bundleToRemove.name}</p>
+              </div>
+            </div>
+            <p className="mb-6 text-gray-600">
+              Are you sure you want to remove this bundle? All items from this bundle will be
+              removed from the session.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setBundleToRemove(null)}
+                className="flex-1 rounded-xl border border-base-300 px-4 py-3 font-medium text-gray-600 transition-colors hover:bg-base-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRemoveBundle}
+                className="flex-1 rounded-xl bg-red-500 px-4 py-3 font-medium text-white transition-colors hover:bg-red-600"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Checkout Button */}
-      {totalItems > 0 && (
-        <CheckoutBar
-          isCurrentSessionValid={isCurrentSessionValid}
-          totalPrice={getTotalPrice()}
-          onCheckout={handleCheckout}
+      {swapItemIndex !== null && activeSession && (
+        <SwapItemModal
+          currentItem={activeSession.orderItems[swapItemIndex].item as MenuItem}
+          currentQuantity={activeSession.orderItems[swapItemIndex].quantity}
+          alternatives={swapAlternatives}
+          isOpen={true}
+          onClose={() => {
+            setSwapItemIndex(null);
+            setSwapAlternatives([]);
+          }}
+          onSwap={handleConfirmSwap}
         />
       )}
 
@@ -1359,10 +1347,10 @@ export default function CateringOrderBuilder({
         totalSteps={getTutorialSteps().length}
       />
 
-      <div className="fixed bottom-4 left-4 md:bottom-8 md:left-8 z-40">
+      <div className="fixed bottom-4 left-4 z-40 md:bottom-8 md:left-8">
         {isTutorialHintVisible && (
-          <div className="absolute bottom-14 left-0 md:bottom-16 w-64 rounded-2xl border border-base-300 bg-white shadow-xl p-3">
-            <div className="absolute -bottom-2 left-7 w-4 h-4 rotate-45 bg-white border-r border-b border-base-300" />
+          <div className="absolute bottom-14 left-0 w-64 rounded-2xl border border-base-300 bg-white p-3 shadow-xl md:bottom-16">
+            <div className="absolute -bottom-2 left-7 h-4 w-4 rotate-45 border-b border-r border-base-300 bg-white" />
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-gray-900">Need a quick walkthrough?</p>
@@ -1372,7 +1360,7 @@ export default function CateringOrderBuilder({
               </div>
               <button
                 onClick={() => setIsTutorialHintVisible(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 transition-colors hover:text-gray-600"
                 aria-label="Dismiss tutorial hint"
               >
                 <svg
@@ -1403,7 +1391,7 @@ export default function CateringOrderBuilder({
 
         <button
           onClick={handleRestartTutorial}
-          className="w-10 h-10 md:w-12 md:h-12 bg-white border border-base-300 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary transition-colors"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-base-300 bg-white text-gray-500 shadow-lg transition-colors hover:border-primary hover:text-primary md:h-12 md:w-12"
           title="Restart Tutorial"
         >
           <svg
