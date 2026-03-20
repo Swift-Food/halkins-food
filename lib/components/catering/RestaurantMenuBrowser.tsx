@@ -901,18 +901,24 @@ export default function RestaurantMenuBrowser({
                   )
                 }
                 className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-sm font-medium transition-all border flex flex-col items-center justify-center gap-0.5 leading-none ${
-                  category.icon ? "min-h-16" : ""
+                  category.images || category.icon ? "min-h-16" : ""
                 } ${
                   selectedCategoryId === category.id
-                    ? "bg-base-200/30 border-primary text-primary"
-                    : "bg-base-200/30 border-transparent text-gray-700 hover:text-primary"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-700 hover:text-primary"
                 }`}
               >
-                {category.icon && (
+                {category.images ? (
+                  <img
+                    src={category.images}
+                    alt={category.name}
+                    className="h-8 w-8 md:h-9 md:w-9 object-cover rounded-full border border-base-300"
+                  />
+                ) : category.icon ? (
                   <span className="flex h-6 md:h-7 items-center justify-center text-xl md:text-2xl leading-none">
                     {category.icon}
                   </span>
-                )}
+                ) : null}
                 <span className="text-center text-xs md:text-sm">
                   {category.name}
                 </span>
