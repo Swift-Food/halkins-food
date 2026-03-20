@@ -188,7 +188,7 @@ export default function MenuItemModal({
       let singleDefaultSet = false;
 
       grouped[groupTitle].items.forEach((addon) => {
-        const shouldPreSelect = addon.isDefault === true && !isEditMode;
+        const shouldPreSelect = !!addon.isDefault && !isEditMode;
         if (shouldPreSelect && group.selectionType === 'single') {
           if (!singleDefaultSet) {
             initialSelections[groupTitle][addon.name] = true;
