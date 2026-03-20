@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { MenuItem } from "@/types/restaurant.types";
 import MenuItemModal from "./MenuItemModal";
@@ -24,6 +24,7 @@ export default function MenuItemCard({
   onToggleExpand = () => {},
   onAddItem,
   onUpdateQuantity,
+  onAddOrderPress,
   viewOnly = false,
   onAddToOrder,
 }: MenuItemCardProps) {
@@ -35,8 +36,35 @@ export default function MenuItemCard({
   const BACKEND_QUANTITY_UNIT = item.cateringQuantityUnit || 1;
   const DISPLAY_FEEDS_PER_UNIT = item.feedsPerUnit || 1;
 
+  // Convert backend quantity to portions for display
+  const portionQuantity = quantity > 0 ? quantity / BACKEND_QUANTITY_UNIT : 0;
+
+  // Use simple quantity state
+  const [quantityInput, setQuantityInput] = useState(
+    portionQuantity.toString()
+  );
   // Tooltip state for dietary icons
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+
+  // Sync input with external quantity changes
+  useEffect(() => {
+    setQuantityInput(portionQuantity.toString());
+  }, [portionQuantity]);
+
+  const hasAddons = item.addons && item.addons.length > 0;
+
+  const handleAddToOrder = () => {
+    // Check if mobile (width < 768px which is md breakpoint)
+    const isMobile = window.innerWidth < 768;
+
+    if (isMobile || hasAddons) {
+      // On mobile or if item has addons, open modal
+      onAddOrderPress?.(item);
+    } else {
+      // On md and larger with no addons, directly add to cart with default quantity
+      onAddItem?.({ ...item, portionQuantity: item.minOrderQuantity || 1 });
+    }
+  };
 
   return (
     <>
@@ -58,6 +86,11 @@ export default function MenuItemCard({
                   <h3 className="font-bold text-sm text-gray-900 flex-1 line-clamp-1">
                     {item.menuItemName}
                   </h3>
+                  {item.minOrderQuantity && item.minOrderQuantity > 1 && (
+                    <span className="text-[9px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-medium whitespace-nowrap ml-1">
+                      Min {item.minOrderQuantity}
+                    </span>
+                  )}
                 </div>
 
                 {/* Restaurant Name */}
@@ -146,7 +179,7 @@ export default function MenuItemCard({
               </p>
             )} */}
 
-              {/* Price */}
+              {/* Price and Add to Order / Quantity */}
               <div className="flex items-end justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
@@ -178,6 +211,119 @@ export default function MenuItemCard({
                     </p>
                   )}
                 </div>
+
+                {/* Add to order button / quantity controls - Hidden in viewOnly mode */}
+                {!viewOnly && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-shrink-0 flex items-center gap-2"
+                  >
+                    {quantity > 0 ? (
+                      <>
+                        {/* On md and smaller: show simple add button that opens modal */}
+                        <button
+                          onClick={() => onAddOrderPress?.(item)}
+                          className="lg:hidden w-8 h-8 bg-primary hover:opacity-90 text-white rounded-full font-medium transition-all flex items-center justify-center"
+                          aria-label="Add to Order"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3 w-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 4v16m8-8H4"
+                            />
+                          </svg>
+                        </button>
+
+                        {/* On lg and larger: show quantity controls */}
+                        <div className="hidden lg:flex bg-[#F5F1E8] p-1 rounded-md border border-[#F0ECE3] items-center gap-1">
+                          <button
+                            onClick={() => {
+                              const newPortionQty = Math.max(
+                                0,
+                                portionQuantity - 1
+                              );
+                              const newBackendQty =
+                                newPortionQty * BACKEND_QUANTITY_UNIT;
+                              onUpdateQuantity?.(item.id, newBackendQty);
+                            }}
+                            className="w-6 h-6 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center justify-center text-xs flex-shrink-0"
+                          >
+                            −
+                          </button>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={quantityInput}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "" || /^\d+$/.test(val)) {
+                                setQuantityInput(val);
+                                if (val !== "" && !isNaN(parseInt(val))) {
+                                  const newPortionQty = parseInt(val);
+                                  const newBackendQty =
+                                    Math.max(0, newPortionQty) *
+                                    BACKEND_QUANTITY_UNIT;
+                                  onUpdateQuantity?.(item.id, newBackendQty);
+                                }
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (
+                                e.target.value === "" ||
+                                parseInt(e.target.value) < 1
+                              ) {
+                                onUpdateQuantity?.(item.id, 0);
+                                setQuantityInput("0");
+                              }
+                            }}
+                            className="w-8 text-center font-medium text-xs text-gray-900 bg-white border border-gray-300 rounded px-0.5 py-0.5 flex-shrink-0"
+                          />
+
+                          <button
+                            onClick={() => {
+                              const newPortionQty = portionQuantity + 1;
+                              const newBackendQty =
+                                newPortionQty * BACKEND_QUANTITY_UNIT;
+                              onUpdateQuantity?.(item.id, newBackendQty);
+                            }}
+                            className="w-6 h-6 bg-white border border-gray-300 rounded hover:bg-gray-100 flex items-center justify-center text-xs flex-shrink-0"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <button
+                        onClick={handleAddToOrder}
+                        className="w-7 h-7 bg-primary hover:opacity-90 text-white rounded-full font-medium transition-all flex items-center justify-center flex-shrink-0"
+                        aria-label="Add to Order"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3 w-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 4v16m8-8H4"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
