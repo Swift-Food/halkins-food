@@ -565,12 +565,13 @@ export default function MenuItemModal({
     // Validate multiple-selection min/max constraints
     const multipleSelectionErrors: string[] = [];
     Object.entries(addonGroups).forEach(([groupTitle, group]) => {
-      if (group.selectionType === 'single') return; // single validated above
+      if (group.selectionType === 'single') return;
 
       const count = getMultipleSelectionCount(groupTitle);
+      const scale = group.selectionType === 'multiple_repeat' ? itemQuantity : 1;
 
       if (group.minSelections != null) {
-        const effectiveMin = group.minSelections * itemQuantity;
+        const effectiveMin = group.minSelections * scale;
         if (count < effectiveMin) {
           multipleSelectionErrors.push(
             `${groupTitle}: Please select at least ${effectiveMin} option${effectiveMin > 1 ? "s" : ""} (currently ${count})`
@@ -578,9 +579,8 @@ export default function MenuItemModal({
         }
       }
 
-      // Validate maxSelections for all non-single groups
       if (group.maxSelections != null) {
-        const effectiveMax = group.maxSelections * itemQuantity;
+        const effectiveMax = group.maxSelections * scale;
         if (count > effectiveMax) {
           multipleSelectionErrors.push(
             `${groupTitle}: Please select at most ${effectiveMax} option${effectiveMax > 1 ? "s" : ""} (currently ${count})`
@@ -669,9 +669,11 @@ export default function MenuItemModal({
 
   // Check if any multiple-selection group has unmet minSelections
   const isMinSelectionsUnmet = Object.entries(addonGroups).some(
-    ([groupTitle, group]) =>
-      group.minSelections != null &&
-      getMultipleSelectionCount(groupTitle) < group.minSelections * itemQuantity
+    ([groupTitle, group]) => {
+      if (group.minSelections == null) return false;
+      const scale = group.selectionType === 'multiple_repeat' ? itemQuantity : 1;
+      return getMultipleSelectionCount(groupTitle) < group.minSelections * scale;
+    }
   );
 
   if (!isOpen) return null;
@@ -934,8 +936,8 @@ export default function MenuItemModal({
                             // multiple_no_repeat
                             if (group.minSelections != null || group.maxSelections != null) {
                               const count = getMultipleSelectionCount(groupTitle);
-                              const effectiveMin = group.minSelections != null ? group.minSelections * itemQuantity : null;
-                              const effectiveMax = group.maxSelections != null ? group.maxSelections * itemQuantity : null;
+                              const effectiveMin = group.minSelections ?? null;
+                              const effectiveMax = group.maxSelections ?? null;
                               let rule = "Select your choices";
                               if (effectiveMin != null && effectiveMax != null && effectiveMin === effectiveMax) {
                                 rule = `Select ${effectiveMin} option${effectiveMin > 1 ? "s" : ""}`;
