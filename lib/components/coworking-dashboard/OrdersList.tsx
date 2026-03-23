@@ -212,20 +212,21 @@ export default function OrdersList({
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
-                        statusBadgeColor[order.status] ||
-                        "bg-gray-100 text-gray-700 border-gray-300"
-                      }`}
-                    >
-                      {order.status === "pending_review" && order.adminReviewStatus === "approved"
-                        ? "Awaiting Swift Food Review"
-                        : statusLabel[order.status] || order.status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                    </span>
-                    {needsReview && (
+                    {needsReview ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-amber-100 text-amber-800 border-amber-300">
                         <AlertTriangle className="h-3 w-3" />
                         Review Required
+                      </span>
+                    ) : (
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                          statusBadgeColor[order.status] ||
+                          "bg-gray-100 text-gray-700 border-gray-300"
+                        }`}
+                      >
+                        {order.status === "pending_review" && order.adminReviewStatus === "approved"
+                          ? "Awaiting Swift Food Review"
+                          : statusLabel[order.status] || order.status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                       </span>
                     )}
                     <span className="text-xs text-gray-400">
