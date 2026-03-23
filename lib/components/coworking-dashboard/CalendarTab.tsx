@@ -40,12 +40,27 @@ const VENUE_COLORS = [
 const statusBadgeColor: Record<string, string> = {
   pending_review: "bg-yellow-100 text-yellow-800",
   pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-blue-100 text-blue-800",
+  admin_reviewed: "bg-blue-100 text-blue-800",
+  restaurant_reviewed: "bg-indigo-100 text-indigo-800",
+  payment_link_sent: "bg-purple-100 text-purple-800",
+  paid: "bg-green-100 text-green-800",
+  confirmed: "bg-green-100 text-green-800",
   preparing: "bg-indigo-100 text-indigo-800",
   ready: "bg-purple-100 text-purple-800",
   delivered: "bg-green-100 text-green-800",
   completed: "bg-gray-100 text-gray-800",
   cancelled: "bg-red-100 text-red-800",
+};
+
+const statusLabel: Record<string, string> = {
+  pending_review: "Under Review",
+  admin_reviewed: "Awaiting Restaurants",
+  restaurant_reviewed: "Awaiting Payment",
+  payment_link_sent: "Invoice Sent",
+  paid: "Paid",
+  confirmed: "Confirmed",
+  completed: "Completed",
+  cancelled: "Cancelled",
 };
 
 function formatDateTime(dateStr: string | null): string {
@@ -329,7 +344,7 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
                           statusBadgeColor[order.status] || "bg-gray-100 text-gray-700 border-gray-300"
                         }`}
                       >
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace(/_/g, " ")}
+                        {statusLabel[order.status] || order.status.charAt(0).toUpperCase() + order.status.slice(1).replace(/_/g, " ")}
                       </span>
                       {venueName && (
                         <span className="text-xs text-gray-400 font-medium">{venueName}</span>

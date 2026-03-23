@@ -85,7 +85,11 @@ const questionLookup = questionsConfig.sections.reduce<
 const statusBadgeColor: Record<string, string> = {
   pending_review: "bg-yellow-100 text-yellow-800 border-yellow-300",
   pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  confirmed: "bg-blue-100 text-blue-800 border-blue-300",
+  admin_reviewed: "bg-blue-100 text-blue-800 border-blue-300",
+  restaurant_reviewed: "bg-indigo-100 text-indigo-800 border-indigo-300",
+  payment_link_sent: "bg-purple-100 text-purple-800 border-purple-300",
+  paid: "bg-green-100 text-green-800 border-green-300",
+  confirmed: "bg-green-100 text-green-800 border-green-300",
   preparing: "bg-indigo-100 text-indigo-800 border-indigo-300",
   ready: "bg-purple-100 text-purple-800 border-purple-300",
   delivered: "bg-green-100 text-green-800 border-green-300",
@@ -93,11 +97,22 @@ const statusBadgeColor: Record<string, string> = {
   cancelled: "bg-red-100 text-red-800 border-red-300",
 };
 
+const statusLabel: Record<string, string> = {
+  pending_review: "Under Review",
+  admin_reviewed: "Awaiting Restaurants",
+  restaurant_reviewed: "Awaiting Payment",
+  payment_link_sent: "Invoice Sent",
+  paid: "Paid",
+  confirmed: "Confirmed",
+  completed: "Completed",
+  cancelled: "Cancelled",
+};
+
 function formatStatus(status: string, adminReviewStatus?: string) {
   if (status === "pending_review" && adminReviewStatus === "approved") {
     return "Awaiting Swift Food Review";
   }
-  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return statusLabel[status] || status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function formatDate(dateStr: string) {

@@ -73,12 +73,27 @@ const statusTabs: {
 const statusBadgeColor: Record<string, string> = {
   pending_review: "bg-yellow-100 text-yellow-800 border-yellow-300",
   pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  confirmed: "bg-blue-100 text-blue-800 border-blue-300",
+  admin_reviewed: "bg-blue-100 text-blue-800 border-blue-300",
+  restaurant_reviewed: "bg-indigo-100 text-indigo-800 border-indigo-300",
+  payment_link_sent: "bg-purple-100 text-purple-800 border-purple-300",
+  paid: "bg-green-100 text-green-800 border-green-300",
+  confirmed: "bg-green-100 text-green-800 border-green-300",
   preparing: "bg-indigo-100 text-indigo-800 border-indigo-300",
   ready: "bg-purple-100 text-purple-800 border-purple-300",
   delivered: "bg-green-100 text-green-800 border-green-300",
   completed: "bg-gray-100 text-gray-800 border-gray-300",
   cancelled: "bg-red-100 text-red-800 border-red-300",
+};
+
+const statusLabel: Record<string, string> = {
+  pending_review: "Under Review",
+  admin_reviewed: "Awaiting Restaurants",
+  restaurant_reviewed: "Awaiting Payment",
+  payment_link_sent: "Invoice Sent",
+  paid: "Paid",
+  confirmed: "Confirmed",
+  completed: "Completed",
+  cancelled: "Cancelled",
 };
 
 function formatDate(dateStr: string) {
@@ -205,7 +220,7 @@ export default function OrdersList({
                     >
                       {order.status === "pending_review" && order.adminReviewStatus === "approved"
                         ? "Awaiting Swift Food Review"
-                        : order.status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                        : statusLabel[order.status] || order.status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                     </span>
                     {needsReview && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-amber-100 text-amber-800 border-amber-300">
