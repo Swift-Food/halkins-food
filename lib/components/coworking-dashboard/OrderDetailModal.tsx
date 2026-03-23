@@ -20,6 +20,7 @@ import {
   ChevronRight,
   MessageSquareText,
   Info,
+  AlertTriangle,
 } from "lucide-react";
 
 interface OrderDetailModalProps {
@@ -261,6 +262,9 @@ export default function OrderDetailModal({
   };
 
   const isPending = order?.adminReviewStatus === "pending";
+  const needsReview =
+    order?.adminReviewStatus === "pending" &&
+    order?.status === "pending_review";
   const feeIsLocked = order ? ["paid", "confirmed", "completed", "cancelled"].includes(order.status) : false;
 
   // Pre-fill venue hire fee input: use DB value if set, otherwise auto-calculate recommendation
@@ -409,27 +413,19 @@ export default function OrderDetailModal({
             ) : order ? (
               <div className="space-y-6">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span
-                    className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold ${
-                      statusBadgeColor[order.status] ||
-                      "border-gray-300 bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {formatStatus(order.status, order.adminReviewStatus)}
-                  </span>
-                  {order.adminReviewStatus === "pending" && (
-                    <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
-                      Awaiting Review
+                  {needsReview ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
+                      <AlertTriangle className="h-4 w-4" />
+                      Review Required
                     </span>
-                  )}
-                  {order.adminReviewStatus === "approved" && (
-                    <span className="inline-flex items-center rounded-full border border-green-300 bg-green-100 px-3 py-1 text-sm font-semibold text-green-800">
-                      Approved
-                    </span>
-                  )}
-                  {order.adminReviewStatus === "rejected" && (
-                    <span className="inline-flex items-center rounded-full border border-red-300 bg-red-100 px-3 py-1 text-sm font-semibold text-red-800">
-                      Rejected
+                  ) : (
+                    <span
+                      className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold ${
+                        statusBadgeColor[order.status] ||
+                        "border-gray-300 bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {formatStatus(order.status, order.adminReviewStatus)}
                     </span>
                   )}
                   <span className="text-sm text-gray-500">
