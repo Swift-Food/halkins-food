@@ -69,9 +69,12 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
   const [form, setForm] = useState<CreateCoworkingVenueRequest>(emptyForm);
   const [imageUploading, setImageUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
+  const [galleryUploading, setGalleryUploading] = useState(false);
   const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
   const [addressSearchError, setAddressSearchError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   // Transfer-on-delete state
   const [transferModal, setTransferModal] = useState<{
@@ -103,6 +106,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
     setForm(emptyForm);
     setEditingVenue(null);
     setImagePreview(null);
+    setGalleryPhotos([]);
     setHasSelectedAddress(false);
     setAddressSearchError("");
     setError("");
@@ -121,6 +125,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
       description: venue.description ?? "",
       attendanceTags: venue.attendanceTags ?? [],
     });
+    setGalleryPhotos(venue.galleryPhotos ?? []);
     setHasSelectedAddress(false);
     setAddressSearchError("");
     setError("");
@@ -138,6 +143,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
         latitude: Number(form.latitude),
         longitude: Number(form.longitude),
         coverPhoto: form.coverPhoto || undefined,
+        galleryPhotos: galleryPhotos.length > 0 ? galleryPhotos : undefined,
         description: form.description || undefined,
       };
       if (mode === "create") {
@@ -284,6 +290,47 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
       setImageUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setGalleryUploading(true);
+    setError("");
+    try {
+      const newUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("upload", file);
+        const response = await fetchWithAuth(
+          `${API_BASE_URL}${API_ENDPOINTS.IMAGE_UPLOAD}`,
+          { method: "POST", body: formData }
+        );
+        if (!response.ok) throw new Error("Failed to upload gallery image");
+        const url: string = await response.json();
+        newUrls.push(url);
+      }
+      setGalleryPhotos((prev) => [...prev, ...newUrls]);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to upload gallery photos"));
+    } finally {
+      setGalleryUploading(false);
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
+    }
+  };
+
+  const moveGalleryPhoto = (index: number, direction: -1 | 1) => {
+    setGalleryPhotos((prev) => {
+      const next = [...prev];
+      const target = index + direction;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const removeGalleryPhoto = (index: number) => {
+    setGalleryPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -716,6 +763,82 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
                         )}
                       </button>
                     )}
+                  </section>
+
+                  {/* Gallery Photos */}
+                  <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="mb-4">
+                      <h3 className="text-base font-semibold text-slate-900">Gallery Photos</h3>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Add multiple photos. Drag to reorder — first photo appears first in the gallery.
+                      </p>
+                    </div>
+
+                    <input
+                      ref={galleryInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleGalleryUpload}
+                    />
+
+                    {galleryPhotos.length > 0 && (
+                      <div className="space-y-2 mb-4">
+                        {galleryPhotos.map((url, idx) => (
+                          <div key={url + idx} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2">
+                            <div className="relative h-16 w-24 flex-shrink-0 overflow-hidden rounded-lg">
+                              <Image src={url} alt={`Gallery ${idx + 1}`} fill className="object-cover" />
+                            </div>
+                            <span className="flex-1 text-xs text-slate-500 truncate">Photo {idx + 1}</span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => moveGalleryPhoto(idx, -1)}
+                                disabled={idx === 0}
+                                className="btn btn-xs btn-ghost rounded-lg disabled:opacity-30"
+                                title="Move up"
+                              >
+                                ↑
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveGalleryPhoto(idx, 1)}
+                                disabled={idx === galleryPhotos.length - 1}
+                                className="btn btn-xs btn-ghost rounded-lg disabled:opacity-30"
+                                title="Move down"
+                              >
+                                ↓
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeGalleryPhoto(idx)}
+                                className="btn btn-xs btn-ghost rounded-lg text-red-500 hover:bg-red-50"
+                                title="Remove"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      disabled={galleryUploading}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm text-slate-500 transition-colors hover:border-primary hover:bg-primary/5 hover:text-primary"
+                    >
+                      {galleryUploading ? (
+                        <span className="loading loading-spinner loading-sm text-primary" />
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4" />
+                          Add photos
+                        </>
+                      )}
+                    </button>
                   </section>
                 </div>
               </div>
