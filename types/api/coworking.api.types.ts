@@ -121,7 +121,8 @@ export interface CoworkingVenue {
   capacity: number;
   latitude: number;
   longitude: number;
-  image?: string;
+  coverPhoto?: string;
+  galleryPhotos?: string[] | null;
   description?: string;
   attendanceTags?: string[] | null;
 }

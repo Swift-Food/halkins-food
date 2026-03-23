@@ -36,7 +36,7 @@ const emptyForm: CreateCoworkingVenueRequest = {
   capacity: 0,
   latitude: 0,
   longitude: 0,
-  image: "",
+  coverPhoto: "",
   description: "",
   attendanceTags: [],
 };
@@ -117,7 +117,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
       capacity: venue.capacity,
       latitude: Number(venue.latitude),
       longitude: Number(venue.longitude),
-      image: venue.image ?? "",
+      coverPhoto: venue.coverPhoto ?? "",
       description: venue.description ?? "",
       attendanceTags: venue.attendanceTags ?? [],
     });
@@ -137,7 +137,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
         capacity: Number(form.capacity),
         latitude: Number(form.latitude),
         longitude: Number(form.longitude),
-        image: form.image || undefined,
+        coverPhoto: form.coverPhoto || undefined,
         description: form.description || undefined,
       };
       if (mode === "create") {
@@ -273,7 +273,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
       );
       if (!response.ok) throw new Error("Failed to upload image");
       const url: string = await response.json();
-      setForm((f) => ({ ...f, image: url }));
+      setForm((f) => ({ ...f, coverPhoto: url }));
       URL.revokeObjectURL(localPreview);
       setImagePreview(null);
     } catch (err: unknown) {
@@ -433,9 +433,9 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
                         <div
                           className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-slate-100 lg:w-64"
                         >
-                          {venue.image ? (
+                          {venue.coverPhoto ? (
                             <Image
-                              src={venue.image}
+                              src={venue.coverPhoto}
                               alt={venue.name}
                               fill
                               className="object-cover"
@@ -657,10 +657,10 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
                       onChange={handleImageUpload}
                     />
 
-                    {(imagePreview || form.image) ? (
+                    {(imagePreview || form.coverPhoto) ? (
                       <div className="relative h-64 overflow-hidden rounded-[22px] border border-slate-200 bg-slate-100 group">
                         <Image
-                          src={imagePreview ?? form.image!}
+                          src={imagePreview ?? form.coverPhoto!}
                           alt="Venue preview"
                           fill
                           className="object-cover"
@@ -675,7 +675,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
                             <button
                               type="button"
                               onClick={() => {
-                                setForm((f) => ({ ...f, image: "" }));
+                                setForm((f) => ({ ...f, coverPhoto: "" }));
                                 setImagePreview(null);
                               }}
                               className="btn btn-sm rounded-full border-none bg-white/85 text-slate-700 shadow-sm hover:bg-white"

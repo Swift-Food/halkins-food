@@ -284,9 +284,9 @@ export default function CoworkingBookingDetailsForm({
                   }`}
                 >
                   <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-200">
-                    {venue.image ? (
+                    {venue.coverPhoto ? (
                       <Image
-                        src={venue.image}
+                        src={venue.coverPhoto}
                         alt={venue.name}
                         fill
                         className={`object-cover transition-transform duration-300 group-hover:scale-105 ${

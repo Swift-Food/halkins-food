@@ -202,7 +202,8 @@ export interface CoworkingVenueAdmin {
   capacity: number;
   latitude: string;
   longitude: string;
-  image?: string | null;
+  coverPhoto?: string | null;
+  galleryPhotos?: string[] | null;
   description?: string | null;
   attendanceTags?: CoworkingVenueAttendanceTag[] | null;
   createdAt: string;
@@ -219,7 +220,8 @@ export interface CreateCoworkingVenueRequest {
   capacity: number;
   latitude: number;
   longitude: number;
-  image?: string;
+  coverPhoto?: string;
+  galleryPhotos?: string[];
   description?: string;
   attendanceTags?: CoworkingVenueAttendanceTag[];
 }
@@ -233,7 +235,8 @@ export interface UpdateCoworkingVenueRequest {
   capacity?: number;
   latitude?: number;
   longitude?: number;
-  image?: string;
+  coverPhoto?: string;
+  galleryPhotos?: string[];
   description?: string;
   attendanceTags?: CoworkingVenueAttendanceTag[];
 }
