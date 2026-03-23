@@ -319,15 +319,26 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
     }
   };
 
-  const moveGalleryPhoto = (index: number, direction: -1 | 1) => {
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const handleDragStart = (idx: number) => setDragIdx(idx);
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    setDragOverIdx(idx);
+  };
+  const handleDrop = (idx: number) => {
+    if (dragIdx === null || dragIdx === idx) { setDragIdx(null); setDragOverIdx(null); return; }
     setGalleryPhotos((prev) => {
       const next = [...prev];
-      const target = index + direction;
-      if (target < 0 || target >= next.length) return prev;
-      [next[index], next[target]] = [next[target], next[index]];
+      const [moved] = next.splice(dragIdx, 1);
+      next.splice(idx, 0, moved);
       return next;
     });
+    setDragIdx(null);
+    setDragOverIdx(null);
   };
+  const handleDragEnd = () => { setDragIdx(null); setDragOverIdx(null); };
 
   const removeGalleryPhoto = (index: number) => {
     setGalleryPhotos((prev) => prev.filter((_, i) => i !== index));
@@ -786,39 +797,34 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
                     {galleryPhotos.length > 0 && (
                       <div className="space-y-2 mb-4">
                         {galleryPhotos.map((url, idx) => (
-                          <div key={url + idx} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2">
+                          <div
+                            key={url + idx}
+                            draggable
+                            onDragStart={() => handleDragStart(idx)}
+                            onDragOver={(e) => handleDragOver(e, idx)}
+                            onDrop={() => handleDrop(idx)}
+                            onDragEnd={handleDragEnd}
+                            className={`flex items-center gap-3 rounded-xl border p-2 transition-all cursor-grab active:cursor-grabbing ${
+                              dragOverIdx === idx && dragIdx !== idx
+                                ? "border-primary bg-primary/5 scale-[1.01]"
+                                : dragIdx === idx
+                                  ? "opacity-50 border-slate-300 bg-slate-100"
+                                  : "border-slate-200 bg-slate-50"
+                            }`}
+                          >
+                            <span className="text-slate-300 select-none text-lg px-1" title="Drag to reorder">⠿</span>
                             <div className="relative h-16 w-24 flex-shrink-0 overflow-hidden rounded-lg">
                               <Image src={url} alt={`Gallery ${idx + 1}`} fill className="object-cover" />
                             </div>
                             <span className="flex-1 text-xs text-slate-500 truncate">Photo {idx + 1}</span>
-                            <div className="flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => moveGalleryPhoto(idx, -1)}
-                                disabled={idx === 0}
-                                className="btn btn-xs btn-ghost rounded-lg disabled:opacity-30"
-                                title="Move up"
-                              >
-                                ↑
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => moveGalleryPhoto(idx, 1)}
-                                disabled={idx === galleryPhotos.length - 1}
-                                className="btn btn-xs btn-ghost rounded-lg disabled:opacity-30"
-                                title="Move down"
-                              >
-                                ↓
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => removeGalleryPhoto(idx)}
-                                className="btn btn-xs btn-ghost rounded-lg text-red-500 hover:bg-red-50"
-                                title="Remove"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeGalleryPhoto(idx)}
+                              className="btn btn-xs btn-ghost rounded-lg text-red-500 hover:bg-red-50"
+                              title="Remove"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
                           </div>
                         ))}
                       </div>
