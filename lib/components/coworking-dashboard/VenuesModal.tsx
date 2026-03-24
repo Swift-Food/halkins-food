@@ -143,7 +143,7 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
         latitude: Number(form.latitude),
         longitude: Number(form.longitude),
         coverPhoto: form.coverPhoto || undefined,
-        galleryPhotos: galleryPhotos.length > 0 ? galleryPhotos : undefined,
+        galleryPhotos,
         description: form.description || undefined,
       };
       if (mode === "create") {
