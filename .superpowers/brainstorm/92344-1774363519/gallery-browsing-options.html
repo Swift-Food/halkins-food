@@ -1,0 +1,97 @@
+<h2>How should users browse a venue's gallery photos?</h2>
+<p class="subtitle">Each venue can have a cover photo + multiple gallery photos</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:#f8fafc">
+      <!-- Arrows directly on card image -->
+      <div style="border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;width:180px;margin:0 auto">
+        <div style="background:#94a3b8;height:100px;position:relative">
+          <!-- left arrow -->
+          <button style="position:absolute;left:6px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.85);border:none;border-radius:999px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)">‹</button>
+          <!-- right arrow -->
+          <button style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.85);border:none;border-radius:999px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)">›</button>
+          <!-- dot indicators -->
+          <div style="position:absolute;bottom:6px;left:0;right:0;display:flex;justify-content:center;gap:4px">
+            <div style="width:5px;height:5px;border-radius:99px;background:white"></div>
+            <div style="width:5px;height:5px;border-radius:99px;background:rgba(255,255,255,0.4)"></div>
+            <div style="width:5px;height:5px;border-radius:99px;background:rgba(255,255,255,0.4)"></div>
+            <div style="width:5px;height:5px;border-radius:99px;background:rgba(255,255,255,0.4)"></div>
+          </div>
+        </div>
+        <div style="background:white;padding:8px">
+          <div style="font-size:10px;font-weight:700">Paris Garden</div>
+          <div style="font-size:8px;color:#64748b">👥 150 guests</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Arrow buttons on the card image</h3>
+      <p>Left/right arrow buttons overlaid on the cover photo let users cycle through gallery images inline. Dot indicators show photo count. No modal needed — quick and frictionless.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:#f8fafc">
+      <!-- View details button -->
+      <div style="border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;width:180px;margin:0 auto">
+        <div style="background:#94a3b8;height:90px;position:relative">
+          <div style="position:absolute;bottom:8px;right:8px">
+            <div style="background:rgba(0,0,0,0.55);color:white;font-size:8px;padding:4px 8px;border-radius:8px;backdrop-filter:blur(4px);font-weight:600">📷 5 photos</div>
+          </div>
+        </div>
+        <div style="background:white;padding:8px">
+          <div style="font-size:10px;font-weight:700">Paris Garden</div>
+          <div style="font-size:8px;color:#64748b;margin-top:1px">👥 150 guests</div>
+          <button style="margin-top:6px;width:100%;background:#fef2f2;color:#dc2626;border:none;border-radius:8px;padding:4px;font-size:8px;font-weight:700;cursor:pointer">View full details →</button>
+        </div>
+      </div>
+      <!-- Simulated modal preview -->
+      <div style="margin-top:8px;border:1px solid #e2e8f0;border-radius:8px;padding:8px;background:white;font-size:8px;color:#64748b">
+        <div style="font-weight:700;color:#0f172a;margin-bottom:4px;font-size:9px">↗ Opens side panel / modal with:</div>
+        <div>• Full gallery grid</div>
+        <div>• Venue description</div>
+        <div>• Capacity & tags</div>
+        <div>• Select button</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — "View details" opens a panel/modal</h3>
+      <p>A button on the card opens a side panel or modal with the full gallery, description, and a "Select this venue" button. More info, but requires an extra tap to see photos.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:#f8fafc">
+      <!-- Both: arrows + details button -->
+      <div style="border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;width:180px;margin:0 auto">
+        <div style="background:#94a3b8;height:100px;position:relative">
+          <button style="position:absolute;left:6px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.85);border:none;border-radius:999px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)">‹</button>
+          <button style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.85);border:none;border-radius:999px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)">›</button>
+          <div style="position:absolute;bottom:6px;left:0;right:0;display:flex;justify-content:center;gap:4px">
+            <div style="width:5px;height:5px;border-radius:99px;background:white"></div>
+            <div style="width:5px;height:5px;border-radius:99px;background:rgba(255,255,255,0.4)"></div>
+            <div style="width:5px;height:5px;border-radius:99px;background:rgba(255,255,255,0.4)"></div>
+          </div>
+        </div>
+        <div style="background:white;padding:8px">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <div style="font-size:10px;font-weight:700">Paris Garden</div>
+              <div style="font-size:8px;color:#64748b">👥 150 guests</div>
+            </div>
+            <div style="font-size:8px;color:#dc2626;font-weight:600;cursor:pointer;white-space:nowrap">Details ↗</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Both: arrows on card + details link</h3>
+      <p>Arrow buttons to quickly flip through photos inline, plus a small "Details" link that opens the full panel for users who want more. Best of both — quick browse and deep dive.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px">Click to select, then tell me your thoughts in the terminal.</p>

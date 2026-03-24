@@ -1,0 +1,161 @@
+<h2>How should many venues be handled?</h2>
+<p class="subtitle">Same A-style card — the question is how to manage vertical space when there are 8–12 venues</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:#f8fafc">
+      <!-- Horizontal scroll carousel -->
+      <div style="overflow:hidden;position:relative">
+        <div style="font-size:9px;color:#94a3b8;text-align:right;margin-bottom:6px">← scroll →</div>
+        <div style="display:flex;gap:8px;overflow:hidden">
+          <div style="flex-shrink:0;width:110px;border-radius:10px;overflow:hidden;border:2px solid #dc2626">
+            <div style="background:#94a3b8;height:65px;position:relative">
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+                <div style="background:white;border-radius:999px;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px">✓</div>
+              </div>
+            </div>
+            <div style="background:white;padding:6px">
+              <div style="font-size:9px;font-weight:700">Paris Garden</div>
+              <div style="font-size:8px;color:#64748b">150 guests</div>
+            </div>
+          </div>
+          <div style="flex-shrink:0;width:110px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0">
+            <div style="background:#cbd5e1;height:65px"></div>
+            <div style="background:white;padding:6px">
+              <div style="font-size:9px;font-weight:700">Thames St</div>
+              <div style="font-size:8px;color:#64748b">100 guests</div>
+            </div>
+          </div>
+          <div style="flex-shrink:0;width:110px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;opacity:0.6">
+            <div style="background:#e2e8f0;height:65px"></div>
+            <div style="background:white;padding:6px">
+              <div style="font-size:9px;font-weight:700">Eversholt St</div>
+              <div style="font-size:8px;color:#64748b">120 guests</div>
+            </div>
+          </div>
+          <div style="flex-shrink:0;width:110px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;opacity:0.3">
+            <div style="background:#e2e8f0;height:65px"></div>
+            <div style="background:white;padding:6px">
+              <div style="font-size:9px;font-weight:700">King's Cross</div>
+              <div style="font-size:8px;color:#64748b">80 guests</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:center;gap:4px;margin-top:8px">
+          <div style="width:16px;height:4px;border-radius:99px;background:#dc2626"></div>
+          <div style="width:6px;height:4px;border-radius:99px;background:#e2e8f0"></div>
+          <div style="width:6px;height:4px;border-radius:99px;background:#e2e8f0"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Horizontal scrolling row</h3>
+      <p>Cards sit in a single scrollable row. Fixed height — no matter how many venues. 2–3 cards visible at once with peek of the next. Works great on mobile too.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:#f8fafc">
+      <!-- 2-col compact + show more -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div style="border-radius:10px;overflow:hidden;border:2px solid #dc2626">
+          <div style="background:#94a3b8;height:55px;position:relative">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <div style="background:white;border-radius:999px;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px">✓</div>
+            </div>
+          </div>
+          <div style="background:white;padding:6px">
+            <div style="font-size:9px;font-weight:700">Paris Garden</div>
+            <div style="font-size:8px;color:#64748b">150 guests</div>
+          </div>
+        </div>
+        <div style="border-radius:10px;overflow:hidden;border:1px solid #e2e8f0">
+          <div style="background:#cbd5e1;height:55px"></div>
+          <div style="background:white;padding:6px">
+            <div style="font-size:9px;font-weight:700">Thames St</div>
+            <div style="font-size:8px;color:#64748b">100 guests</div>
+          </div>
+        </div>
+        <div style="border-radius:10px;overflow:hidden;border:1px solid #e2e8f0">
+          <div style="background:#e2e8f0;height:55px"></div>
+          <div style="background:white;padding:6px">
+            <div style="font-size:9px;font-weight:700">Eversholt St</div>
+            <div style="font-size:8px;color:#64748b">120 guests</div>
+          </div>
+        </div>
+        <div style="border-radius:10px;overflow:hidden;border:1px dashed #e2e8f0;display:flex;align-items:center;justify-content:center;height:83px;background:#f8fafc">
+          <div style="text-align:center">
+            <div style="font-size:18px;color:#94a3b8">+9</div>
+            <div style="font-size:8px;color:#94a3b8">Show all</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — 2-col grid, show 3 then "Show all"</h3>
+      <p>Show the first 3 venues in the grid, with a "+9 more" tile that expands to reveal all. Keeps page short by default, no scrolling needed for common cases.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:14px;background:#f8fafc">
+      <!-- 3-col compact grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">
+        <div style="border-radius:8px;overflow:hidden;border:2px solid #dc2626">
+          <div style="background:#94a3b8;height:45px;position:relative">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <div style="background:white;border-radius:999px;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px">✓</div>
+            </div>
+          </div>
+          <div style="background:white;padding:4px 5px">
+            <div style="font-size:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Paris Garden</div>
+            <div style="font-size:7px;color:#64748b">150</div>
+          </div>
+        </div>
+        <div style="border-radius:8px;overflow:hidden;border:1px solid #e2e8f0">
+          <div style="background:#cbd5e1;height:45px"></div>
+          <div style="background:white;padding:4px 5px">
+            <div style="font-size:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Thames St</div>
+            <div style="font-size:7px;color:#64748b">100</div>
+          </div>
+        </div>
+        <div style="border-radius:8px;overflow:hidden;border:1px solid #e2e8f0">
+          <div style="background:#e2e8f0;height:45px"></div>
+          <div style="background:white;padding:4px 5px">
+            <div style="font-size:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Eversholt</div>
+            <div style="font-size:7px;color:#64748b">120</div>
+          </div>
+        </div>
+        <div style="border-radius:8px;overflow:hidden;border:1px solid #e2e8f0">
+          <div style="background:#f1f5f9;height:45px"></div>
+          <div style="background:white;padding:4px 5px">
+            <div style="font-size:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">King's Cross</div>
+            <div style="font-size:7px;color:#64748b">80</div>
+          </div>
+        </div>
+        <div style="border-radius:8px;overflow:hidden;border:1px solid #e2e8f0">
+          <div style="background:#f1f5f9;height:45px"></div>
+          <div style="background:white;padding:4px 5px">
+            <div style="font-size:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Shoreditch</div>
+            <div style="font-size:7px;color:#64748b">200</div>
+          </div>
+        </div>
+        <div style="border-radius:8px;overflow:hidden;border:1px solid #e2e8f0">
+          <div style="background:#f1f5f9;height:45px"></div>
+          <div style="background:white;padding:4px 5px">
+            <div style="font-size:8px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Canary Wharf</div>
+            <div style="font-size:7px;color:#64748b">60</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — 3-col compact grid</h3>
+      <p>Switch to 3 columns on larger screens with slightly smaller cards. 12 venues = 4 rows instead of 6. Denser but still visual. Names may truncate on small cards.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px">Click to select your preference, then share thoughts in terminal.</p>

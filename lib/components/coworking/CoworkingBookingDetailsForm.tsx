@@ -1,17 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import {
   Building2,
   Calendar,
-  CheckCircle2,
   Mail,
   Pencil,
-  Users,
 } from "lucide-react";
-import {  CoworkingVenue } from "@/types/api";
+import { CoworkingVenue } from "@/types/api";
 import CoworkingEventWindowModal from "./CoworkingEventWindowModal";
+import VenuePicker from "./VenuePicker";
 
 interface TimeSlot {
   value: string;
@@ -88,14 +86,6 @@ export function formatCoworkingEventDateTime(date: string, time: string) {
   return `${formattedDate}, ${
     COWORKING_TIME_SLOTS.find((slot) => slot.value === time)?.label || time
   }`;
-}
-
-function formatAttendanceTag(tag: string) {
-  return tag
-    .split("_")
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
 }
 
 export function isCoworkingBookingWindowValid(values: EventWindowValues) {
@@ -258,81 +248,13 @@ export default function CoworkingBookingDetailsForm({
         >
           <div className="mb-5">
             <p className={COWORKING_SECTION_HEADER_CLASS}>Choose a Venue</p>
-            <h3 className="mt-2 text-xl font-semibold text-slate-900">
-              Pick the space that fits your event
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Select your preferred venue before continuing to the menu.
-            </p>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {venues.map((venue) => {
-              const isSelected = selectedVenue?.id === venue.id;
-              const formattedAttendanceTags =
-                venue.attendanceTags
-                  ?.filter((tag): tag is string => Boolean(tag))
-                  .map(formatAttendanceTag) ?? [];
-
-              return (
-                <button
-                  key={venue.id}
-                  type="button"
-                  onClick={() => onVenueChange(venue)}
-                  disabled={isSubmitting}
-                  className={`relative flex h-full flex-col overflow-hidden rounded-[1.6rem] text-left transition-all group ${
-                    isSelected
-                      ? "border-primary/30 bg-white ring-2 ring-primary/80"
-                      : "border border-slate-200/80 bg-white hover:-translate-y-0.5 hover:border-primary/40"
-                  }`}
-                >
-                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-200">
-                    {venue.coverPhoto ? (
-                      <Image
-                        src={venue.coverPhoto}
-                        alt={venue.name}
-                        fill
-                        loading={imageLoading}
-                        sizes="(min-width: 640px) 50vw, 100vw"
-                        className={`object-cover transition-transform duration-300 group-hover:scale-105 ${
-                          isSelected ? "scale-105" : ""
-                        }`}
-                      />
-                    ) : (
-                      <div className="h-full w-full bg-gradient-to-br from-gray-200 to-gray-300" />
-                    )}
-
-                    {(isSelected || formattedAttendanceTags.length > 0) && (
-                      <div className="absolute right-3 top-3 flex max-w-[75%] flex-wrap justify-end gap-2">
-                        {formattedAttendanceTags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded-full border border-primary/25 bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-sm"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {isSelected && formattedAttendanceTags.length === 0 && (
-                          <CheckCircle2 className="h-6 w-6 text-white drop-shadow" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex min-h-[92px] flex-1 flex-col bg-white p-4">
-                    <p className="text-base font-semibold text-slate-900">
-                      {venue.name}
-                    </p>
-                    <div className="mt-2 flex items-start gap-3">
-                      <span className="flex items-center gap-1 text-xs font-medium text-slate-500">
-                        <Users className="h-3.5 w-3.5" />
-                        Up to {venue.capacity} guests
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          <VenuePicker
+            venues={venues}
+            selectedVenue={selectedVenue}
+            imageLoading={imageLoading}
+            onVenueChange={onVenueChange}
+          />
         </div>
 
         {error && (

@@ -1,0 +1,116 @@
+<h2>How should the venue cards be laid out?</h2>
+<p class="subtitle">Each venue has: cover photo, gallery photos, name, capacity, tags, description</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f8fafc">
+      <!-- 2-col grid mockup, taller cards -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="border-radius:12px;overflow:hidden;border:2px solid #e2e8f0">
+          <div style="background:#cbd5e1;height:90px;position:relative">
+            <div style="position:absolute;top:6px;right:6px;background:#dc2626;color:white;font-size:9px;padding:2px 6px;border-radius:99px;font-weight:700">FEMALES ONLY</div>
+          </div>
+          <div style="background:white;padding:8px">
+            <div style="font-size:10px;font-weight:700;color:#0f172a">Halkin - Paris Garden</div>
+            <div style="font-size:9px;color:#64748b;margin-top:2px">👥 150 guests</div>
+            <div style="font-size:9px;color:#3b82f6;margin-top:4px;font-weight:600">📷 View gallery →</div>
+          </div>
+        </div>
+        <div style="border-radius:12px;overflow:hidden;border:2px solid #dc2626">
+          <div style="background:#94a3b8;height:90px;position:relative">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <div style="background:white;border-radius:999px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px">✓</div>
+            </div>
+          </div>
+          <div style="background:white;padding:8px">
+            <div style="font-size:10px;font-weight:700;color:#0f172a">Halkin - Thames St</div>
+            <div style="font-size:9px;color:#64748b;margin-top:2px">👥 100 guests</div>
+            <div style="font-size:9px;color:#3b82f6;margin-top:4px;font-weight:600">📷 View gallery →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — 2-col grid (refined current)</h3>
+      <p>Keep the 2-column grid but add a "View gallery" link/button on each card. Familiar, compact. Works well with 2–4 venues.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f8fafc">
+      <!-- Horizontal list mockup -->
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="border-radius:12px;overflow:hidden;border:2px solid #dc2626;display:flex;height:72px">
+          <div style="background:#cbd5e1;width:90px;flex-shrink:0;position:relative">
+            <div style="position:absolute;top:4px;left:4px;background:white;border-radius:999px;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:8px">✓</div>
+          </div>
+          <div style="background:white;padding:8px;flex:1;display:flex;flex-direction:column;justify-content:center">
+            <div style="font-size:10px;font-weight:700;color:#0f172a">Halkin - Paris Garden</div>
+            <div style="font-size:9px;color:#64748b;margin-top:2px">👥 150 guests · Females only</div>
+            <div style="display:flex;gap:6px;margin-top:4px">
+              <div style="font-size:8px;background:#f1f5f9;color:#475569;padding:2px 6px;border-radius:99px">See photos ▸</div>
+              <div style="font-size:8px;background:#fef2f2;color:#dc2626;padding:2px 6px;border-radius:99px">Details</div>
+            </div>
+          </div>
+        </div>
+        <div style="border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;display:flex;height:72px">
+          <div style="background:#94a3b8;width:90px;flex-shrink:0"></div>
+          <div style="background:white;padding:8px;flex:1;display:flex;flex-direction:column;justify-content:center">
+            <div style="font-size:10px;font-weight:700;color:#0f172a">Halkin - Thames St</div>
+            <div style="font-size:9px;color:#64748b;margin-top:2px">👥 100 guests</div>
+            <div style="display:flex;gap:6px;margin-top:4px">
+              <div style="font-size:8px;background:#f1f5f9;color:#475569;padding:2px 6px;border-radius:99px">See photos ▸</div>
+              <div style="font-size:8px;background:#fef2f2;color:#dc2626;padding:2px 6px;border-radius:99px">Details</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Horizontal list rows</h3>
+      <p>Image thumbnail on the left, name/capacity/tags on the right. More info visible at a glance. Better for 4+ venues.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#f8fafc">
+      <!-- Full-width featured cards -->
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="border-radius:12px;overflow:hidden;border:2px solid #dc2626">
+          <div style="background:#cbd5e1;height:80px;position:relative">
+            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.6));padding:8px 10px;display:flex;justify-content:space-between;align-items:flex-end">
+              <span style="color:white;font-size:10px;font-weight:700">Halkin - Paris Garden</span>
+              <span style="font-size:9px;color:white;background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:99px;backdrop-filter:blur(4px)">1/5 ❯</span>
+            </div>
+            <div style="position:absolute;top:6px;right:6px;background:#dc2626;color:white;font-size:9px;padding:2px 6px;border-radius:99px;font-weight:700">FEMALES ONLY</div>
+          </div>
+          <div style="background:white;padding:8px;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:9px;color:#64748b">👥 Up to 150 guests</div>
+            </div>
+            <div style="font-size:9px;color:#dc2626;font-weight:600">View details →</div>
+          </div>
+        </div>
+        <div style="border-radius:12px;overflow:hidden;border:1px solid #e2e8f0">
+          <div style="background:#94a3b8;height:60px;position:relative">
+            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.5));padding:6px 8px">
+              <span style="color:white;font-size:10px;font-weight:700">Halkin - Thames St</span>
+            </div>
+          </div>
+          <div style="background:white;padding:6px 8px;display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:9px;color:#64748b">👥 Up to 100 guests</div>
+            <div style="font-size:9px;color:#dc2626;font-weight:600">View details →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Full-width stacked with image overlay</h3>
+      <p>Full-width cards stacked vertically, name overlaid on the image. Arrow buttons cycle through gallery photos directly on the card. Richer, more visual feel.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px">Click a card to select it, then tell me your thoughts in the terminal.</p>
