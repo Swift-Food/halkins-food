@@ -151,7 +151,7 @@ export default function VenueCard({
 
       {/* Card footer */}
       <div className="flex flex-1 flex-col bg-white p-3 sm:p-4 justify-center">
-        <p className="text-sm font-semibold text-slate-900 leading-snug">{venue.name}</p>
+        <p className="text-sm font-semibold text-slate-900 leading-snug min-h-[2.5rem] line-clamp-2">{venue.name}</p>
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <span className="flex items-center gap-1 text-xs font-medium text-slate-500">
             <Users className="h-3.5 w-3.5 shrink-0" />
