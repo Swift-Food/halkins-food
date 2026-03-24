@@ -76,7 +76,7 @@ export default function VenueCard({
       } ${
         isSelected
           ? "ring-2 ring-primary/80 border-primary/30 bg-white"
-          : "border border-slate-200/80 bg-white hover:-translate-y-0.5 hover:border-primary/40"
+          : "border border-slate-200/80 bg-white hover:border-primary/40"
       }`}
     >
       {/* Photo area */}
@@ -94,9 +94,7 @@ export default function VenueCard({
             fill
             loading={imageLoading}
             sizes="(min-width: 640px) 33vw, 40vw"
-            className={`object-cover transition-transform duration-300 group-hover:scale-105 ${
-              isSelected ? "scale-105" : ""
-            }`}
+            className="object-cover"
           />
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-gray-200 to-gray-300" />
@@ -162,7 +160,7 @@ export default function VenueCard({
           <button
             type="button"
             onClick={handleDetailsClick}
-            className="text-xs font-semibold text-primary hover:underline shrink-0"
+            className="shrink-0 rounded-lg bg-primary/8 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"
           >
             Details →
           </button>
