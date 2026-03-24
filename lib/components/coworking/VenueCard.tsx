@@ -17,6 +17,7 @@ interface VenueCardProps {
   venue: CoworkingVenue;
   isSelected: boolean;
   imageLoading?: "eager" | "lazy";
+  horizontal?: boolean;
   onSelect: (venue: CoworkingVenue) => void;
   onViewDetails: (venue: CoworkingVenue) => void;
 }
@@ -25,6 +26,7 @@ export default function VenueCard({
   venue,
   isSelected,
   imageLoading = "lazy",
+  horizontal = false,
   onSelect,
   onViewDetails,
 }: VenueCardProps) {
@@ -57,25 +59,41 @@ export default function VenueCard({
     onViewDetails(venue);
   }
 
+  function handleCardClick() {
+    if (window.matchMedia("(max-width: 639px)").matches) {
+      onViewDetails(venue);
+    } else {
+      onSelect(venue);
+    }
+  }
+
   return (
     <button
       type="button"
-      onClick={() => onSelect(venue)}
-      className={`relative flex h-full flex-col overflow-hidden rounded-[1.6rem] text-left transition-all group ${
+      onClick={handleCardClick}
+      className={`relative overflow-hidden rounded-[1.6rem] text-left transition-all group ${
+        horizontal ? "flex flex-row sm:flex-col h-auto sm:h-full" : "flex flex-col h-full"
+      } ${
         isSelected
           ? "ring-2 ring-primary/80 border-primary/30 bg-white"
           : "border border-slate-200/80 bg-white hover:-translate-y-0.5 hover:border-primary/40"
       }`}
     >
       {/* Photo area */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-200">
+      <div
+        className={`relative overflow-hidden bg-gray-200 flex-shrink-0 ${
+          horizontal
+            ? "w-[38%] sm:w-full sm:h-44 self-stretch sm:self-auto"
+            : "h-44 w-full"
+        }`}
+      >
         {currentPhoto ? (
           <Image
             src={currentPhoto}
             alt={`${venue.name} photo ${photoIndex + 1}`}
             fill
             loading={imageLoading}
-            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 80vw"
+            sizes="(min-width: 640px) 33vw, 40vw"
             className={`object-cover transition-transform duration-300 group-hover:scale-105 ${
               isSelected ? "scale-105" : ""
             }`}
@@ -84,13 +102,13 @@ export default function VenueCard({
           <div className="h-full w-full bg-gradient-to-br from-gray-200 to-gray-300" />
         )}
 
-        {/* Arrow buttons */}
+        {/* Arrow buttons — desktop only */}
         {hasMultiplePhotos && (
           <>
             <button
               type="button"
               onClick={handlePrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-white/85 shadow-md transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
+              className="hidden sm:flex absolute left-2 top-1/2 -translate-y-1/2 h-7 w-7 items-center justify-center rounded-full bg-white/85 shadow-md transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
               aria-label="Previous photo"
             >
               <ChevronLeft className="h-4 w-4 text-slate-700" />
@@ -98,7 +116,7 @@ export default function VenueCard({
             <button
               type="button"
               onClick={handleNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-white/85 shadow-md transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
+              className="hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 items-center justify-center rounded-full bg-white/85 shadow-md transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
               aria-label="Next photo"
             >
               <ChevronRight className="h-4 w-4 text-slate-700" />
@@ -120,11 +138,11 @@ export default function VenueCard({
 
         {/* Attendance tags */}
         {formattedTags.length > 0 && (
-          <div className="absolute right-3 top-3 flex max-w-[75%] flex-wrap justify-end gap-2">
+          <div className="absolute right-2 top-2 flex max-w-[90%] flex-wrap justify-end gap-1">
             {formattedTags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-primary/25 bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-sm"
+                className="rounded-full border border-primary/25 bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-white shadow-sm"
               >
                 {tag}
               </span>
@@ -134,12 +152,12 @@ export default function VenueCard({
       </div>
 
       {/* Card footer */}
-      <div className="flex flex-1 flex-col bg-white p-4">
-        <p className="text-base font-semibold text-slate-900">{venue.name}</p>
-        <div className="mt-2 flex items-center justify-between gap-2">
+      <div className="flex flex-1 flex-col bg-white p-3 sm:p-4 justify-center">
+        <p className="text-sm font-semibold text-slate-900 leading-snug">{venue.name}</p>
+        <div className="mt-1.5 flex items-center justify-between gap-2">
           <span className="flex items-center gap-1 text-xs font-medium text-slate-500">
-            <Users className="h-3.5 w-3.5" />
-            Up to {venue.capacity} guests
+            <Users className="h-3.5 w-3.5 shrink-0" />
+            {venue.capacity}
           </span>
           <button
             type="button"

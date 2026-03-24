@@ -22,7 +22,6 @@ export default function VenuePicker({
   const [isExpanded, setIsExpanded] = useState(false);
   const [detailVenue, setDetailVenue] = useState<CoworkingVenue | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [atEnd, setAtEnd] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleScroll = useCallback(() => {
@@ -31,7 +30,6 @@ export default function VenuePicker({
     const max = el.scrollWidth - el.clientWidth;
     const progress = max > 0 ? el.scrollLeft / max : 1;
     setActiveIndex(Math.round(progress * (venues.length - 1)));
-    setAtEnd(progress >= 0.98);
   }, [venues.length]);
 
   if (venues.length === 0) return null;
@@ -71,13 +69,14 @@ export default function VenuePicker({
 
       {isExpanded ? (
         /* Responsive grid — max 3 cols */
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
           {venues.map((venue) => (
             <VenueCard
               key={venue.id}
               venue={venue}
               isSelected={selectedVenue?.id === venue.id}
               imageLoading={imageLoading}
+              horizontal
               onSelect={onVenueChange}
               onViewDetails={setDetailVenue}
             />
@@ -87,20 +86,14 @@ export default function VenuePicker({
         /* Horizontal carousel */
         <div className="space-y-3">
           <div className="relative">
-            {/* Right-edge fade — hidden once scrolled to end */}
-            <div
-              className={`pointer-events-none absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white/90 to-transparent z-10 transition-opacity duration-300 ${
-                atEnd ? "opacity-0" : "opacity-100"
-              }`}
-            />
             <div
               ref={scrollRef}
               onScroll={handleScroll}
               className="-mx-1 overflow-x-auto pb-2 scrollbar-hide"
             >
-              <div className="flex gap-4 px-1 min-w-0">
+              <div className="flex items-stretch gap-4 px-1 min-w-0">
                 {venues.map((venue) => (
-                  <div key={venue.id} className="w-[260px] shrink-0 sm:w-[280px]">
+                  <div key={venue.id} className="flex flex-col w-[260px] shrink-0 sm:w-[280px]">
                     <VenueCard
                       venue={venue}
                       isSelected={selectedVenue?.id === venue.id}
