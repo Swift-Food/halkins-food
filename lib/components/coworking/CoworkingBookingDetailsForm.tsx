@@ -30,6 +30,7 @@ interface CoworkingBookingDetailsFormProps extends EventWindowValues {
   email: string;
   venues: CoworkingVenue[];
   selectedVenue: CoworkingVenue | null;
+  imageLoading?: "eager" | "lazy";
   isSubmitting?: boolean;
   error?: string | null;
   submitLabel: string;
@@ -124,6 +125,7 @@ export default function CoworkingBookingDetailsForm({
   endDate,
   endTime,
   selectedVenue,
+  imageLoading = "lazy",
   isSubmitting = false,
   error = null,
   submitLabel,
@@ -289,6 +291,8 @@ export default function CoworkingBookingDetailsForm({
                         src={venue.coverPhoto}
                         alt={venue.name}
                         fill
+                        loading={imageLoading}
+                        sizes="(min-width: 640px) 50vw, 100vw"
                         className={`object-cover transition-transform duration-300 group-hover:scale-105 ${
                           isSelected ? "scale-105" : ""
                         }`}

@@ -133,6 +133,7 @@ function EventEditModal({
           endDate={endDate}
           endTime={end}
           selectedVenue={venue}
+          imageLoading="eager"
           submitLabel="Save Changes"
           submitDisabled={!canSave}
           submitButtonType="button"
