@@ -20,6 +20,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import questionsConfigJson from "@/lib/data/coworking-booking-questions.json";
+import { BillingCalcDemo } from "./BillingCalcDemo";
 import { useCatering } from "@/context/CateringContext";
 import { useCoworking } from "@/context/CoworkingContext";
 import { ContactInfo, CoworkingBookingQuestionnaire } from "@/types/catering.types";
@@ -675,7 +676,21 @@ export default function CoworkingBookingQuestionsStep() {
                 </div>
               </div>
 
-              {section.body && (
+              {section.body && section.id === "billing" ? (
+                <div className="mt-6 space-y-4">
+                  <div className="text-base leading-7 text-slate-700 space-y-2">
+                    {section.body.slice(0, 2).map((line, index) =>
+                      renderSectionBodyLine(section.id, line, index)
+                    )}
+                  </div>
+                  <BillingCalcDemo />
+                  <div className="rounded-[1.5rem] border border-slate-200/80 bg-slate-50/70 p-5 text-sm leading-7 text-slate-600 space-y-1">
+                    {section.body.slice(2).map((line) => (
+                      <p key={line}>{line}</p>
+                    ))}
+                  </div>
+                </div>
+              ) : section.body ? (
                 <div className="mt-6 rounded-[1.5rem] border border-slate-200/80 bg-slate-50/70 p-5 text-base leading-7 text-slate-700">
                   <div className="space-y-3">
                     {section.body.map((line, index) =>
@@ -683,7 +698,7 @@ export default function CoworkingBookingQuestionsStep() {
                     )}
                   </div>
                 </div>
-              )}
+              ) : null}
 
               {section.link && (
                 <Link

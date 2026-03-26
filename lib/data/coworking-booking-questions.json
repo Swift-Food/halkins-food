@@ -142,8 +142,8 @@
       "layout": "grid",
       "description": "",
       "body": [
-        "The venue hire charge is £1 for every £1 spent with Swift Food.",
-        "For example, if you spend £500 on food, the venue hire fee is £500.",
+        "The venue hire fee matches your catering spend, rounded down to the nearest £250 (minimum £250).",
+        "For example, if you spend £600 on catering, the venue hire fee is £500.",
         "We require payment details to recover this cost.",
         "We may waive this fee at our discretion for communities that we sponsor."
       ],
