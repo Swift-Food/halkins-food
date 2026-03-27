@@ -140,7 +140,8 @@ export default function MenuItemModal({
       let singleDefaultSet = false;
 
       // Auto-select all when minSelections >= item count (no real choice to make)
-      const autoSelectAll = !isEditMode && group.minSelections != null && group.minSelections >= group.items.length;
+      // Skip for single type — single means "pick one and allocate portions", not "select all"
+      const autoSelectAll = !isEditMode && group.selectionType !== 'single' && group.minSelections != null && group.minSelections >= group.items.length;
 
       for (const addon of group.items) {
         const preSelectDefault = !!addon.isDefault && !isEditMode && group.selectionType === 'single' && !singleDefaultSet;
