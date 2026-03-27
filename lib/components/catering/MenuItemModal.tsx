@@ -597,11 +597,16 @@ export default function MenuItemModal({
     onClose();
   };
 
-  // Check if any multiple-selection group has unmet minSelections
-  // Single type groups have their own validation in handleAddToCart — skip them here
+  // Check if any addon group has unmet selection requirements
   const isMinSelectionsUnmet = Object.entries(addonGroups).some(
     ([groupTitle, group]) => {
-      if (group.selectionType === 'single') return false;
+      // Single type: user allocates portions via quantity steppers.
+      // Only block if they've started selecting but haven't allocated all portions.
+      if (group.selectionType === 'single') {
+        const hasAnySelection = Object.values(selectedAddons[groupTitle] || {}).some(Boolean);
+        if (!hasAnySelection) return false;
+        return getSingleSelectionTotal(groupTitle) !== itemQuantity;
+      }
       if (group.minSelections == null) return false;
       const scale = group.selectionType === 'multiple_repeat' ? itemQuantity : 1;
       return getMultipleSelectionCount(groupTitle) < group.minSelections * scale;
