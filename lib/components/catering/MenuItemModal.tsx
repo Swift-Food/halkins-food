@@ -404,11 +404,8 @@ export default function MenuItemModal({
       if (currentCount >= group.maxSelections) return;
     }
 
-    // If toggling OFF, check minSelections constraint
-    if (currentValue && group.minSelections != null) {
-      const currentCount = getMultipleSelectionCount(groupTitle);
-      if (currentCount <= group.minSelections) return;
-    }
+    // Allow toggling OFF freely — the button disabled state enforces minSelections.
+    // Blocking deselection creates a dead-end when min equals max.
 
     setSelectedAddons((prev) => {
       const newSelections: Record<string, Record<string, boolean>> = {};
@@ -601,8 +598,10 @@ export default function MenuItemModal({
   };
 
   // Check if any multiple-selection group has unmet minSelections
+  // Single type groups have their own validation in handleAddToCart — skip them here
   const isMinSelectionsUnmet = Object.entries(addonGroups).some(
     ([groupTitle, group]) => {
+      if (group.selectionType === 'single') return false;
       if (group.minSelections == null) return false;
       const scale = group.selectionType === 'multiple_repeat' ? itemQuantity : 1;
       return getMultipleSelectionCount(groupTitle) < group.minSelections * scale;
