@@ -128,6 +128,9 @@ export function CateringProvider({ children }: { children: ReactNode }) {
       return { discount: 0, promotion: null };
     }
 
+    // Only consider items from THIS restaurant for discount calculations
+    const restaurantCartItems = cartItems.filter(item => item.restaurantId === restaurantId);
+
     const isPromotionApplicable = (promo: any, subtotal: number): boolean => {
       const now = new Date();
       if (now < new Date(promo.startDate) || now > new Date(promo.endDate)) {
@@ -247,7 +250,7 @@ export function CateringProvider({ children }: { children: ReactNode }) {
     const primaryPromotion = applicablePromos[0];
 
     applicablePromos.forEach(promo => {
-      totalDiscount += calculateDiscountByType(promo, subtotal, cartItems);
+      totalDiscount += calculateDiscountByType(promo, subtotal, restaurantCartItems);
     });
 
     return {
