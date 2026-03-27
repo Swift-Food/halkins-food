@@ -184,8 +184,7 @@ function CoworkingDashboardInner({
         activeStatus === "needs_review"
           ? data.orders.filter(
             (o) =>
-              o.adminReviewStatus === "pending" &&
-              o.status == "pending_review",
+              o.adminReviewStatus === "pending_admin_review",
           )
           : data.orders;
       setOrders(filtered);

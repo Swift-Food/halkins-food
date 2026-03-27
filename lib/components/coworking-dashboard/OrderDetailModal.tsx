@@ -261,10 +261,9 @@ export default function OrderDetailModal({
     }
   };
 
-  const isPending = order?.adminReviewStatus === "pending";
+  const isPending = order?.adminReviewStatus === "pending_admin_review";
   const needsReview =
-    order?.adminReviewStatus === "pending" &&
-    order?.status === "pending_review";
+    order?.adminReviewStatus === "pending_admin_review";
   const feeIsLocked = order ? ["paid", "confirmed", "completed", "cancelled"].includes(order.status) : false;
 
   // Pre-fill venue hire fee input: use DB value if set, otherwise auto-calculate recommendation

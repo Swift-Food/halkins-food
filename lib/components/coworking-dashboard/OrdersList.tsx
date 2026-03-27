@@ -193,8 +193,7 @@ export default function OrdersList({
         ) : (
           orders.map((order) => {
             const needsReview =
-              order.adminReviewStatus === "pending" &&
-              order.status == "pending_review";
+              order.adminReviewStatus === "pending_admin_review";
             const isApproving = approvingId === order.id;
 
             return (
