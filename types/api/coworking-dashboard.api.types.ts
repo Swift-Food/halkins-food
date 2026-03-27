@@ -20,7 +20,7 @@ export type DashboardOrderStatusFilter =
   | 'completed'
   | 'cancelled'
   | 'all'
-  | 'needs_review'; // frontend-only: fetches 'upcoming' + filters by adminReviewStatus === 'pending'
+  | 'needs_review'; // frontend-only: fetches 'upcoming' + filters by adminReviewStatus === 'pending_admin_review'
 
 /**
  * Query parameters for listing orders

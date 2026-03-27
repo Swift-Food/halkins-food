@@ -206,7 +206,7 @@ function CoworkingDashboardInner({
 
   // Count of pending-review orders across all loaded orders (or from a separate fetch)
   const pendingCount = orders.filter(
-    (o) => o.adminReviewStatus === "pending" && o.status == "pending_review",
+    (o) => o.adminReviewStatus === "pending_admin_review",
   ).length;
 
   useEffect(() => {
