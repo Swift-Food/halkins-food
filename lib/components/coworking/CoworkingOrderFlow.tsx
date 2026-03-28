@@ -19,7 +19,7 @@ import { Calendar, Clock, MapPin, Pencil, X } from "lucide-react";
 const coworkingSteps = [
   { step: 1, label: "Booking details" },
   { step: 2, label: "Questions form" },
-  { step: 3, label: "Catering" },
+  { step: 3, label: "Catering optional" },
   { step: 4, label: "Contact details" },
 ] as const;
 
@@ -193,6 +193,7 @@ export default function CoworkingOrderFlow() {
     contactInfo,
     setContactInfo,
     setCurrentStep,
+    mealSessions,
     updateMealSession,
     resetOrder,
   } = useCatering();
@@ -208,6 +209,9 @@ export default function CoworkingOrderFlow() {
       eventStartTime &&
       eventEndDate &&
       eventEndTime
+  );
+  const hasSelectedCatering = mealSessions.some(
+    (session) => session.orderItems.length > 0
   );
   const canNavigateToStep = (step: number) =>
     step === 1 || step <= highestVisitedStep;
@@ -492,7 +496,33 @@ export default function CoworkingOrderFlow() {
             />
           )}
           {currentStep === 2 && <CoworkingBookingQuestionsStep />}
-          {currentStep === 3 && <CateringOrderBuilder nextStep={4} />}
+          {currentStep === 3 && (
+            <div className="space-y-4">
+              <div className="mx-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 md:mx-10">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="font-semibold">Catering is optional at this stage.</p>
+                    <p className="mt-1 text-amber-800/85">
+                      You can add food now, or skip ahead and just secure the venue with your deposit first.
+                    </p>
+                    <p className="mt-1 text-amber-800/85">
+                      You&apos;ll still need to place your catering order later to fully seal the booking.
+                    </p>
+                  </div>
+                  {!hasSelectedCatering && (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(4)}
+                      className="shrink-0 rounded-full bg-white px-4 py-2 text-sm font-semibold text-primary shadow-sm ring-1 ring-amber-200 transition hover:bg-primary hover:text-white"
+                    >
+                      Skip catering for now
+                    </button>
+                  )}
+                </div>
+              </div>
+              <CateringOrderBuilder nextStep={4} />
+            </div>
+          )}
           {currentStep === 4 && <Step3ContactInfo />}
         </div>
       </div>

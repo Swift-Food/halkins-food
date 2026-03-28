@@ -207,6 +207,7 @@ export default function Step3ContactInfo() {
       return total + unitPrice * quantity + addonTotal;
     }, 0);
   }, [selectedItems]);
+  const hasSelectedCatering = selectedItems.length > 0;
 
   useEffect(() => {
     if (!contactInfo) {
@@ -550,7 +551,10 @@ export default function Step3ContactInfo() {
         venueId: selectedVenue?.id,
         customerPhone: formData.phone,
         mealSessions: builtMealSessions,
-        promoCodes: promoCodes.length > 0 ? promoCodes : undefined,
+        promoCodes:
+          hasSelectedCatering && promoCodes.length > 0
+            ? promoCodes
+            : undefined,
         specialInstructions: specialInstructions || undefined,
         scheduledFor: sessionDate,
         scheduledTime: sessionTime,
@@ -686,6 +690,22 @@ export default function Step3ContactInfo() {
         setPricing(null);
         return;
       }
+
+      if (!hasSelectedCatering) {
+        setPricing({
+          isValid: true,
+          subtotal: 0,
+          deliveryFee: 0,
+          promoDiscount: 0,
+          venueHireFee: 0,
+          venueHireDiscount: 0,
+          total: 0,
+        });
+        setPromoError("");
+        setPromoSuccess("");
+        return;
+      }
+
       const pricingResult = await cateringService.calculateCateringPricingWithMealSessions(
         mealSessions,
         { latitude: deliveryLat, longitude: deliveryLng },
@@ -750,7 +770,7 @@ export default function Step3ContactInfo() {
   useEffect(() => {
     calculatePricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [promoCodes, mealSessions]);
+  }, [hasSelectedCatering, promoCodes, mealSessions]);
 
   const handleApplyPromoCode = async (code: string) => {
     setValidatingPromo(true);
@@ -1050,16 +1070,27 @@ export default function Step3ContactInfo() {
                 />
 
                 {/* Promo Code Section */}
-                <PromoCodeSection
-                  promoCodes={promoCodes}
-                  onApplyPromoCode={handleApplyPromoCode}
-                  onRemovePromoCode={handleRemovePromoCode}
-                  validatingPromo={validatingPromo}
-                  promoError={promoError}
-                  promoSuccess={promoSuccess}
-                  promoDiscount={pricing?.promoDiscount}
-                  venueHireDiscount={pricing?.venueHireDiscount}
-                />
+                {hasSelectedCatering && (
+                  <PromoCodeSection
+                    promoCodes={promoCodes}
+                    onApplyPromoCode={handleApplyPromoCode}
+                    onRemovePromoCode={handleRemovePromoCode}
+                    validatingPromo={validatingPromo}
+                    promoError={promoError}
+                    promoSuccess={promoSuccess}
+                    promoDiscount={pricing?.promoDiscount}
+                    venueHireDiscount={pricing?.venueHireDiscount}
+                  />
+                )}
+
+                {!hasSelectedCatering && (
+                  <div className="-mt-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900">
+                    <p className="font-semibold">Venue-only checkout</p>
+                    <p className="mt-1 text-sky-800/85">
+                      You haven&apos;t added catering yet, so this checkout will secure the venue with a deposit only.
+                    </p>
+                  </div>
+                )}
 
                 {/* Special Instructions */}
                 <div className="-mt-4 pt-2">
@@ -1176,7 +1207,11 @@ export default function Step3ContactInfo() {
                   disabled={submitting || !termsAccepted}
                   className="w-full bg-primary text-white py-4 rounded-2xl font-bold uppercase tracking-[0.2em] text-sm hover:bg-primary/90 transition-all disabled:bg-base-300 disabled:cursor-not-allowed disabled:tracking-[0.08em]"
                 >
-                  {submitting ? "Submitting..." : "Submit Order"}
+                  {submitting
+                    ? "Redirecting..."
+                    : hasSelectedCatering
+                      ? "Pay Deposit"
+                      : "Secure Venue Deposit"}
                 </button>
               </form>
             </div>
