@@ -273,7 +273,39 @@ export interface GetOrderDetailResponse {
 }
 
 /**
- * Response for POST /orders (order creation)
+ * Response for POST /cart-pricing in the Stripe Checkout flow.
+ */
+export interface CoworkingCheckoutPricingResponse {
+  isValid: boolean;
+  subtotal: number;
+  deliveryFee: number;
+  restaurantPromotionDiscount?: number;
+  totalDiscount?: number;
+  promoDiscount?: number;
+  venueHireFee?: number;
+  venueHireDiscount?: number;
+  total: number;
+  error?: string;
+  distanceInMiles?: number;
+  deliveryFeeBreakdown?: {
+    baseFee: number;
+    portionFee: number;
+    drinksFee: number;
+    subtotal: number;
+    distanceMultiplier: number;
+    finalDeliveryFee: number;
+    requiresCustomQuote: boolean;
+  };
+  checkoutUrl?: string;
+  deposit?: {
+    amount: number;
+    perDayRate: number;
+    days: number;
+  } | null;
+}
+
+/**
+ * Response for POST /orders (legacy order creation flow)
  * Backend: CreateOrderResult
  */
 export interface CreateOrderResponse {
@@ -288,4 +320,24 @@ export interface CreateOrderResponse {
   deliveryAddress: string;
   estimatedDelivery: string;
   accessToken?: string;
+}
+
+/**
+ * Response for POST /confirm-checkout in the Stripe Checkout flow.
+ */
+export interface ConfirmCoworkingCheckoutResponse {
+  orderId: string;
+  adminReviewStatus: string;
+  depositStatus: string;
+  depositAmount?: number;
+  venueId?: string | null;
+  venueName?: string | null;
+  deliveryAddress?: string | null;
+  bookingStartTime?: string | null;
+  bookingEndTime?: string | null;
+  bookingReference?: string | null;
+  roomLocationDetails?: string | null;
+  requiresCatering?: boolean;
+  cateringOrder?: unknown | null;
+  accessToken?: string | null;
 }

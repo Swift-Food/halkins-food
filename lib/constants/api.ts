@@ -89,6 +89,8 @@ export const API_ENDPOINTS = {
     `/coworking/${spaceSlug}/orders/${orderId}`,
   COWORKING_CART_PRICING: (spaceSlug: string) =>
     `/coworking/${spaceSlug}/cart-pricing`,
+  COWORKING_CONFIRM_CHECKOUT: (spaceSlug: string) =>
+    `/coworking/${spaceSlug}/confirm-checkout`,
   COWORKING_VENUES: (spaceSlug: string) => `/coworking-dashboard/${spaceSlug}/venues`,
 
   // Coworking Admin

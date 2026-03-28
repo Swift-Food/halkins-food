@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, FormEvent, useEffect, useMemo, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useCatering } from "@/context/CateringContext";
 import { cateringService } from "@/services/api/catering.api";
 import { SessionExpiredError } from "@/services/api/coworking.api";
@@ -23,7 +23,6 @@ import PricingSummary from "./contact/PricingSummary";
 import { coworkingService } from "@/services/api";
 import { CreateCoworkingOrderRequest } from "@/types/api";
 import {
-  clearCoworkingSessionStorage,
   useCoworking,
 } from "@/context/CoworkingContext";
 import CoworkingAuthForm from "@/lib/components/coworking/CoworkingAuthForm";
@@ -98,9 +97,22 @@ function formatEventTime(time: string) {
   return `${hour12}:${minutes} ${period}`;
 }
 
+function withEstimatedVenueHireFee(
+  pricingResult: CateringPricingResult
+): CateringPricingResult {
+  const venueHireFee =
+    pricingResult.subtotal > 0
+      ? Math.max(250, Math.floor(pricingResult.subtotal / 250) * 250)
+      : 0;
+
+  return {
+    ...pricingResult,
+    venueHireFee,
+  };
+}
+
 export default function Step3ContactInfo() {
   const params = useParams<{ spaceSlug?: string }>();
-  const router = useRouter();
   const topSectionRef = useRef<HTMLDivElement | null>(null);
   const orderDetailsRef = useRef<HTMLDivElement | null>(null);
   const {
@@ -111,9 +123,6 @@ export default function Step3ContactInfo() {
     bookingQuestionnaire,
     mealSessions,
     getAllItems,
-    resetOrder,
-    markOrderAsSubmitted,
-
   } = useCatering();
 
   const {
@@ -157,7 +166,6 @@ export default function Step3ContactInfo() {
     billingAddress: normalizedContactInfo.billingAddress,
   });
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [promoCodes, setPromoCodes] = useState<string[]>([]);
   const [validatingPromo, setValidatingPromo] = useState(false);
   const [promoError, setPromoError] = useState("");
@@ -578,20 +586,23 @@ export default function Step3ContactInfo() {
 
       
       const { spaceSlug, orderData } = buildCoworkingOrderData();
-      const createOrderResponse = await coworkingService.createOrder(spaceSlug, orderData);
-      console.log("COWORKING_CREATE_ORDER_RESPONSE", {
+      const checkoutResponse = await coworkingService.createCheckoutIntent(
         spaceSlug,
-        accessToken: createOrderResponse?.accessToken,
-        createOrderResponse,
-      });
+        orderData
+      );
 
-      markOrderAsSubmitted();
-      setSuccess(true);
-      clearCoworkingSessionStorage();
+      if (!checkoutResponse.isValid) {
+        throw new Error(
+          checkoutResponse.error || "Unable to start deposit checkout."
+        );
+      }
 
-      const accessToken = createOrderResponse?.accessToken;
-      if (accessToken) {
-        router.push(`/coworking/${spaceSlug}/view/${accessToken}`);
+      if (!checkoutResponse.checkoutUrl) {
+        throw new Error("Checkout URL was not returned by the server.");
+      }
+
+      if (typeof window !== "undefined") {
+        window.location.assign(checkoutResponse.checkoutUrl);
         return;
       }
     } catch (error: unknown) {
@@ -675,13 +686,10 @@ export default function Step3ContactInfo() {
         setPricing(null);
         return;
       }
-      console.log("calculating")
-      const pricingResult = await coworkingService.calculateCartPricing(
-        slug,
+      const pricingResult = await cateringService.calculateCateringPricingWithMealSessions(
         mealSessions,
         { latitude: deliveryLat, longitude: deliveryLng },
         promoCodes,
-        selectedVenue?.id,
       );
 
       if (!pricingResult.isValid) {
@@ -689,7 +697,7 @@ export default function Step3ContactInfo() {
         return;
       }
 
-      setPricing(pricingResult);
+      setPricing(withEstimatedVenueHireFee(pricingResult));
 
       // If promo codes are applied but resulted in no discount, warn the user
       if (promoCodes.length > 0) {
@@ -797,7 +805,11 @@ export default function Step3ContactInfo() {
     setGeneratingPdf(true);
     try {
       const hasDeliveryQuote = Boolean(selectedVenue?.id);
-      const pricingSessions = (pricing as any)?.mealSessions as
+      const pricingSessions = (
+        pricing as CateringPricingResult & {
+          mealSessions?: Array<{ deliveryFee?: number }>;
+        }
+      )?.mealSessions as
         | Array<{ deliveryFee?: number }>
         | undefined;
 
@@ -875,94 +887,6 @@ export default function Step3ContactInfo() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <span className="loading loading-spinner loading-lg"></span>
-      </div>
-    );
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-base-100 py-8 px-4">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="mb-8">
-            <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg
-                className="w-10 h-10 text-success"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-3 text-base-content">
-              Thank you! Your event order request has been submitted.
-            </h2>
-            <p className="text-base-content/70 text-lg">
-              We&apos;ll get back to you within 24 hours via your preferred contact
-              method. You will receive a quote for the event hire fee, followed by a payment link once the order is confirmed.
-            </p>
-          </div>
-
-          <div className="bg-base-200/50 rounded-2xl p-6 md:p-8 mb-8 text-left border border-base-300">
-            <h3 className="text-xl font-bold mb-6 text-base-content">
-              Event & Order Summary
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 pb-6 border-b border-base-300">
-              <div>
-                <p className="text-xs text-base-content/60 mb-1">
-                  Event Date & Time
-                </p>
-                <p className="font-semibold text-base-content">
-                  {eventDetails?.eventDate}
-                </p>
-                <p className="text-sm text-base-content/80">
-                  {eventDetails?.eventTime}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-base-content/60 mb-1">
-                  Type of Event
-                </p>
-                <p className="font-semibold text-base-content capitalize">
-                  {eventDetails?.eventType}
-                </p>
-              </div>
-              {/* <div> */}
-              {/* <p className="text-xs text-base-content/60 mb-1">Guest Count</p>
-                <p className="font-semibold text-base-content">
-                  {(eventDetails?.guestCount || 10) - 10} -{" "}
-                  {(eventDetails?.guestCount || 10) + 10}{" "}
-                </p>
-              </div> */}
-            </div>
-
-            <h4 className="font-bold mb-4 text-base-content">Your List</h4>
-
-            {promoCodes.length > 0 && (
-              <div className="mb-4">
-                <p className="text-xs text-base-content/60 mb-2">Promo Codes Applied</p>
-                <div className="flex flex-wrap gap-2">
-                  {promoCodes.map((code) => (
-                    <span
-                      key={code}
-                      className="px-3 py-1 bg-success/10 text-success rounded-full text-sm font-medium"
-                    >
-                      {code}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <AllMealSessionsItems />
-          </div>
-        </div>
       </div>
     );
   }
