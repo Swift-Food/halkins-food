@@ -10,7 +10,7 @@ import { Users, Trash2, Plus, X, Eye, Shield, Edit } from 'lucide-react';
 interface SharedAccessManagerProps {
   order: CateringOrderResponse;
   onUpdate: () => void;
-  currentUserRole: 'viewer' | 'editor' | 'manager' | null;
+  currentUserRole: 'viewer' | 'manager' | null;
 }
 
 export default function SharedAccessManager({ order, onUpdate, currentUserRole }: SharedAccessManagerProps) {
@@ -25,7 +25,7 @@ export default function SharedAccessManager({ order, onUpdate, currentUserRole }
   const [editingUser, setEditingUser] = useState<string | null>(null);
 
   const sharedUsers = order.sharedAccessUsers || [];
-  const isManager = currentUserRole === 'manager' || currentUserRole === 'editor';
+  const isManager = currentUserRole === 'manager';
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,8 +204,7 @@ export default function SharedAccessManager({ order, onUpdate, currentUserRole }
                   ) : (
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold w-fit ${
-                        user.role === 'manager' || user.role === 'editor'
-                          ? 'bg-green-100 text-green-700'
+                        user.role === 'manager'                          ? 'bg-green-100 text-green-700'
                           : 'bg-blue-100 text-blue-700'
                       }`}
                     >
