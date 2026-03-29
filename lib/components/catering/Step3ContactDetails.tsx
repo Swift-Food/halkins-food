@@ -1129,13 +1129,15 @@ export default function Step3ContactInfo() {
                   </div>
                 )}
 
-                {/* Pricing Summary */}
-                <PricingSummary
-                  pricing={pricing}
-                  calculatingPricing={calculatingPricing}
-                  estimatedTotal={estimatedTotal}
-                  hasDeliveryAddress={Boolean(deliveryAddress)}
-                />
+                {/* Pricing Summary — only shown when catering is selected */}
+                {hasSelectedCatering && (
+                  <PricingSummary
+                    pricing={pricing}
+                    calculatingPricing={calculatingPricing}
+                    estimatedTotal={estimatedTotal}
+                    hasDeliveryAddress={Boolean(deliveryAddress)}
+                  />
+                )}
 
                 {depositInfo && (
                   <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm">
