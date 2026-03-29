@@ -21,7 +21,7 @@ import ContactInfoForm from "./contact/ContactInfoForm";
 import PromoCodeSection from "./contact/PromoCodeSection";
 import PricingSummary from "./contact/PricingSummary";
 import { coworkingService } from "@/services/api";
-import { CreateCoworkingOrderRequest } from "@/types/api";
+import { CreateCoworkingOrderRequest, CoworkingCheckoutPricingResponse } from "@/types/api";
 import {
   useCoworking,
 } from "@/context/CoworkingContext";
@@ -158,11 +158,7 @@ export default function Step3ContactInfo() {
   const [promoError, setPromoError] = useState("");
   const [promoSuccess, setPromoSuccess] = useState("");
   const [pricing, setPricing] = useState<CateringPricingResult | null>(null);
-  const [depositInfo, setDepositInfo] = useState<{
-    amount: number;
-    perDayRate: number;
-    days: number;
-  } | null>(null);
+  const [depositInfo, setDepositInfo] = useState<NonNullable<CoworkingCheckoutPricingResponse['deposit']> | null>(null);
   const [calculatingPricing, setCalculatingPricing] = useState(false);
 
   const [ccEmails, setCcEmails] = useState<string[]>([]);
@@ -701,6 +697,7 @@ export default function Step3ContactInfo() {
       if (!result.isValid) {
         setPricing(null);
         setDepositInfo(null);
+        setPromoError(result.error || "Unable to calculate pricing. Please try again.");
         return;
       }
 
@@ -1123,22 +1120,6 @@ export default function Step3ContactInfo() {
                   />
                 </div>
 
-                {depositInfo && (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-semibold text-amber-900">Deposit due now</p>
-                        <p className="text-amber-700 mt-0.5">
-                          £{depositInfo.perDayRate.toFixed(2)} × {depositInfo.days} day{depositInfo.days !== 1 ? "s" : ""}
-                        </p>
-                      </div>
-                      <p className="text-lg font-bold text-amber-900">
-                        £{depositInfo.amount.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 {!hasSelectedCatering && (
                   <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900">
                     <p className="font-semibold">Venue-only checkout</p>
@@ -1155,6 +1136,22 @@ export default function Step3ContactInfo() {
                   estimatedTotal={estimatedTotal}
                   hasDeliveryAddress={Boolean(deliveryAddress)}
                 />
+
+                {depositInfo && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-amber-900">Deposit due now</p>
+                        <p className="text-amber-700 mt-0.5">
+                          £{depositInfo.perDayRate.toFixed(2)} × {depositInfo.days} day{depositInfo.days !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                      <p className="text-lg font-bold text-amber-900">
+                        £{depositInfo.amount.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Important Notes */}
                 <div>
