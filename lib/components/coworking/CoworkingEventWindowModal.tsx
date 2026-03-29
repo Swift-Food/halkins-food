@@ -215,8 +215,17 @@ export default function CoworkingEventWindowModal({
     manualTimeParts.period
   );
   const isManualTimeComplete = Boolean(selectedManualTime);
-  const isManualTimeAllowed =
-    !selectedManualTime || activeTimeValues.includes(selectedManualTime);
+  const isManualTimeAllowed = (() => {
+    if (!selectedManualTime) return true;
+    const mins = toMinutes(selectedManualTime);
+    const inOperatingHours = mins >= toMinutes("07:00") && mins <= toMinutes("22:00");
+    if (!inOperatingHours) return false;
+    // For end time on same day, must be after start time
+    if (isEditingEndTime && isSameDay(draftStartDate, draftEndDate) && draftStartTime) {
+      return mins > toMinutes(draftStartTime);
+    }
+    return true;
+  })();
 
   const invalidTimeMessage =
     !isEditingEndTime
