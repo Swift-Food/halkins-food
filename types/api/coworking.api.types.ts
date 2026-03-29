@@ -296,8 +296,20 @@ export interface CoworkingCheckoutPricingResponse {
     finalDeliveryFee: number;
     requiresCustomQuote: boolean;
   };
-  checkoutUrl?: string;
   deposit?: {
+    amount: number;
+    perDayRate: number;
+    days: number;
+  } | null;
+}
+
+/**
+ * Response for POST /create-checkout — creates a Stripe Checkout session.
+ * Call this only when the user clicks "Pay deposit".
+ */
+export interface CoworkingCreateCheckoutResponse {
+  checkoutUrl: string;
+  deposit: {
     amount: number;
     perDayRate: number;
     days: number;
