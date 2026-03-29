@@ -26,7 +26,7 @@ import {
   GetOrderDetailResponse,
   ConfirmCoworkingCheckoutResponse,
   CoworkingCheckoutPricingResponse,
-  CoworkingCreateCheckoutResponse,
+  type CoworkingCreateCheckoutResponse,
   RefreshTokenResponse,
   CateringAddonRequest,
   CateringMenuItemRequest,
