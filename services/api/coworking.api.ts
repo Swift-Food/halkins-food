@@ -26,6 +26,7 @@ import {
   GetOrderDetailResponse,
   ConfirmCoworkingCheckoutResponse,
   CoworkingCheckoutPricingResponse,
+  CoworkingCreateCheckoutResponse,
   RefreshTokenResponse,
   CateringAddonRequest,
   CateringMenuItemRequest,
@@ -464,10 +465,11 @@ class CoworkingService {
   }
 
   /**
-   * Create a Stripe Checkout intent for the coworking flow.
+   * Get cart pricing (deposit + catering totals) for display on the final step.
+   * Does NOT create a Stripe session — safe to call on page load.
    * Backend: POST /coworking/:spaceSlug/cart-pricing
    */
-  async createCheckoutIntent(
+  async getCartPricing(
     spaceSlug: string,
     data: CreateCoworkingOrderRequest
   ): Promise<CoworkingCheckoutPricingResponse> {
@@ -503,6 +505,31 @@ class CoworkingService {
         error: message,
       } as CoworkingCheckoutPricingResponse;
     }
+  }
+
+  /**
+   * Create a Stripe Checkout session and return the checkout URL.
+   * Call this ONLY when the user clicks "Pay deposit".
+   * Backend: POST /coworking/:spaceSlug/create-checkout
+   */
+  async createCheckoutSession(
+    spaceSlug: string,
+    data: CreateCoworkingOrderRequest
+  ): Promise<CoworkingCreateCheckoutResponse> {
+    const response = await this.fetchWithSession(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_CREATE_CHECKOUT(spaceSlug)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to initiate checkout');
+    }
+
+    return response.json();
   }
 
   /**
