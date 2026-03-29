@@ -25,7 +25,7 @@ export default function SharedAccessManager({ order, onUpdate, currentUserRole }
   const [editingUser, setEditingUser] = useState<string | null>(null);
 
   const sharedUsers = order.sharedAccessUsers || [];
-  const isManager = currentUserRole === 'editor';
+  const isManager = currentUserRole === 'manager';
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,7 +209,7 @@ export default function SharedAccessManager({ order, onUpdate, currentUserRole }
                           : 'bg-blue-100 text-blue-700'
                       }`}
                     >
-                      {user.role === 'editor' ? (
+                      {isManager ? (
                         <>
                           <Shield className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                           Manager
