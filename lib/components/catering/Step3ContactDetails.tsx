@@ -97,19 +97,6 @@ function formatEventTime(time: string) {
   return `${hour12}:${minutes} ${period}`;
 }
 
-function withEstimatedVenueHireFee(
-  pricingResult: CateringPricingResult
-): CateringPricingResult {
-  const venueHireFee =
-    pricingResult.subtotal > 0
-      ? Math.max(250, Math.floor(pricingResult.subtotal / 250) * 250)
-      : 0;
-
-  return {
-    ...pricingResult,
-    venueHireFee,
-  };
-}
 
 export default function Step3ContactInfo() {
   const params = useParams<{ spaceSlug?: string }>();
@@ -171,6 +158,11 @@ export default function Step3ContactInfo() {
   const [promoError, setPromoError] = useState("");
   const [promoSuccess, setPromoSuccess] = useState("");
   const [pricing, setPricing] = useState<CateringPricingResult | null>(null);
+  const [depositInfo, setDepositInfo] = useState<{
+    amount: number;
+    perDayRate: number;
+    days: number;
+  } | null>(null);
   const [calculatingPricing, setCalculatingPricing] = useState(false);
 
   const [ccEmails, setCcEmails] = useState<string[]>([]);
@@ -208,6 +200,27 @@ export default function Step3ContactInfo() {
     }, 0);
   }, [selectedItems]);
   const hasSelectedCatering = selectedItems.length > 0;
+  const pageTitle = hasSelectedCatering
+    ? "Your Contact Details"
+    : "Secure Your Venue";
+  const pageDescription = hasSelectedCatering
+    ? "Please provide your contact details so we can confirm your event order request."
+    : "Provide your contact details to secure the venue with your deposit. Catering can be added later to finalise the booking.";
+  const panelTitle = hasSelectedCatering
+    ? "Contact & Delivery Details"
+    : "Venue Hold Details";
+  const bookingCardLabel = hasSelectedCatering
+    ? "Event Details"
+    : "Venue Hold Details";
+  const specialInstructionsPlaceholder = hasSelectedCatering
+    ? "Any special requests or instructions for your order..."
+    : "Any notes for the venue team about this booking...";
+  const quickJumpTitle = hasSelectedCatering
+    ? "Review order details"
+    : "Review venue hold";
+  const quickJumpDescription = hasSelectedCatering
+    ? "Check the menu and quantities before submitting"
+    : "Review your venue and booking details before paying the deposit";
 
   useEffect(() => {
     if (!contactInfo) {
@@ -590,20 +603,10 @@ export default function Step3ContactInfo() {
 
       
       const { spaceSlug, orderData } = buildCoworkingOrderData();
-      const checkoutResponse = await coworkingService.createCheckoutIntent(
+      const checkoutResponse = await coworkingService.createCheckoutSession(
         spaceSlug,
         orderData
       );
-
-      if (!checkoutResponse.isValid) {
-        throw new Error(
-          checkoutResponse.error || "Unable to start deposit checkout."
-        );
-      }
-
-      if (!checkoutResponse.checkoutUrl) {
-        throw new Error("Checkout URL was not returned by the server.");
-      }
 
       if (typeof window !== "undefined") {
         window.location.assign(checkoutResponse.checkoutUrl);
@@ -688,51 +691,38 @@ export default function Step3ContactInfo() {
       const slug = resolvedSpaceSlug;
       if (!slug) {
         setPricing(null);
+        setDepositInfo(null);
         return;
       }
 
-      if (!hasSelectedCatering) {
-        setPricing({
-          isValid: true,
-          subtotal: 0,
-          deliveryFee: 0,
-          promoDiscount: 0,
-          venueHireFee: 0,
-          venueHireDiscount: 0,
-          total: 0,
-        });
-        setPromoError("");
-        setPromoSuccess("");
-        return;
-      }
+      const { spaceSlug, orderData } = buildCoworkingOrderData();
+      const result = await coworkingService.getCartPricing(spaceSlug, orderData);
 
-      const pricingResult = await cateringService.calculateCateringPricingWithMealSessions(
-        mealSessions,
-        { latitude: deliveryLat, longitude: deliveryLng },
-        promoCodes,
-      );
-
-      if (!pricingResult.isValid) {
+      if (!result.isValid) {
         setPricing(null);
+        setDepositInfo(null);
         return;
       }
 
-      setPricing(withEstimatedVenueHireFee(pricingResult));
+      setPricing(result as unknown as CateringPricingResult);
+      setDepositInfo(result.deposit ?? null);
 
       // If promo codes are applied but resulted in no discount, warn the user
       if (promoCodes.length > 0) {
-        const hasDiscount = (pricingResult.promoDiscount ?? 0) > 0 || (pricingResult.venueHireDiscount ?? 0) > 0;
+        const hasDiscount = (result.promoDiscount ?? 0) > 0 || (result.venueHireDiscount ?? 0) > 0;
         if (!hasDiscount) {
           setPromoSuccess("");
           setPromoError("Promo code may not apply to current items");
         } else {
-          // Clear stale error if discount is now valid
-          setPromoError((prev) => prev === "Promo code may not apply to current items" ? "" : prev);
+          setPromoError((prev) =>
+            prev === "Promo code may not apply to current items" ? "" : prev
+          );
         }
       }
     } catch (error: unknown) {
       console.error("Error calculating pricing:", error);
       setPricing(null);
+      setDepositInfo(null);
     } finally {
       setCalculatingPricing(false);
     }
@@ -938,11 +928,10 @@ export default function Step3ContactInfo() {
                 Step 3 of 3 - Contact & Confirmation
               </p> */}
               <h2 className="text-3xl md:text-4xl font-bold mb-3 text-base-content">
-                Your Contact Details
+                {pageTitle}
               </h2>
               <p className="text-base-content/70">
-                Please provide your contact details so we can confirm your event
-                order request.
+                {pageDescription}
               </p>
             </div>
             <button
@@ -967,11 +956,39 @@ export default function Step3ContactInfo() {
             ref={orderDetailsRef}
             className="lg:col-span-3 order-2 lg:order-1 pb-24 lg:pb-0"
           >
-            <AllMealSessionsItems
-              showActions={false}
-              onViewMenu={handleViewMenu}
-              isGeneratingPdf={generatingPdf}
-            />
+            {hasSelectedCatering ? (
+              <AllMealSessionsItems
+                showActions={false}
+                onViewMenu={handleViewMenu}
+                isGeneratingPdf={generatingPdf}
+              />
+            ) : (
+              <div className="rounded-3xl border border-sky-200 bg-[linear-gradient(180deg,#f8fdff_0%,#eef8ff_100%)] p-6 md:p-8">
+                <div className="max-w-2xl">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-700/70">
+                    Venue Hold
+                  </p>
+                  <h3 className="mt-3 text-2xl font-bold text-slate-900">
+                    Secure the space now, add catering later
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 text-slate-700">
+                    Your deposit will hold the venue for the selected date and time.
+                    To fully seal the booking, you&apos;ll still need to place your catering
+                    order at a later point.
+                  </p>
+                  <div className="mt-6 rounded-2xl border border-sky-100 bg-white/80 p-5">
+                    <p className="text-sm font-semibold text-slate-900">
+                      What happens next
+                    </p>
+                    <div className="mt-3 space-y-2 text-sm text-slate-600">
+                      <p>1. Pay the deposit to secure the venue first.</p>
+                      <p>2. Return later to add catering for the event.</p>
+                      <p>3. Once catering is added, the booking can move forward for review.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div
               className={`lg:hidden fixed inset-x-4 bottom-4 z-30 transition-all duration-200 ${
                 showBackToTopButton
@@ -1001,10 +1018,10 @@ export default function Step3ContactInfo() {
                   Quick jump
                 </span>
                 <span className="mt-1 block text-sm font-semibold text-base-content">
-                  Review order details
+                  {quickJumpTitle}
                 </span>
                 <span className="mt-0.5 block text-xs text-base-content/60">
-                  Check the menu and quantities before submitting
+                  {quickJumpDescription}
                 </span>
               </span>
               <span className="ml-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary/80">
@@ -1015,7 +1032,7 @@ export default function Step3ContactInfo() {
             <div className="bg-base-200/40 rounded-3xl p-4 md:p-8">
               <h3 className="text-xl font-bold mb-8 flex items-center gap-3 text-base-content">
                 <span className="w-1.5 h-6 bg-primary/80 rounded-full"></span>
-                Contact & Delivery Details
+                {panelTitle}
               </h3>
 
               <form onSubmit={handleSubmit} className="space-y-10">
@@ -1023,7 +1040,7 @@ export default function Step3ContactInfo() {
                 <div>
                   <div className="rounded-2xl border border-base-300 bg-base-100/80 px-4 py-4">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-base-content/45 mb-2">
-                      Event Details
+                      {bookingCardLabel}
                     </p>
                     <div className="space-y-2 text-sm text-base-content">
                       <div className="flex items-start gap-2">
@@ -1083,15 +1100,6 @@ export default function Step3ContactInfo() {
                   />
                 )}
 
-                {!hasSelectedCatering && (
-                  <div className="-mt-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900">
-                    <p className="font-semibold">Venue-only checkout</p>
-                    <p className="mt-1 text-sky-800/85">
-                      You haven&apos;t added catering yet, so this checkout will secure the venue with a deposit only.
-                    </p>
-                  </div>
-                )}
-
                 {/* Special Instructions */}
                 <div className="-mt-4 pt-2">
                   <div className="flex items-center gap-2 mb-4">
@@ -1110,10 +1118,35 @@ export default function Step3ContactInfo() {
                     name="specialInstructions"
                     value={specialInstructions}
                     onChange={(e) => setSpecialInstructions(e.target.value)}
-                    placeholder="Any special requests or instructions for your order..."
+                    placeholder={specialInstructionsPlaceholder}
                     className="w-full bg-gray-50 border border-base-300 rounded-xl px-4 py-3 text-sm text-base-content placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[100px] resize-none"
                   />
                 </div>
+
+                {depositInfo && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-amber-900">Deposit due now</p>
+                        <p className="text-amber-700 mt-0.5">
+                          £{depositInfo.perDayRate.toFixed(2)} × {depositInfo.days} day{depositInfo.days !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                      <p className="text-lg font-bold text-amber-900">
+                        £{depositInfo.amount.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {!hasSelectedCatering && (
+                  <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900">
+                    <p className="font-semibold">Venue-only checkout</p>
+                    <p className="mt-1 text-sky-800/85">
+                      You haven&apos;t added catering yet, so this checkout will secure the venue with a deposit only.
+                    </p>
+                  </div>
+                )}
 
                 {/* Pricing Summary */}
                 <PricingSummary
@@ -1160,12 +1193,14 @@ export default function Step3ContactInfo() {
                         className="mt-3 text-xs text-base-content/80 leading-relaxed space-y-1"
                       >
                         <p>
-                          For accurate allergen information, please contact
-                          restaurants directly.
+                          {hasSelectedCatering
+                            ? "For accurate allergen information, please contact restaurants directly."
+                            : "Your deposit secures the venue first, but the booking will only be fully sealed once catering is added later."}
                         </p>
                         <p>
-                          For any last-minute changes, please contact us at
-                          least two days before your event.
+                          {hasSelectedCatering
+                            ? "For any last-minute changes, please contact us at least two days before your event."
+                            : "If your booking details change, please let us know as early as possible before the event date."}
                         </p>
                       </div>
                     )}
