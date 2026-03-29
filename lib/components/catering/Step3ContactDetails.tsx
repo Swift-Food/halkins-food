@@ -21,7 +21,7 @@ import ContactInfoForm from "./contact/ContactInfoForm";
 import PromoCodeSection from "./contact/PromoCodeSection";
 import PricingSummary from "./contact/PricingSummary";
 import { coworkingService } from "@/services/api";
-import { CreateCoworkingOrderRequest, CoworkingCheckoutPricingResponse } from "@/types/api";
+import { CreateCoworkingOrderRequest, type CoworkingCheckoutPricingResponse } from "@/types/api";
 import {
   useCoworking,
 } from "@/context/CoworkingContext";
