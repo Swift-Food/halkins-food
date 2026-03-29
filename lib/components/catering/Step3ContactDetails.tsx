@@ -694,7 +694,7 @@ export default function Step3ContactInfo() {
       const { spaceSlug, orderData } = buildCoworkingOrderData();
       const result = await coworkingService.getCartPricing(spaceSlug, orderData);
 
-      if (!result.isValid) {
+      if (result.isValid === false) {
         setPricing(null);
         setDepositInfo(null);
         setPromoError(result.error || "Unable to calculate pricing. Please try again.");
