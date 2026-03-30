@@ -28,6 +28,8 @@ import {
   CoworkingCheckoutPricingResponse,
   CoworkingOrderViewResponse,
   type CoworkingCreateCheckoutResponse,
+  type AddCateringToOrderRequest,
+  type AddCateringToOrderResponse,
   RefreshTokenResponse,
   CateringAddonRequest,
   CateringMenuItemRequest,
@@ -460,6 +462,27 @@ class CoworkingService {
         throw new Error('Order not found');
       }
       throw new Error('Failed to fetch order details');
+    }
+
+    return response.json();
+  }
+
+  async addCateringToOrder(
+    spaceSlug: string,
+    orderId: string,
+    data: AddCateringToOrderRequest
+  ): Promise<AddCateringToOrderResponse> {
+    const response = await this.fetchWithSession(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_ADD_CATERING(spaceSlug, orderId)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to add catering to booking');
     }
 
     return response.json();

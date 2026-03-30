@@ -18,7 +18,7 @@ import { CategoryWithSubcategories } from "@/types/catering.types";
 import { CateringBundleItem, CateringBundleResponse } from "@/types/api/catering.api.types";
 import { categoryService } from "@/services/api/category.api";
 import { cateringService } from "@/services/api/catering.api";
-import { useCatering } from "@/context/CateringContext";
+import { useActiveCatering } from "@/context/useActiveCatering";
 import MenuItemCard from "./MenuItemCard";
 import BundleCard from "./BundleCard";
 import BundleDetailModal from "./modals/BundleDetailModal";
@@ -395,7 +395,7 @@ export default function RestaurantMenuBrowser({
   autoOpenFirstRestaurant = false,
   tutorialResetKey = 0,
 }: RestaurantMenuBrowserProps) {
-  const { addMenuItem } = useCatering();
+  const { addMenuItem } = useActiveCatering();
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<
     string | null
   >(null);

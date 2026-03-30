@@ -1,7 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { Loader2, Eye, ArrowRight, CalendarDays, MapPin, UtensilsCrossed } from "lucide-react";
+import { CoworkingProvider, useCoworking } from "@/context/CoworkingContext";
 import { cateringService } from "@/services/api/catering.api";
 import { CateringOrderResponse, CoworkingOrderViewResponse } from "@/types/api";
 import OrderStatusBadge from "@/lib/components/catering/dashboard/OrderStatusBadge";
@@ -11,7 +14,6 @@ import DeliveryInfo from "@/lib/components/catering/dashboard/DeliveryInfo";
 import SharedAccessManager from "@/lib/components/catering/dashboard/SharedAccessManager";
 import PickupContactManager from "@/lib/components/catering/dashboard/PickupContactManager";
 import DeliveryTimeManager from "@/lib/components/catering/dashboard/DeliveryTimeManager";
-import { Loader2, Eye } from "lucide-react";
 import RefundRequestButton from "@/lib/components/catering/dashboard/RefundRequestButton";
 import { transformOrderToPdfData } from "@/lib/utils/menuPdfUtils";
 import { pdf } from "@react-pdf/renderer";
@@ -35,10 +37,25 @@ const getOrderReference = (order: Partial<CoworkingOrderViewResponse> | null) =>
   getOrderIdentifier(order)?.substring(0, 4).toUpperCase() ||
   "ORDER";
 
-export default function CoworkingOrderViewPage() {
+function formatDateTime(value?: string | null) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toLocaleString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function CoworkingOrderViewPageContent() {
   const params = useParams();
   const spaceSlug = params.spaceSlug as string;
   const token = params.token as string;
+  const { isAuthenticated, member } = useCoworking();
   const [refunds, setRefunds] = useState<RefundRequest[]>([]);
   const [, setLoadingRefunds] = useState(false);
   const [order, setOrder] = useState<CoworkingOrderViewResponse | null>(null);
@@ -95,12 +112,11 @@ export default function CoworkingOrderViewPage() {
       "completed",
     ];
     const sessions = orderData.mealSessions ?? [];
-    if (!trackableStatuses.includes(orderData.status) || sessions.length === 0)
-      return;
+    if (!trackableStatuses.includes(orderData.status) || sessions.length === 0) return;
 
     try {
       const results = await Promise.allSettled(
-        sessions.map((s) => cateringService.getDeliveryTracking(s.id))
+        sessions.map((session) => cateringService.getDeliveryTracking(session.id))
       );
 
       const data: Record<string, DeliveryTrackingDto> = {};
@@ -120,7 +136,7 @@ export default function CoworkingOrderViewPage() {
   }, [loadOrder]);
 
   useEffect(() => {
-    if (order) {
+    if (order && order.mealSessions && order.mealSessions.length > 0) {
       loadRefunds();
       loadDeliveryTracking(order);
     }
@@ -158,8 +174,8 @@ export default function CoworkingOrderViewPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       setShowPdfModal(false);
-    } catch (error) {
-      console.error("Failed to generate PDF:", error);
+    } catch (downloadError) {
+      console.error("Failed to generate PDF:", downloadError);
       alert("Failed to generate PDF. Please try again.");
     } finally {
       setGeneratingPdf(false);
@@ -171,9 +187,7 @@ export default function CoworkingOrderViewPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
           <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-gray-600 text-sm sm:text-base">
-            Loading your order...
-          </p>
+          <p className="text-gray-600 text-sm sm:text-base">Loading your order...</p>
         </div>
       </div>
     );
@@ -184,12 +198,9 @@ export default function CoworkingOrderViewPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg p-6 sm:p-8 max-w-md w-full text-center">
           <div className="text-red-500 text-4xl sm:text-5xl mb-4">⚠️</div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-            Order Not Found
-          </h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Order Not Found</h2>
           <p className="text-gray-600 text-sm sm:text-base mb-4">
-            {error ||
-              "We couldn't find this order. Please check your link and try again."}
+            {error || "We couldn't find this order. Please check your link and try again."}
           </p>
         </div>
       </div>
@@ -199,6 +210,13 @@ export default function CoworkingOrderViewPage() {
   const isManager = currentUserRole === "manager";
   const orderReference = getOrderReference(order);
   const orderIdentifier = getOrderIdentifier(order);
+  const hasCatering = Boolean(order.mealSessions && order.mealSessions.length > 0);
+  const bookingOwnerLoggedIn =
+    !!member?.email &&
+    !!order.memberEmail &&
+    member.email.toLowerCase() === order.memberEmail.toLowerCase();
+  const bookingStartLabel = formatDateTime(order.bookingStartTime);
+  const bookingEndLabel = formatDateTime(order.bookingEndTime);
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
@@ -211,7 +229,6 @@ export default function CoworkingOrderViewPage() {
       )}
 
       <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-8">
-        {/* Header */}
         <div className="bg-gradient-to-r from-primary to-primary/80 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 lg:mb-8 text-white">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -219,10 +236,7 @@ export default function CoworkingOrderViewPage() {
                 Your Order
               </h1>
               <p className="text-white/80 text-sm sm:text-base">
-                Reference:{" "}
-                <span className="font-mono font-bold">
-                  #{orderReference}
-                </span>
+                Reference: <span className="font-mono font-bold">#{orderReference}</span>
               </p>
             </div>
             <div className="flex flex-col items-start sm:items-end gap-2">
@@ -231,92 +245,163 @@ export default function CoworkingOrderViewPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            <OrderStatusTimeline status={order.status} />
-            {order.mealSessions && order.mealSessions.length > 0 && (
-              <DeliveryTracking
-                sessions={order.mealSessions}
-                trackingData={deliveryTracking}
-              />
-            )}
-            <OrderDetails order={order} />
-            {isManager && (
-              <DeliveryTimeManager
-                order={order}
-                onUpdate={loadOrder}
-                accessToken={token}
-              />
-            )}
-            <OrderItemsByCategory
-              order={order}
-              onViewMenu={handleDownloadPdf}
-              isGeneratingPdf={generatingPdf}
-            />
-          </div>
+        {!hasCatering && order.requiresCatering ? (
+          <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_0.9fr] gap-4 sm:gap-6">
+            <div className="space-y-4 sm:space-y-6">
+              <OrderStatusTimeline status={order.status} />
+              <div className="bg-white rounded-xl p-6 sm:p-8 shadow-sm">
+                <div className="flex items-start gap-4">
+                  <div className="rounded-2xl bg-[#bd2429]/10 p-3">
+                    <UtensilsCrossed className="h-6 w-6 text-[#bd2429]" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-bold text-slate-900">
+                      Catering still needs to be added
+                    </h2>
+                    <p className="mt-2 text-sm leading-6 text-slate-600 sm:text-base">
+                      This booking has a venue hold but no catering order yet. Add the food order
+                      on a separate page, then come back here to review the full booking.
+                    </p>
 
-          {/* Sidebar */}
-          <div className="space-y-4 sm:space-y-6">
-            <DeliveryInfo order={order} />
-            <OrderSummary order={order} />
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      {bookingOwnerLoggedIn || !isAuthenticated ? (
+                        <Link
+                          href={`/coworking/${spaceSlug}/view/${token}/add-catering`}
+                          className="inline-flex items-center gap-2 rounded-full bg-[#bd2429] px-5 py-3 text-sm font-semibold text-white"
+                        >
+                          {bookingOwnerLoggedIn ? "Add catering" : "Log in to add catering"}
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      ) : null}
 
-            {refunds.length > 0 && <RefundsList refunds={refunds} />}
-            {order.status === "completed" && orderIdentifier && (
-              <div className="bg-white rounded-xl p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
-                  Need a Refund?
-                </h3>
-                <RefundRequestButton
-                  orderId={orderIdentifier}
-                  orderType="catering"
-                  orderCompletedAt={
-                    typeof order.updatedAt === "string"
-                      ? order.updatedAt
-                      : order.updatedAt?.toISOString() ??
-                        (typeof order.createdAt === "string"
-                          ? order.createdAt
-                          : order.createdAt?.toISOString() ?? new Date().toISOString())
-                  }
-                  totalAmount={order.finalTotal ?? 0}
-                  orderItems={order.restaurants || order.orderItems || []}
-                  canRequestRefund={true}
-                  onRefundRequested={loadOrder}
-                  userId={order.userId ?? ""}
-                />
-              </div>
-            )}
+                      <Link
+                        href={`/coworking/${spaceSlug}`}
+                        className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+                      >
+                        Back to coworking
+                      </Link>
+                    </div>
 
-            {isManager ? (
-              <>
-                <PickupContactManager
-                  order={order}
-                  onUpdate={loadOrder}
-                  accessToken={token}
-                />
-                <SharedAccessManager
-                  order={order}
-                  onUpdate={loadOrder}
-                  currentUserRole={currentUserRole}
-                />
-              </>
-            ) : (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <Eye className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-                  <h3 className="text-base sm:text-lg font-bold text-blue-900">
-                    View Only Access
-                  </h3>
+                    {isAuthenticated && !bookingOwnerLoggedIn ? (
+                      <p className="mt-4 text-sm text-slate-600">
+                        Only the booking owner can add catering for this booking.
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
-                <p className="text-xs sm:text-sm text-blue-800">
-                  You have view-only access to this order. Contact the order
-                  owner if you need to make changes.
-                </p>
               </div>
-            )}
+            </div>
+
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <MapPin className="h-4 w-4" />
+                  Event location
+                </div>
+                <p className="mt-3 text-base font-semibold text-slate-900">
+                  {order.venueName || "Venue confirmed"}
+                </p>
+                {order.roomLocationDetails ? (
+                  <p className="mt-1 text-sm text-slate-600">{order.roomLocationDetails}</p>
+                ) : null}
+              </div>
+
+              {(bookingStartLabel || bookingEndLabel) && (
+                <div className="bg-white rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                    <CalendarDays className="h-4 w-4" />
+                    Event window
+                  </div>
+                  <div className="mt-3 space-y-1 text-sm text-slate-600">
+                    {bookingStartLabel ? <p>Start: {bookingStartLabel}</p> : null}
+                    {bookingEndLabel ? <p>End: {bookingEndLabel}</p> : null}
+                    {order.bookingReference ? <p>Booking reference: {order.bookingReference}</p> : null}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+              <OrderStatusTimeline status={order.status} />
+              {order.mealSessions && order.mealSessions.length > 0 && (
+                <DeliveryTracking sessions={order.mealSessions} trackingData={deliveryTracking} />
+              )}
+              <OrderDetails order={order} />
+              {isManager && (
+                <DeliveryTimeManager order={order} onUpdate={loadOrder} accessToken={token} />
+              )}
+              <OrderItemsByCategory
+                order={order}
+                onViewMenu={handleDownloadPdf}
+                isGeneratingPdf={generatingPdf}
+              />
+            </div>
+
+            <div className="space-y-4 sm:space-y-6">
+              <DeliveryInfo order={order} />
+              <OrderSummary order={order} />
+
+              {refunds.length > 0 && <RefundsList refunds={refunds} />}
+              {order.status === "completed" && orderIdentifier && (
+                <div className="bg-white rounded-xl p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Need a Refund?</h3>
+                  <RefundRequestButton
+                    orderId={orderIdentifier}
+                    orderType="catering"
+                    orderCompletedAt={
+                      typeof order.updatedAt === "string"
+                        ? order.updatedAt
+                        : order.updatedAt?.toISOString() ??
+                          (typeof order.createdAt === "string"
+                            ? order.createdAt
+                            : order.createdAt?.toISOString() ?? new Date().toISOString())
+                    }
+                    totalAmount={order.finalTotal ?? 0}
+                    orderItems={order.restaurants || order.orderItems || []}
+                    canRequestRefund={true}
+                    onRefundRequested={loadOrder}
+                    userId={order.userId ?? ""}
+                  />
+                </div>
+              )}
+
+              {isManager ? (
+                <>
+                  <PickupContactManager order={order} onUpdate={loadOrder} accessToken={token} />
+                  <SharedAccessManager
+                    order={order}
+                    onUpdate={loadOrder}
+                    currentUserRole={currentUserRole}
+                  />
+                </>
+              ) : (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Eye className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                    <h3 className="text-base sm:text-lg font-bold text-blue-900">
+                      View Only Access
+                    </h3>
+                  </div>
+                  <p className="text-xs sm:text-sm text-blue-800">
+                    You have view-only access to this order. Contact the order owner if you need
+                    to make changes.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+export default function CoworkingOrderViewPage() {
+  return (
+    <CoworkingProvider>
+      <CoworkingOrderViewPageContent />
+    </CoworkingProvider>
   );
 }

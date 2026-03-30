@@ -113,6 +113,20 @@ export interface CoworkingMealSessionRequest {
   orderItems: CoworkingRestaurantOrder[];
 }
 
+export interface AddCateringToOrderRequest {
+  mealSessions?: CoworkingMealSessionRequest[];
+  specialInstructions?: string;
+  customerPhone?: string;
+  promoCodes?: string[];
+  deliveryLocation: LocationDto;
+}
+
+export interface AddCateringToOrderResponse {
+  coworkingOrderId: string;
+  cateringOrderId: string;
+  adminReviewStatus: string;
+}
+
 // ============================================================================
 // VENUE TYPES
 // ============================================================================
@@ -376,6 +390,7 @@ export interface CoworkingOrderViewResponse extends CateringOrderResponse {
   coworkingOrderId: string;
   cateringOrderId: string;
   orderId: string;
+  memberEmail?: string | null;
   adminReviewStatus: string;
   depositStatus: string;
   depositAmount: number;

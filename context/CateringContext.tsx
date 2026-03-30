@@ -25,7 +25,7 @@ const createDefaultSession = (): MealSessionState => ({
   orderItems: [],
 });
 
-interface CateringContextType {
+export interface CateringContextType {
   currentStep: number;
   highestVisitedStep: number;
   eventDetails: EventDetails | null;
@@ -609,4 +609,8 @@ export function useCatering() {
     throw new Error("useCatering must be used within CateringProvider");
   }
   return context;
+}
+
+export function useCateringOptional() {
+  return useContext(CateringContext);
 }
