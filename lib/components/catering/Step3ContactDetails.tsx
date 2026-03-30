@@ -738,7 +738,25 @@ export default function Step3ContactInfo() {
   };
 
 
+  const pricingAbortRef = useRef<AbortController | null>(null);
+  const lastPricingHashRef = useRef<string>("");
+
   const calculatePricing = async () => {
+    const slug = resolvedSpaceSlug;
+    if (!slug) {
+      setPricing(null);
+      return;
+    }
+
+    // Skip if nothing changed
+    const hash = JSON.stringify({ items: mealSessions.map(s => s.orderItems.map(o => ({ id: o.item.id, qty: o.quantity }))), promoCodes });
+    if (hash === lastPricingHashRef.current) return;
+    lastPricingHashRef.current = hash;
+
+    // Cancel previous in-flight request
+    pricingAbortRef.current?.abort();
+    pricingAbortRef.current = new AbortController();
+
     setCalculatingPricing(true);
     try {
       const slug = resolvedSpaceSlug;
