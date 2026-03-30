@@ -27,6 +27,7 @@ import {
   AlertTriangle,
   CalendarDays,
   Tag,
+  Clock,
 } from "lucide-react";
 import StripeReturnPage from "./StripeReturnPage";
 
@@ -174,19 +175,28 @@ function CoworkingDashboardInner({
     if (!spaceId) return;
     setOrdersLoading(true);
     try {
-      // "needs_review" is a frontend pseudo-filter: fetch all, then filter client-side
-      const apiStatus = activeStatus === "needs_review" ? "all" : activeStatus;
+      // Map frontend filter values to API status values
+      let apiStatus: string;
+      if (activeStatus === "needs_review") {
+        apiStatus = "all";
+      } else if (activeStatus === "awaiting_catering") {
+        apiStatus = "deposit_paid";
+      } else {
+        apiStatus = activeStatus;
+      }
+
       const data = await coworkingDashboardService.getOrders(spaceId, {
-        status: apiStatus,
+        status: apiStatus as any,
         limit: 50,
       });
+
       const filtered =
         activeStatus === "needs_review"
           ? data.orders.filter(
-            (o) =>
-              o.adminReviewStatus === "pending_admin_review",
-          )
+              (o) => o.adminReviewStatus === "pending_admin_review",
+            )
           : data.orders;
+
       setOrders(filtered);
     } catch (err: unknown) {
       console.error("Failed to fetch orders:", err);
@@ -195,18 +205,14 @@ function CoworkingDashboardInner({
     }
   }, [spaceId, activeStatus]);
 
-  const handleQuickApprove = useCallback(
-    async (orderId: string) => {
-      if (!spaceId) return;
-      await coworkingDashboardService.approveOrder(spaceId, orderId);
-      await fetchOrders();
-    },
-    [spaceId, fetchOrders],
-  );
-
-  // Count of pending-review orders across all loaded orders (or from a separate fetch)
+  // Keep pendingCount for needs_review badge
   const pendingCount = orders.filter(
     (o) => o.adminReviewStatus === "pending_admin_review",
+  ).length;
+
+  // Add awaitingCateringCount for awaiting_catering badge
+  const awaitingCateringCount = orders.filter(
+    (o) => o.status === "deposit_paid",
   ).length;
 
   useEffect(() => {
@@ -324,7 +330,7 @@ function CoworkingDashboardInner({
         <>
           {stats && <StatsCards stats={stats} />}
 
-          {/* Pending approval banner */}
+          {/* Needs review banner */}
           {spaceId && pendingCount > 0 && activeStatus !== "needs_review" && (
             <button
               onClick={() => setActiveStatus("needs_review")}
@@ -343,14 +349,32 @@ function CoworkingDashboardInner({
             </button>
           )}
 
+          {/* Awaiting catering banner */}
+          {spaceId && awaitingCateringCount > 0 && activeStatus !== "awaiting_catering" && (
+            <button
+              onClick={() => setActiveStatus("awaiting_catering")}
+              className="w-full flex items-center justify-between gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3.5 text-left hover:bg-blue-100 transition-colors"
+            >
+              <span className="flex items-center gap-3">
+                <Clock className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                <span className="text-sm font-semibold text-blue-800">
+                  {awaitingCateringCount} venue hold{awaitingCateringCount !== 1 ? "s" : ""} awaiting catering
+                </span>
+              </span>
+              <span className="text-xs font-semibold text-blue-700 underline underline-offset-2">
+                View
+              </span>
+            </button>
+          )}
+
           {spaceId && (
             <OrdersList
               orders={orders}
               activeStatus={activeStatus}
               pendingCount={pendingCount}
+              awaitingCateringCount={awaitingCateringCount}
               onStatusChange={setActiveStatus}
               onOrderClick={setSelectedOrderId}
-              onQuickApprove={handleQuickApprove}
               loading={ordersLoading}
             />
           )}
