@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useCatering } from "@/context/CateringContext";
+import { useActiveCatering } from "@/context/useActiveCatering";
 import { MealSessionState, SelectedMenuItem } from "@/types/catering.types";
 import { ChefHat, ChevronDown, ChevronUp, Calendar, Clock, Package } from "lucide-react";
 import { categoryService } from "@/services/api/category.api";
@@ -33,7 +33,7 @@ export default function AllMealSessionsItems({
   onViewMenu,
   isGeneratingPdf = false,
 }: AllMealSessionsItemsProps) {
-  const { mealSessions } = useCatering();
+  const { mealSessions } = useActiveCatering();
 
   // Fetch categories for ordering
   const [categoryOrder, setCategoryOrder] = useState<string[]>([]);

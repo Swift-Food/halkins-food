@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Package, ArrowLeftRight, Pencil, Trash2, Store } from "lucide-react";
-import { useCatering } from "@/context/CateringContext";
+import { useActiveCatering } from "@/context/useActiveCatering";
 import { SelectedMenuItem } from "@/types/catering.types";
 import { categoryService } from "@/services/api/category.api";
 import { ALLERGENS } from "@/lib/constants/allergens";
@@ -51,7 +51,7 @@ export default function SelectedItemsByCategory({
   compactLayout = false,
   restaurants,
 }: SelectedItemsByCategoryProps) {
-  const { mealSessions, activeSessionIndex } = useCatering();
+  const { mealSessions, activeSessionIndex } = useActiveCatering();
   const currentSessionIndex = sessionIndex ?? activeSessionIndex;
   const orderItems = useMemo(
     () => mealSessions[currentSessionIndex]?.orderItems || [],

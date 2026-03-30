@@ -3,8 +3,12 @@
 "use client";
 
 import { useState, FormEvent, useEffect, useMemo, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useCatering } from "@/context/CateringContext";
+import { useParams } from "next/navigation";
+import {
+  clearCateringStorageSnapshot,
+  saveCateringStorageSnapshot,
+  useCatering,
+} from "@/context/CateringContext";
 import { cateringService } from "@/services/api/catering.api";
 import { SessionExpiredError } from "@/services/api/coworking.api";
 import { CateringPricingResult, ContactInfo } from "@/types/catering.types";
@@ -21,9 +25,9 @@ import ContactInfoForm from "./contact/ContactInfoForm";
 import PromoCodeSection from "./contact/PromoCodeSection";
 import PricingSummary from "./contact/PricingSummary";
 import { coworkingService } from "@/services/api";
-import { CreateCoworkingOrderRequest } from "@/types/api";
+import { CreateCoworkingOrderRequest, type CoworkingCheckoutPricingResponse } from "@/types/api";
 import {
-  clearCoworkingSessionStorage,
+  saveCoworkingSessionSnapshot,
   useCoworking,
 } from "@/context/CoworkingContext";
 import CoworkingAuthForm from "@/lib/components/coworking/CoworkingAuthForm";
@@ -98,9 +102,9 @@ function formatEventTime(time: string) {
   return `${hour12}:${minutes} ${period}`;
 }
 
+
 export default function Step3ContactInfo() {
   const params = useParams<{ spaceSlug?: string }>();
-  const router = useRouter();
   const topSectionRef = useRef<HTMLDivElement | null>(null);
   const orderDetailsRef = useRef<HTMLDivElement | null>(null);
   const {
@@ -111,9 +115,6 @@ export default function Step3ContactInfo() {
     bookingQuestionnaire,
     mealSessions,
     getAllItems,
-    resetOrder,
-    markOrderAsSubmitted,
-
   } = useCatering();
 
   const {
@@ -157,12 +158,12 @@ export default function Step3ContactInfo() {
     billingAddress: normalizedContactInfo.billingAddress,
   });
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [promoCodes, setPromoCodes] = useState<string[]>([]);
   const [validatingPromo, setValidatingPromo] = useState(false);
   const [promoError, setPromoError] = useState("");
   const [promoSuccess, setPromoSuccess] = useState("");
   const [pricing, setPricing] = useState<CateringPricingResult | null>(null);
+  const [depositInfo, setDepositInfo] = useState<NonNullable<CoworkingCheckoutPricingResponse['deposit']> | null>(null);
   const [calculatingPricing, setCalculatingPricing] = useState(false);
 
   const [ccEmails, setCcEmails] = useState<string[]>([]);
@@ -199,6 +200,28 @@ export default function Step3ContactInfo() {
       return total + unitPrice * quantity + addonTotal;
     }, 0);
   }, [selectedItems]);
+  const hasSelectedCatering = selectedItems.length > 0;
+  const pageTitle = hasSelectedCatering
+    ? "Your Contact Details"
+    : "Secure Your Venue";
+  const pageDescription = hasSelectedCatering
+    ? "Please provide your contact details so we can confirm your event order request."
+    : "Provide your contact details to secure the venue with your deposit. Catering can be added later to finalise the booking.";
+  const panelTitle = hasSelectedCatering
+    ? "Contact & Delivery Details"
+    : "Venue Hold Details";
+  const bookingCardLabel = hasSelectedCatering
+    ? "Event Details"
+    : "Venue Hold Details";
+  const specialInstructionsPlaceholder = hasSelectedCatering
+    ? "Any special requests or instructions for your order..."
+    : "Any notes for the venue team about this booking...";
+  const quickJumpTitle = hasSelectedCatering
+    ? "Review order details"
+    : "Review venue hold";
+  const quickJumpDescription = hasSelectedCatering
+    ? "Check the menu and quantities before submitting"
+    : "Review your venue and booking details before paying the deposit";
 
   useEffect(() => {
     if (!contactInfo) {
@@ -339,8 +362,6 @@ export default function Step3ContactInfo() {
       case "postalCode":
         if (!billing?.postalCode?.trim()) {
           error = "Postcode is required";
-        } else if (!validateUKPostcode(billing.postalCode)) {
-          error = "Please enter a valid UK postcode (e.g., SW1A 1AA)";
         }
         break;
     }
@@ -360,14 +381,6 @@ export default function Step3ContactInfo() {
     if (field in errors) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
-  };
-
-  // UK Postcode validation regex
-  const UK_POSTCODE_REGEX = /^([A-Z]{1,2}\d{1,2}[A-Z]?)\s?(\d[A-Z]{2})$/i;
-
-  const validateUKPostcode = (postcode: string): boolean => {
-    if (!postcode) return false;
-    return UK_POSTCODE_REGEX.test(postcode.trim());
   };
 
   // Check if billing address has any data entered
@@ -393,8 +406,6 @@ export default function Step3ContactInfo() {
     }
     if (!billing?.postalCode?.trim()) {
       billingErrors.postalCode = "Postcode is required";
-    } else if (!validateUKPostcode(billing.postalCode)) {
-      billingErrors.postalCode = "Please enter a valid UK postcode (e.g., SW1A 1AA)";
     }
 
     // Return undefined if no errors, otherwise return the errors object
@@ -482,13 +493,20 @@ export default function Step3ContactInfo() {
     }
 
     const firstSession = mealSessions[0];
-    const sessionDate = firstSession?.sessionDate || '';
-    const sessionTime = firstSession?.eventTime || eventDetails?.eventTime || '';
+    const sessionDate =
+      eventStartDate || firstSession?.sessionDate || eventDetails?.eventDate || "";
+    const sessionTime =
+      eventStartTime || firstSession?.eventTime || eventDetails?.eventTime || "";
+    const endDate = eventEndDate || sessionDate;
+    const endTime = eventEndTime || sessionTime;
+
+    const nonEmptyMealSessions = mealSessions.filter(
+      (session) => session.orderItems.length > 0
+    );
 
     // Build per-session meal sessions with items grouped by restaurant
-    const builtMealSessions = mealSessions
-      .filter(session => session.orderItems.length > 0)
-      .map(session => {
+    const builtMealSessions = nonEmptyMealSessions
+      .map((session, index) => {
         const itemsByRestaurant = new Map<string, { menuItemId: string; quantity: number; selectedAddons?: { name: string; quantity: number }[] }[]>();
         session.orderItems.forEach(({ item, quantity }) => {
           const restaurantId = item.restaurantId;
@@ -506,15 +524,68 @@ export default function Step3ContactInfo() {
         });
 
         return {
-          sessionName: session.sessionName,
+          sessionName: session.sessionName || `Session ${index + 1}`,
           sessionDate: session.sessionDate,
           eventTime: session.eventTime,
+          collectionTime: session.eventTime,
+          guestCount: session.guestCount,
+          specialRequirements: session.specialRequirements,
           orderItems: Array.from(itemsByRestaurant.entries()).map(([restaurantId, menuItems]) => ({
             restaurantId,
             menuItems,
           })),
         };
       });
+
+    // Flat orderItems across all sessions grouped by restaurant.
+    // Needed by the backend pricing service which does not read mealSessions.
+    const flatOrderItemsByRestaurant = new Map<string, { menuItemId: string; quantity: number; selectedAddons?: { name: string; quantity: number }[] }[]>();
+    mealSessions
+      .filter(session => session.orderItems.length > 0)
+      .forEach(session => {
+        session.orderItems.forEach(({ item, quantity }) => {
+          const restaurantId = item.restaurantId;
+          if (!flatOrderItemsByRestaurant.has(restaurantId)) {
+            flatOrderItemsByRestaurant.set(restaurantId, []);
+          }
+          flatOrderItemsByRestaurant.get(restaurantId)!.push({
+            menuItemId: item.id,
+            quantity,
+            selectedAddons: item.selectedAddons?.map(addon => ({
+              name: addon.name,
+              quantity: addon.quantity,
+            })),
+          });
+        });
+      });
+    const flatOrderItems = Array.from(flatOrderItemsByRestaurant.entries()).map(
+      ([restaurantId, menuItems]) => ({ restaurantId, menuItems })
+    );
+
+    // The coworking backend accepts both flat orderItems and mealSessions.
+    // If session metadata has fallen out of sync but we still have items plus
+    // a booking window, synthesize a single meal session so downstream DTOs
+    // always receive the delivery timing context they expect.
+    const fallbackMealSessions =
+      builtMealSessions.length === 0 &&
+      flatOrderItems.length > 0 &&
+      sessionDate &&
+      sessionTime
+        ? [
+            {
+              sessionName: "Main Event",
+              sessionDate,
+              eventTime: sessionTime,
+              collectionTime: sessionTime,
+              guestCount: eventDetails?.guestCount,
+              specialRequirements: specialInstructions || undefined,
+              orderItems: flatOrderItems,
+            },
+          ]
+        : [];
+
+    const mealSessionsPayload =
+      builtMealSessions.length > 0 ? builtMealSessions : fallbackMealSessions;
 
     const additionalAnswers = bookingQuestionnaire
       ? {
@@ -536,13 +607,17 @@ export default function Step3ContactInfo() {
       orderData: {
         deliveryAddress,
         deliveryLocation: {
-          latitude: deliveryLat,
-          longitude: deliveryLng,
+          latitude: Number(deliveryLat),
+          longitude: Number(deliveryLng),
         },
         venueId: selectedVenue?.id,
         customerPhone: formData.phone,
-        mealSessions: builtMealSessions,
-        promoCodes: promoCodes.length > 0 ? promoCodes : undefined,
+        orderItems: flatOrderItems.length > 0 ? flatOrderItems : undefined,
+        mealSessions: mealSessionsPayload.length > 0 ? mealSessionsPayload : undefined,
+        promoCodes:
+          hasSelectedCatering && promoCodes.length > 0
+            ? promoCodes
+            : undefined,
         specialInstructions: specialInstructions || undefined,
         scheduledFor: sessionDate,
         scheduledTime: sessionTime,
@@ -551,8 +626,8 @@ export default function Step3ContactInfo() {
           deliveryDate: sessionDate,
           deliveryTime: sessionTime,
         }),
-        ...(eventEndDate && eventEndTime && {
-          eventEndDateTime: `${eventEndDate}T${eventEndTime}:00`,
+        ...(endDate && endTime && {
+          eventEndDateTime: `${endDate}T${endTime}:00`,
         }),
         ...(additionalAnswers && { additionalAnswers }),
       },
@@ -578,20 +653,16 @@ export default function Step3ContactInfo() {
 
       
       const { spaceSlug, orderData } = buildCoworkingOrderData();
-      const createOrderResponse = await coworkingService.createOrder(spaceSlug, orderData);
-      console.log("COWORKING_CREATE_ORDER_RESPONSE", {
+      clearCateringStorageSnapshot();
+      saveCateringStorageSnapshot();
+      saveCoworkingSessionSnapshot();
+      const checkoutResponse = await coworkingService.createCheckoutSession(
         spaceSlug,
-        accessToken: createOrderResponse?.accessToken,
-        createOrderResponse,
-      });
+        orderData
+      );
 
-      markOrderAsSubmitted();
-      setSuccess(true);
-      clearCoworkingSessionStorage();
-
-      const accessToken = createOrderResponse?.accessToken;
-      if (accessToken) {
-        router.push(`/coworking/${spaceSlug}/view/${accessToken}`);
+      if (typeof window !== "undefined") {
+        window.location.assign(checkoutResponse.checkoutUrl);
         return;
       }
     } catch (error: unknown) {
@@ -673,38 +744,39 @@ export default function Step3ContactInfo() {
       const slug = resolvedSpaceSlug;
       if (!slug) {
         setPricing(null);
+        setDepositInfo(null);
         return;
       }
-      console.log("calculating")
-      const pricingResult = await coworkingService.calculateCartPricing(
-        slug,
-        mealSessions,
-        { latitude: deliveryLat, longitude: deliveryLng },
-        promoCodes,
-        selectedVenue?.id,
-      );
 
-      if (!pricingResult.isValid) {
+      const { spaceSlug, orderData } = buildCoworkingOrderData();
+      const result = await coworkingService.getCartPricing(spaceSlug, orderData);
+
+      if (result.isValid === false) {
         setPricing(null);
+        setDepositInfo(null);
+        setPromoError(result.error || "Unable to calculate pricing. Please try again.");
         return;
       }
 
-      setPricing(pricingResult);
+      setPricing(result as unknown as CateringPricingResult);
+      setDepositInfo(result.deposit ?? null);
 
       // If promo codes are applied but resulted in no discount, warn the user
       if (promoCodes.length > 0) {
-        const hasDiscount = (pricingResult.promoDiscount ?? 0) > 0 || (pricingResult.venueHireDiscount ?? 0) > 0;
+        const hasDiscount = (result.promoDiscount ?? 0) > 0 || (result.venueHireDiscount ?? 0) > 0;
         if (!hasDiscount) {
           setPromoSuccess("");
           setPromoError("Promo code may not apply to current items");
         } else {
-          // Clear stale error if discount is now valid
-          setPromoError((prev) => prev === "Promo code may not apply to current items" ? "" : prev);
+          setPromoError((prev) =>
+            prev === "Promo code may not apply to current items" ? "" : prev
+          );
         }
       }
     } catch (error: unknown) {
       console.error("Error calculating pricing:", error);
       setPricing(null);
+      setDepositInfo(null);
     } finally {
       setCalculatingPricing(false);
     }
@@ -742,7 +814,7 @@ export default function Step3ContactInfo() {
   useEffect(() => {
     calculatePricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [promoCodes, mealSessions]);
+  }, [hasSelectedCatering, promoCodes, mealSessions]);
 
   const handleApplyPromoCode = async (code: string) => {
     setValidatingPromo(true);
@@ -797,7 +869,11 @@ export default function Step3ContactInfo() {
     setGeneratingPdf(true);
     try {
       const hasDeliveryQuote = Boolean(selectedVenue?.id);
-      const pricingSessions = (pricing as any)?.mealSessions as
+      const pricingSessions = (
+        pricing as CateringPricingResult & {
+          mealSessions?: Array<{ deliveryFee?: number }>;
+        }
+      )?.mealSessions as
         | Array<{ deliveryFee?: number }>
         | undefined;
 
@@ -879,94 +955,6 @@ export default function Step3ContactInfo() {
     );
   }
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-base-100 py-8 px-4">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="mb-8">
-            <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg
-                className="w-10 h-10 text-success"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-3 text-base-content">
-              Thank you! Your event order request has been submitted.
-            </h2>
-            <p className="text-base-content/70 text-lg">
-              We&apos;ll get back to you within 24 hours via your preferred contact
-              method. You will receive a quote for the event hire fee, followed by a payment link once the order is confirmed.
-            </p>
-          </div>
-
-          <div className="bg-base-200/50 rounded-2xl p-6 md:p-8 mb-8 text-left border border-base-300">
-            <h3 className="text-xl font-bold mb-6 text-base-content">
-              Event & Order Summary
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 pb-6 border-b border-base-300">
-              <div>
-                <p className="text-xs text-base-content/60 mb-1">
-                  Event Date & Time
-                </p>
-                <p className="font-semibold text-base-content">
-                  {eventDetails?.eventDate}
-                </p>
-                <p className="text-sm text-base-content/80">
-                  {eventDetails?.eventTime}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-base-content/60 mb-1">
-                  Type of Event
-                </p>
-                <p className="font-semibold text-base-content capitalize">
-                  {eventDetails?.eventType}
-                </p>
-              </div>
-              {/* <div> */}
-              {/* <p className="text-xs text-base-content/60 mb-1">Guest Count</p>
-                <p className="font-semibold text-base-content">
-                  {(eventDetails?.guestCount || 10) - 10} -{" "}
-                  {(eventDetails?.guestCount || 10) + 10}{" "}
-                </p>
-              </div> */}
-            </div>
-
-            <h4 className="font-bold mb-4 text-base-content">Your List</h4>
-
-            {promoCodes.length > 0 && (
-              <div className="mb-4">
-                <p className="text-xs text-base-content/60 mb-2">Promo Codes Applied</p>
-                <div className="flex flex-wrap gap-2">
-                  {promoCodes.map((code) => (
-                    <span
-                      key={code}
-                      className="px-3 py-1 bg-success/10 text-success rounded-full text-sm font-medium"
-                    >
-                      {code}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <AllMealSessionsItems />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen">
@@ -994,11 +982,10 @@ export default function Step3ContactInfo() {
                 Step 3 of 3 - Contact & Confirmation
               </p> */}
               <h2 className="text-3xl md:text-4xl font-bold mb-3 text-base-content">
-                Your Contact Details
+                {pageTitle}
               </h2>
               <p className="text-base-content/70">
-                Please provide your contact details so we can confirm your event
-                order request.
+                {pageDescription}
               </p>
             </div>
             <button
@@ -1023,11 +1010,39 @@ export default function Step3ContactInfo() {
             ref={orderDetailsRef}
             className="lg:col-span-3 order-2 lg:order-1 pb-24 lg:pb-0"
           >
-            <AllMealSessionsItems
-              showActions={false}
-              onViewMenu={handleViewMenu}
-              isGeneratingPdf={generatingPdf}
-            />
+            {hasSelectedCatering ? (
+              <AllMealSessionsItems
+                showActions={false}
+                onViewMenu={handleViewMenu}
+                isGeneratingPdf={generatingPdf}
+              />
+            ) : (
+              <div className="rounded-3xl border border-sky-200 bg-[linear-gradient(180deg,#f8fdff_0%,#eef8ff_100%)] p-6 md:p-8">
+                <div className="max-w-2xl">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-700/70">
+                    Venue Hold
+                  </p>
+                  <h3 className="mt-3 text-2xl font-bold text-slate-900">
+                    Secure the space now, add catering later
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 text-slate-700">
+                    Your deposit will hold the venue for the selected date and time.
+                    To fully seal the booking, you&apos;ll still need to place your catering
+                    order at a later point.
+                  </p>
+                  <div className="mt-6 rounded-2xl border border-sky-100 bg-white/80 p-5">
+                    <p className="text-sm font-semibold text-slate-900">
+                      What happens next
+                    </p>
+                    <div className="mt-3 space-y-2 text-sm text-slate-600">
+                      <p>1. Pay the deposit to secure the venue first.</p>
+                      <p>2. Return later to add catering for the event.</p>
+                      <p>3. Once catering is added, the booking can move forward for review.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div
               className={`lg:hidden fixed inset-x-4 bottom-4 z-30 transition-all duration-200 ${
                 showBackToTopButton
@@ -1057,10 +1072,10 @@ export default function Step3ContactInfo() {
                   Quick jump
                 </span>
                 <span className="mt-1 block text-sm font-semibold text-base-content">
-                  Review order details
+                  {quickJumpTitle}
                 </span>
                 <span className="mt-0.5 block text-xs text-base-content/60">
-                  Check the menu and quantities before submitting
+                  {quickJumpDescription}
                 </span>
               </span>
               <span className="ml-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary/80">
@@ -1071,15 +1086,15 @@ export default function Step3ContactInfo() {
             <div className="bg-base-200/40 rounded-3xl p-4 md:p-8">
               <h3 className="text-xl font-bold mb-8 flex items-center gap-3 text-base-content">
                 <span className="w-1.5 h-6 bg-primary/80 rounded-full"></span>
-                Contact & Delivery Details
+                {panelTitle}
               </h3>
 
-              <form onSubmit={handleSubmit} className="space-y-10">
+              <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Delivery Address */}
                 <div>
                   <div className="rounded-2xl border border-base-300 bg-base-100/80 px-4 py-4">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-base-content/45 mb-2">
-                      Event Details
+                      {bookingCardLabel}
                     </p>
                     <div className="space-y-2 text-sm text-base-content">
                       <div className="flex items-start gap-2">
@@ -1126,19 +1141,21 @@ export default function Step3ContactInfo() {
                 />
 
                 {/* Promo Code Section */}
-                <PromoCodeSection
-                  promoCodes={promoCodes}
-                  onApplyPromoCode={handleApplyPromoCode}
-                  onRemovePromoCode={handleRemovePromoCode}
-                  validatingPromo={validatingPromo}
-                  promoError={promoError}
-                  promoSuccess={promoSuccess}
-                  promoDiscount={pricing?.promoDiscount}
-                  venueHireDiscount={pricing?.venueHireDiscount}
-                />
+                {hasSelectedCatering && (
+                  <PromoCodeSection
+                    promoCodes={promoCodes}
+                    onApplyPromoCode={handleApplyPromoCode}
+                    onRemovePromoCode={handleRemovePromoCode}
+                    validatingPromo={validatingPromo}
+                    promoError={promoError}
+                    promoSuccess={promoSuccess}
+                    promoDiscount={pricing?.promoDiscount}
+                    venueHireDiscount={pricing?.venueHireDiscount}
+                  />
+                )}
 
                 {/* Special Instructions */}
-                <div className="-mt-4 pt-2">
+                <div className="-mt-2">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-8 h-8 rounded-lg bg-gray-200 border border-gray-300 flex items-center justify-center text-base-content/70">
                       <FileText size={18} />
@@ -1155,21 +1172,51 @@ export default function Step3ContactInfo() {
                     name="specialInstructions"
                     value={specialInstructions}
                     onChange={(e) => setSpecialInstructions(e.target.value)}
-                    placeholder="Any special requests or instructions for your order..."
+                    placeholder={specialInstructionsPlaceholder}
                     className="w-full bg-gray-50 border border-base-300 rounded-xl px-4 py-3 text-sm text-base-content placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[100px] resize-none"
                   />
                 </div>
 
-                {/* Pricing Summary */}
-                <PricingSummary
-                  pricing={pricing}
-                  calculatingPricing={calculatingPricing}
-                  estimatedTotal={estimatedTotal}
-                  hasDeliveryAddress={Boolean(deliveryAddress)}
-                />
+                {!hasSelectedCatering && (
+                  <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900">
+                    <p className="font-semibold">Venue-only checkout</p>
+                    <p className="mt-1 text-sky-800/85">
+                      You haven&apos;t added catering yet, so this checkout will secure the venue with a deposit only.
+                    </p>
+                  </div>
+                )}
+
+                {/* Pricing Summary — only shown when catering is selected */}
+                {hasSelectedCatering && (
+                  <PricingSummary
+                    pricing={pricing}
+                    calculatingPricing={calculatingPricing}
+                    estimatedTotal={estimatedTotal}
+                    hasDeliveryAddress={Boolean(deliveryAddress)}
+                  />
+                )}
+
+                {depositInfo && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-amber-950">Deposit due now</p>
+                        <p className="mt-1 text-xs text-amber-800/75">
+                          £{depositInfo.perDayRate.toFixed(2)} × {depositInfo.days} day{depositInfo.days !== 1 ? "s" : ""}
+                        </p>
+                        <p className="mt-1 text-xs text-amber-800/75">
+                          Deducted from the final booking balance later
+                        </p>
+                      </div>
+                      <p className="text-xl font-bold text-amber-950">
+                        £{depositInfo.amount.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Important Notes */}
-                <div>
+                <div className="-mt-1">
                   <div className="w-full bg-orange-50/50 border border-orange-200 rounded-xl p-4">
                     <button
                       type="button"
@@ -1205,12 +1252,14 @@ export default function Step3ContactInfo() {
                         className="mt-3 text-xs text-base-content/80 leading-relaxed space-y-1"
                       >
                         <p>
-                          For accurate allergen information, please contact
-                          restaurants directly.
+                          {hasSelectedCatering
+                            ? "For accurate allergen information, please contact restaurants directly."
+                            : "Your deposit secures the venue first, but the booking will only be fully sealed once catering is added later."}
                         </p>
                         <p>
-                          For any last-minute changes, please contact us at
-                          least two days before your event.
+                          {hasSelectedCatering
+                            ? "For any last-minute changes, please contact us at least two days before your event."
+                            : "If your booking details change, please let us know as early as possible before the event date."}
                         </p>
                       </div>
                     )}
@@ -1252,7 +1301,11 @@ export default function Step3ContactInfo() {
                   disabled={submitting || !termsAccepted}
                   className="w-full bg-primary text-white py-4 rounded-2xl font-bold uppercase tracking-[0.2em] text-sm hover:bg-primary/90 transition-all disabled:bg-base-300 disabled:cursor-not-allowed disabled:tracking-[0.08em]"
                 >
-                  {submitting ? "Submitting..." : "Submit Order"}
+                  {submitting
+                    ? "Redirecting..."
+                    : hasSelectedCatering
+                      ? "Pay Deposit"
+                      : "Secure Venue Deposit"}
                 </button>
               </form>
             </div>

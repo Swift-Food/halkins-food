@@ -9,6 +9,8 @@
  * IMPORTANT: Do not modify these types without updating the corresponding backend DTOs
  */
 
+import type { CateringOrderResponse, MealSessionResponse } from "./catering.api.types";
+
 // ============================================================================
 // REQUEST TYPES
 // ============================================================================
@@ -105,7 +107,24 @@ export interface CoworkingMealSessionRequest {
   sessionName?: string;
   sessionDate: string; // "YYYY-MM-DD"
   eventTime: string; // "HH:MM"
+  collectionTime?: string; // "HH:MM"
+  guestCount?: number;
+  specialRequirements?: string;
   orderItems: CoworkingRestaurantOrder[];
+}
+
+export interface AddCateringToOrderRequest {
+  mealSessions?: CoworkingMealSessionRequest[];
+  specialInstructions?: string;
+  customerPhone?: string;
+  promoCodes?: string[];
+  deliveryLocation: LocationDto;
+}
+
+export interface AddCateringToOrderResponse {
+  coworkingOrderId: string;
+  cateringOrderId: string;
+  adminReviewStatus: string;
 }
 
 // ============================================================================
@@ -273,7 +292,64 @@ export interface GetOrderDetailResponse {
 }
 
 /**
- * Response for POST /orders (order creation)
+ * Response for POST /cart-pricing in the Stripe Checkout flow.
+ */
+export interface CoworkingCheckoutPricingResponse {
+  isValid: boolean;
+  subtotal: number;
+  deliveryFee: number;
+  restaurantPromotionDiscount?: number;
+  promotionDiscount?: number;
+  totalDiscount?: number;
+  promoDiscount?: number;
+  venueHireFee?: number;
+  venueHireDiscount?: number;
+  total: number;
+  error?: string;
+  distanceInMiles?: number;
+  deliveryFeeBreakdown?: {
+    baseFee: number;
+    portionFee: number;
+    drinksFee: number;
+    subtotal: number;
+    distanceMultiplier: number;
+    finalDeliveryFee: number;
+    requiresCustomQuote: boolean;
+  };
+  deposit?: {
+    amount: number;
+    perDayRate: number;
+    days: number;
+  } | null;
+  appliedPromotions?: Array<{
+    restaurantId: string;
+    promotionId: string;
+    name: string;
+    promotionType: string;
+    discountPercentage: number | string;
+    discountTiers?: Array<{
+      minQuantity: number;
+      discountPercentage: number;
+    }> | null;
+    discount: number;
+  }>;
+}
+
+/**
+ * Response for POST /create-checkout — creates a Stripe Checkout session.
+ * Call this only when the user clicks "Pay deposit".
+ */
+export interface CoworkingCreateCheckoutResponse {
+  checkoutUrl: string;
+  deposit: {
+    amount: number;
+    perDayRate: number;
+    days: number;
+  } | null;
+}
+
+/**
+ * Response for POST /orders (legacy order creation flow)
  * Backend: CreateOrderResult
  */
 export interface CreateOrderResponse {
@@ -288,4 +364,44 @@ export interface CreateOrderResponse {
   deliveryAddress: string;
   estimatedDelivery: string;
   accessToken?: string;
+}
+
+/**
+ * Response for POST /confirm-checkout in the Stripe Checkout flow.
+ */
+export interface ConfirmCoworkingCheckoutResponse {
+  orderId: string;
+  adminReviewStatus: string;
+  depositStatus: string;
+  depositAmount?: number;
+  venueId?: string | null;
+  venueName?: string | null;
+  deliveryAddress?: string | null;
+  bookingStartTime?: string | null;
+  bookingEndTime?: string | null;
+  bookingReference?: string | null;
+  roomLocationDetails?: string | null;
+  requiresCatering?: boolean;
+  cateringOrder?: unknown | null;
+  accessToken?: string | null;
+}
+
+export interface CoworkingOrderViewResponse extends CateringOrderResponse {
+  coworkingOrderId: string;
+  cateringOrderId: string;
+  orderId: string;
+  memberEmail?: string | null;
+  adminReviewStatus: string;
+  depositStatus: string;
+  depositAmount: number;
+  venueHireFee: number;
+  venueId: string | null;
+  venueName: string | null;
+  bookingStartTime: string | null;
+  bookingEndTime: string | null;
+  bookingReference: string | null;
+  roomLocationDetails: string | null;
+  requiresCatering: boolean;
+  currentUserRole: "viewer" | "editor" | "manager" | null;
+  mealSessions?: MealSessionResponse[];
 }

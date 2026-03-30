@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { cateringService } from "@/services/api/catering.api";
 import { CateringBundleResponse, CateringBundleItem } from "@/types/api/catering.api.types";
 import { MenuItem } from "@/types/restaurant.types";
-import { useCatering } from "@/context/CateringContext";
+import { useActiveCatering } from "@/context/useActiveCatering";
 import BundleCard from "./BundleCard";
 import BundleDetailModal from "./modals/BundleDetailModal";
 import { mapToMenuItem } from "./catering-order-helpers";
@@ -47,7 +47,7 @@ export default function BundleBrowser({
   onBack,
   defaultGuestCount = 1,
 }: BundleBrowserProps) {
-  const { addMenuItem } = useCatering();
+  const { addMenuItem } = useActiveCatering();
   const [bundles, setBundles] = useState<CateringBundleResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

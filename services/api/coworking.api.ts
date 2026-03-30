@@ -24,10 +24,17 @@ import {
   CreateOrderResponse,
   GetOrdersResponse,
   GetOrderDetailResponse,
+  ConfirmCoworkingCheckoutResponse,
+  CoworkingCheckoutPricingResponse,
+  CoworkingOrderViewResponse,
+  type CoworkingCreateCheckoutResponse,
+  type AddCateringToOrderRequest,
+  type AddCateringToOrderResponse,
   RefreshTokenResponse,
+  CateringAddonRequest,
   CateringMenuItemRequest,
 } from '@/types/api';
-import { MealSessionState, CateringPricingResult, PromoCodeValidation } from '@/types/catering.types';
+import { MealSessionState, PromoCodeValidation } from '@/types/catering.types';
 
 const ACCESS_TOKEN_KEY = 'coworking_access_token';
 const REFRESH_TOKEN_KEY = 'coworking_refresh_token';
@@ -460,58 +467,42 @@ class CoworkingService {
     return response.json();
   }
 
-  /**
-   * Calculate cart pricing for a coworking order.
-   * Uses the coworking-specific endpoint that includes venueHireFee.
-   */
-  async calculateCartPricing(
+  async addCateringToOrder(
     spaceSlug: string,
-    mealSessions: MealSessionState[],
-    deliveryLocation?: { latitude: number; longitude: number },
-    promoCodes?: string[],
-    venueId?: string,
-  ): Promise<CateringPricingResult> {
-    // Flatten all sessions into a single restaurant-grouped orderItems list
-    // matching CoworkingCartPricingDto
-    const itemsByRestaurant = new Map<string, CateringMenuItemRequest[]>();
-    mealSessions
-      .filter((s) => s.orderItems.length > 0)
-      .forEach((s) => {
-        s.orderItems.forEach(({ item, quantity }) => {
-          const restaurantId = item.restaurantId || 'unknown';
-          if (!itemsByRestaurant.has(restaurantId)) {
-            itemsByRestaurant.set(restaurantId, []);
-          }
-          itemsByRestaurant.get(restaurantId)!.push({
-            menuItemId: item.id,
-            quantity,
-            selectedAddons: (item.selectedAddons || []) as any,
-          } as CateringMenuItemRequest);
-        });
-      });
-
-    const orderItems = Array.from(itemsByRestaurant.entries()).map(
-      ([restaurantId, menuItems]) => ({
-        restaurantId,
-        menuItems,
-      })
+    orderId: string,
+    data: AddCateringToOrderRequest
+  ): Promise<AddCateringToOrderResponse> {
+    const response = await this.fetchWithSession(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_ADD_CATERING(spaceSlug, orderId)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
     );
 
-    const body = {
-      orderItems,
-      promoCodes,
-      ...(deliveryLocation && { deliveryLocation }),
-      ...(venueId && { venueId }),
-    };
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to add catering to booking');
+    }
 
+    return response.json();
+  }
+
+  /**
+   * Get cart pricing (deposit + catering totals) for display on the final step.
+   * Does NOT create a Stripe session — safe to call on page load.
+   * Backend: POST /coworking/:spaceSlug/cart-pricing
+   */
+  async getCartPricing(
+    spaceSlug: string,
+    data: CreateCoworkingOrderRequest
+  ): Promise<CoworkingCheckoutPricingResponse> {
     try {
-      console.log("body is", JSON.stringify(body))
       const response = await this.fetchWithSession(
-        
         `${API_BASE_URL}${API_ENDPOINTS.COWORKING_CART_PRICING(spaceSlug)}`,
         {
           method: 'POST',
-          body: JSON.stringify(body),
+          body: JSON.stringify(data),
         }
       );
 
@@ -523,19 +514,90 @@ class CoworkingService {
           deliveryFee: 0,
           total: 0,
           error: error.message || 'Failed to calculate pricing',
-        } as CateringPricingResult;
+        } as CoworkingCheckoutPricingResponse;
       }
 
       return response.json();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to calculate pricing';
       return {
         isValid: false,
         subtotal: 0,
         deliveryFee: 0,
         total: 0,
-        error: error.message || 'Failed to calculate pricing',
-      } as CateringPricingResult;
+        error: message,
+      } as CoworkingCheckoutPricingResponse;
     }
+  }
+
+  /**
+   * Create a Stripe Checkout session and return the checkout URL.
+   * Call this ONLY when the user clicks "Pay deposit".
+   * Backend: POST /coworking/:spaceSlug/create-checkout
+   */
+  async createCheckoutSession(
+    spaceSlug: string,
+    data: CreateCoworkingOrderRequest
+  ): Promise<CoworkingCreateCheckoutResponse> {
+    const response = await this.fetchWithSession(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_CREATE_CHECKOUT(spaceSlug)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to initiate checkout');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Confirm a completed Stripe Checkout session and return the customer dashboard payload.
+   * Backend: POST /coworking/:spaceSlug/confirm-checkout
+   */
+  async confirmCheckout(
+    spaceSlug: string,
+    sessionId: string
+  ): Promise<ConfirmCoworkingCheckoutResponse> {
+    const response = await this.fetchWithSession(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_CONFIRM_CHECKOUT(spaceSlug)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ sessionId }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to confirm checkout');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Public coworking order view by shared-access token.
+   * Returns the catering order payload plus coworking-specific fields.
+   */
+  async getOrderViewByToken(
+    spaceSlug: string,
+    token: string
+  ): Promise<CoworkingOrderViewResponse> {
+    const response = await fetch(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_VIEW_BY_TOKEN(spaceSlug, token)}`
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to fetch coworking order');
+    }
+
+    return response.json();
   }
 
   /**
@@ -592,7 +654,8 @@ class CoworkingService {
           itemsByRestaurant.get(restaurantId)!.push({
             menuItemId: item.id,
             quantity,
-            selectedAddons: (item.selectedAddons || []) as any,
+            selectedAddons:
+              (item.selectedAddons || []) as CateringAddonRequest[],
           } as CateringMenuItemRequest);
         });
       });

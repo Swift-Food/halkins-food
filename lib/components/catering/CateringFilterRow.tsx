@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import CateringFilterModal from "./CateringFilterModal";
-import { useCatering } from "@/context/CateringContext";
+import { useActiveCatering } from "@/context/useActiveCatering";
 
 interface CateringFilterRowProps {
   // Search functionality
@@ -49,7 +49,7 @@ export default function CateringFilterRow({
   showBackButton = false,
   onBackClick,
 }: CateringFilterRowProps) {
-  const { eventDetails, setEventDetails } = useCatering();
+  const { eventDetails, setEventDetails } = useActiveCatering();
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchHovered, setSearchHovered] = useState(false);

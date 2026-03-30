@@ -5,7 +5,7 @@ import { CateringOrderStatus as ApiCateringOrderStatus } from '@/types/api';
 import { CheckCircle, Clock, Package, XCircle, Eye, CreditCard } from 'lucide-react';
 
 interface OrderStatusBadgeProps {
-  status: CateringOrderStatus | ApiCateringOrderStatus;
+  status: CateringOrderStatus | ApiCateringOrderStatus | string;
 }
 
 const statusConfig = {
@@ -57,10 +57,41 @@ const statusConfig = {
     icon: XCircle,
     description: 'This order has been cancelled',
   },
+  pending_admin_review: {
+    label: 'Pending Venue Review',
+    color: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    icon: Clock,
+    description: 'Awaiting venue organiser review',
+  },
+  deposit_paid: {
+    label: 'Deposit Paid',
+    color: 'bg-blue-100 text-blue-800 border-blue-300',
+    icon: CheckCircle,
+    description: 'Deposit received, awaiting catering details',
+  },
+  approved: {
+    label: 'Approved',
+    color: 'bg-green-100 text-green-800 border-green-300',
+    icon: CheckCircle,
+    description: 'Venue review is complete',
+  },
+  rejected: {
+    label: 'Rejected',
+    color: 'bg-red-100 text-red-800 border-red-300',
+    icon: XCircle,
+    description: 'This booking has been rejected',
+  },
 };
 
 export default function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
-  const config = statusConfig[status];
+  const config = statusConfig[status as keyof typeof statusConfig] ?? {
+    label: status
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase()),
+    color: 'bg-gray-100 text-gray-800 border-gray-300',
+    icon: Clock,
+    description: 'Order status updated',
+  };
   const Icon = config.icon;
 
   return (

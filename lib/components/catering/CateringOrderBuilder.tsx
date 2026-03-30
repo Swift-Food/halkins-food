@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { pdf } from "@react-pdf/renderer";
 import { Package, ShoppingBag, X } from "lucide-react";
-import { useCatering } from "@/context/CateringContext";
+import { useActiveCatering } from "@/context/useActiveCatering";
 import { useCoworking } from "@/context/CoworkingContext";
 import { MealSessionState } from "@/types/catering.types";
 import { MenuItem } from "@/types/restaurant.types";
@@ -51,13 +51,30 @@ type PdfPreviewItem = LocalMealSession["orderItems"][number]["item"];
 
 interface CateringOrderBuilderProps {
   nextStep?: number;
+  desktopCheckoutNotice?: React.ReactNode;
+  onContinue?: () => void;
+  disableCheckoutWhenEmpty?: boolean;
+  eventWindow?: {
+    startDate?: string;
+    startTime?: string;
+    endDate?: string;
+    endTime?: string;
+  };
 }
 
 export default function CateringOrderBuilder({
   nextStep = 2,
+  desktopCheckoutNotice,
+  onContinue,
+  disableCheckoutWhenEmpty = false,
+  eventWindow,
 }: CateringOrderBuilderProps) {
   const searchParams = useSearchParams();
   const { eventStartDate, eventStartTime, eventEndDate, eventEndTime } = useCoworking();
+  const resolvedEventStartDate = eventWindow?.startDate || eventStartDate;
+  const resolvedEventStartTime = eventWindow?.startTime || eventStartTime;
+  const resolvedEventEndDate = eventWindow?.endDate || eventEndDate;
+  const resolvedEventEndTime = eventWindow?.endTime || eventEndTime;
   const {
     mealSessions,
     activeSessionIndex,
@@ -74,7 +91,7 @@ export default function CateringOrderBuilder({
     getTotalPrice,
     setCurrentStep,
     eventDetails,
-  } = useCatering();
+  } = useActiveCatering();
 
   const [editingSessionIndex, setEditingSessionIndex] = useState<number | null>(null);
   const [isNewSession, setIsNewSession] = useState(false);
@@ -111,6 +128,7 @@ export default function CateringOrderBuilder({
   );
   const [isViewOrderOpen, setIsViewOrderOpen] = useState(false);
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
+  const hasAnyItems = mealSessions.some((session) => session.orderItems.length > 0);
 
   const lastAutoSelectedSessionTime = useRef<string | null>(null);
   const addDayNavButtonRef = useRef<HTMLButtonElement>(null);
@@ -255,15 +273,15 @@ export default function CateringOrderBuilder({
   }, []);
 
   useEffect(() => {
-    if (!eventStartTime || mealSessions.length === 0) return;
+    if (!resolvedEventStartTime || mealSessions.length === 0) return;
     const firstSession = mealSessions[0];
     if (!firstSession) return;
 
-    const nextCateringTime = getNextCateringTime(eventStartTime);
+    const nextCateringTime = getNextCateringTime(resolvedEventStartTime);
     const currentTime = firstSession.eventTime || "";
     const shouldSync =
       currentTime === "" ||
-      currentTime === eventStartTime ||
+      currentTime === resolvedEventStartTime ||
       currentTime === lastAutoSelectedSessionTime.current;
 
     if (!shouldSync || currentTime === nextCateringTime) {
@@ -275,7 +293,7 @@ export default function CateringOrderBuilder({
 
     updateMealSession(0, { eventTime: nextCateringTime });
     lastAutoSelectedSessionTime.current = nextCateringTime;
-  }, [eventStartTime, mealSessions, updateMealSession]);
+  }, [mealSessions, resolvedEventStartTime, updateMealSession]);
 
   useEffect(() => {
     const bundleId = searchParams.get("bundleId");
@@ -437,12 +455,12 @@ export default function CateringOrderBuilder({
     }
 
     if (
-      eventStartDate &&
-      eventEndDate &&
-      (newDayDate < eventStartDate || newDayDate > eventEndDate)
+      resolvedEventStartDate &&
+      resolvedEventEndDate &&
+      (newDayDate < resolvedEventStartDate || newDayDate > resolvedEventEndDate)
     ) {
       setAddDayError(
-        `Please select a date within the event window: ${eventStartDate} to ${eventEndDate}.`
+        `Please select a date within the event window: ${resolvedEventStartDate} to ${resolvedEventEndDate}.`
       );
       return;
     }
@@ -704,6 +722,10 @@ export default function CateringOrderBuilder({
   };
 
   const handleCheckout = () => {
+    if (disableCheckoutWhenEmpty && !hasAnyItems) {
+      return;
+    }
+
     if (mealSessions.length > 1) {
       const emptyIndex = mealSessions.findIndex((session) => session.orderItems.length === 0);
       if (emptyIndex !== -1) {
@@ -846,6 +868,11 @@ export default function CateringOrderBuilder({
     }
 
     setSessionValidationErrors({});
+    if (onContinue) {
+      onContinue();
+      return;
+    }
+
     setCurrentStep(nextStep);
   };
 
@@ -931,6 +958,7 @@ export default function CateringOrderBuilder({
   };
 
   const activeSession = mealSessions[activeSessionIndex];
+  const activeSessionHasItems = Boolean(activeSession?.orderItems.length);
 
   return (
     <div className="min-h-screen bg-base-100">
@@ -961,10 +989,10 @@ export default function CateringOrderBuilder({
           onUpdate={updateMealSession}
           onClose={handleEditorClose}
           restaurants={restaurants}
-          eventStartDate={eventStartDate}
-          eventStartTime={eventStartTime}
-          eventEndDate={eventEndDate}
-          eventEndTime={eventEndTime}
+          eventStartDate={resolvedEventStartDate}
+          eventStartTime={resolvedEventStartTime}
+          eventEndDate={resolvedEventEndDate}
+          eventEndTime={resolvedEventEndTime}
         />
       )}
 
@@ -1051,9 +1079,17 @@ export default function CateringOrderBuilder({
             />
           </div>
 
-          <div className="hidden h-[calc(100vh-7rem)] flex-shrink-0 self-start md:block md:w-[50%] md:sticky md:top-24 xl:w-[40%]">
+          <div
+            className={`hidden flex-shrink-0 self-start md:block md:w-[50%] md:sticky md:top-24 xl:w-[40%] ${
+              activeSessionHasItems ? "h-[calc(100vh-7rem)]" : ""
+            }`}
+          >
             {activeSession && (
-              <div className="flex h-full flex-col gap-3 overflow-hidden">
+              <div
+                className={`flex flex-col gap-3 ${
+                  activeSessionHasItems ? "h-full overflow-hidden" : ""
+                }`}
+              >
                 <ActiveSessionPanel
                   session={activeSession}
                   sessionIndex={activeSessionIndex}
@@ -1077,12 +1113,17 @@ export default function CateringOrderBuilder({
                   onCheckout={handleCheckout}
                   showCheckoutButton={false}
                   restaurants={restaurants}
+                  contentMaxHeightClass={activeSessionHasItems ? "max-h-[calc(100vh-14rem)]" : undefined}
                 />
+                {desktopCheckoutNotice && <div className="hidden md:block">{desktopCheckoutNotice}</div>}
                 <div className="flex-shrink-0">
                   <button
                     onClick={handleCheckout}
+                    disabled={disableCheckoutWhenEmpty && !hasAnyItems}
                     className={`flex w-full items-center justify-between rounded-xl px-5 py-3 font-semibold text-white transition-colors ${
-                      isCurrentSessionValid
+                      disableCheckoutWhenEmpty && !hasAnyItems
+                        ? "cursor-not-allowed bg-base-300 text-base-content/50"
+                        : isCurrentSessionValid
                         ? "bg-primary hover:bg-primary/90"
                         : "bg-warning hover:bg-warning/90"
                     }`}
@@ -1091,7 +1132,13 @@ export default function CateringOrderBuilder({
                       <span className="text-sm opacity-90">Total</span>
                       <span className="ml-2 text-lg font-bold">£{getTotalPrice().toFixed(2)}</span>
                     </div>
-                    <span>{isCurrentSessionValid ? "Checkout" : "Min. Order Not Met"}</span>
+                    <span>
+                      {disableCheckoutWhenEmpty && !hasAnyItems
+                        ? "Add items to continue"
+                        : isCurrentSessionValid
+                          ? "Checkout"
+                          : "Min. Order Not Met"}
+                    </span>
                   </button>
                 </div>
               </div>

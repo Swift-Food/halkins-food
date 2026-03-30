@@ -35,7 +35,9 @@ export default function ActiveSessionPanel({
   onToggleCategory,
   onViewMenu,
   restaurants,
+  contentMaxHeightClass,
 }: ActiveSessionPanelProps) {
+  const hasItems = session.orderItems.length > 0;
   const totalItemCount = session.orderItems.reduce((sum, oi) => sum + oi.quantity, 0);
 
   const formatDate = (date: string | undefined) => {
@@ -82,7 +84,11 @@ export default function ActiveSessionPanel({
           : "";
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-base-200 bg-white shadow-sm">
+    <div
+      className={`flex flex-col rounded-xl border border-base-200 bg-white shadow-sm ${
+        hasItems ? "overflow-hidden" : ""
+      }`}
+    >
       {isUnscheduled && (
         <div className="flex items-start gap-3 rounded-t-xl border-b border-amber-200 bg-amber-50 p-4">
           <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" />
@@ -148,7 +154,13 @@ export default function ActiveSessionPanel({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        className={
+          hasItems
+            ? ["overflow-y-auto", contentMaxHeightClass].filter(Boolean).join(" ")
+            : ""
+        }
+      >
         {sessionDiscount != null && sessionDiscount > 0 && sessionPromotion && (
           <div className="mx-4 mt-3 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
             <Tag className="h-4 w-4 flex-shrink-0 text-green-600" />
@@ -165,7 +177,7 @@ export default function ActiveSessionPanel({
         )}
 
         <div className="p-4 md:p-5">
-          {session.orderItems.length > 0 ? (
+          {hasItems ? (
             <div className="min-w-0 overflow-hidden">
               <SelectedItemsByCategory
                 sessionIndex={sessionIndex}

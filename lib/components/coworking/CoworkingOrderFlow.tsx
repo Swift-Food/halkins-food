@@ -14,7 +14,7 @@ import CateringOrderBuilder from "@/lib/components/catering/CateringOrderBuilder
 import CoworkingBookingQuestionsStep from "./CoworkingBookingQuestionsStep";
 import Step3ContactInfo from "@/lib/components/catering/Step3ContactDetails";
 import { CoworkingVenue } from "@/types/api";
-import { Calendar, Clock, MapPin, Pencil, X } from "lucide-react";
+import { ArrowRight, Calendar, Clock, MapPin, Pencil, X } from "lucide-react";
 
 const coworkingSteps = [
   { step: 1, label: "Booking details" },
@@ -193,12 +193,14 @@ export default function CoworkingOrderFlow() {
     contactInfo,
     setContactInfo,
     setCurrentStep,
+    mealSessions,
     updateMealSession,
     resetOrder,
   } = useCatering();
 
   const [spaceError, setSpaceError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showSkipCateringModal, setShowSkipCateringModal] = useState(false);
   const [venues, setVenues] = useState<CoworkingVenue[]>([]);
   const hasPrefilledContact = useRef(false);
   const previousStepRef = useRef<number | null>(null);
@@ -208,6 +210,9 @@ export default function CoworkingOrderFlow() {
       eventStartTime &&
       eventEndDate &&
       eventEndTime
+  );
+  const hasSelectedCatering = mealSessions.some(
+    (session) => session.orderItems.length > 0
   );
   const canNavigateToStep = (step: number) =>
     step === 1 || step <= highestVisitedStep;
@@ -492,10 +497,57 @@ export default function CoworkingOrderFlow() {
             />
           )}
           {currentStep === 2 && <CoworkingBookingQuestionsStep />}
-          {currentStep === 3 && <CateringOrderBuilder nextStep={4} />}
+          {currentStep === 3 && (
+            <div className="space-y-4">
+              <CateringOrderBuilder
+                nextStep={4}
+                desktopCheckoutNotice={
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <p className="font-semibold">Catering is optional at this stage.</p>
+                        <p className="mt-1 text-amber-800/85">
+                          Add food now, or continue with the deposit and return to catering later.
+                        </p>
+                      </div>
+                      {!hasSelectedCatering && (
+                        <button
+                          type="button"
+                          onClick={() => setCurrentStep(4)}
+                          className="self-start rounded-full bg-white px-4 py-2 text-sm font-semibold text-primary shadow-sm ring-1 ring-amber-200 transition hover:bg-primary hover:text-white"
+                        >
+                          Skip catering for now
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                }
+              />
+            </div>
+          )}
           {currentStep === 4 && <Step3ContactInfo />}
         </div>
       </div>
+
+      {currentStep === 3 && !hasSelectedCatering && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+          <div className="bg-primary p-4">
+            <button
+              type="button"
+              onClick={() => setShowSkipCateringModal(true)}
+              className="flex w-full items-center justify-between text-white"
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">Skip catering for now</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm opacity-80">Continue</span>
+                <ArrowRight className="h-4 w-4" />
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Edit modal */}
       {showEditModal && (
@@ -511,6 +563,46 @@ export default function CoworkingOrderFlow() {
           initialEnd={eventEndTime}
           venues={venues}
         />
+      )}
+
+      {showSkipCateringModal && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/40 backdrop-blur-sm md:hidden">
+          <div className="w-full rounded-t-[2rem] bg-white px-5 pb-6 pt-5 shadow-2xl">
+            <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-slate-200" />
+            <div className="space-y-3">
+              <div>
+                <p className="text-lg font-bold text-slate-900">Continue without catering?</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Your deposit will secure the venue now. Catering still needs to be added later
+                  before the booking can move into review.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                You can return and add catering from the booking view after payment.
+              </div>
+            </div>
+            <div className="mt-5 space-y-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSkipCateringModal(false);
+                  setCurrentStep(4);
+                }}
+                className="flex w-full items-center justify-between rounded-xl bg-primary px-5 py-3 font-semibold text-white transition-colors hover:bg-primary/90"
+              >
+                <span>Continue to checkout</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSkipCateringModal(false)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700"
+              >
+                Keep browsing catering
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
