@@ -272,9 +272,8 @@ function CoworkingOrderViewPageContent() {
                       Catering still needs to be added
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-600 sm:text-base">
-                      This booking has a venue hold but no catering order yet. Add the food order
-                      on a separate page, then come back here on the order dashboard to review the
-                      full booking.
+                      This booking has a venue hold but no catering order yet. Once the catering
+                      order is placed, it will appear here.
                     </p>
 
                     <div className="mt-6 flex flex-wrap gap-3">

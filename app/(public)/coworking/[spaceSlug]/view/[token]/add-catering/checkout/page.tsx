@@ -258,6 +258,11 @@ function AddCateringCheckoutContent() {
       return;
     }
 
+    if (!phone.trim()) {
+      setError("Enter a contact phone number before submitting.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
     try {
@@ -410,14 +415,17 @@ function AddCateringCheckoutContent() {
                       Contact Details
                     </h4>
                   </div>
-                  <label className={fieldLabelClass}>Telephone</label>
+                  <label className={fieldLabelClass}>
+                    Telephone<span className="text-primary ml-0.5">*</span>
+                  </label>
                   <input
                     value={phone}
                     onChange={(event) => setPhone(event.target.value)}
                     className={fieldClass}
-                    placeholder="Optional phone number"
+                    placeholder="Your phone number"
                     type="tel"
                     autoComplete="tel"
+                    required
                   />
                 </div>
 
@@ -511,43 +519,41 @@ function AddCateringCheckoutContent() {
                   />
                 </div>
 
-                <div className="space-y-4 rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(180deg,#fcfcfd_0%,#f8fafc_100%)] p-4">
-                  <div className="rounded-2xl border border-base-300 bg-base-100 px-4 py-4">
-                    <div className="flex justify-between text-sm text-base-content/70">
-                      <span>Meal sessions</span>
-                      <span>{mealSessionRequests.length}</span>
-                    </div>
-                    <div className="mt-2 flex justify-between text-sm text-base-content/70">
-                      <span>Total portions selected</span>
-                      <span>{totalItems}</span>
-                    </div>
-                    <div className="mt-2 flex justify-between text-sm text-base-content/70">
-                      <span>Food subtotal</span>
-                      <span>£{pricing?.subtotal.toFixed(2) ?? "0.00"}</span>
-                    </div>
-                    <div className="mt-2 flex justify-between text-sm text-base-content/70">
-                      <span>Delivery</span>
-                      <span>
-                        {pricingLoading ? (
-                          <span className="inline-flex items-center gap-2">
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            Calculating
-                          </span>
-                        ) : (
-                          `£${pricing?.deliveryFee.toFixed(2) ?? "0.00"}`
-                        )}
-                      </span>
-                    </div>
-                    <div className="mt-4 flex justify-between border-t border-base-300 pt-3 text-lg font-bold text-base-content">
-                      <span>Catering total</span>
-                      <span>£{pricing?.total.toFixed(2) ?? "0.00"}</span>
-                    </div>
-                    {pricing?.error ? (
-                      <p className="mt-3 text-xs text-warning-content bg-warning/10 border border-warning/30 rounded-lg p-2">
-                        {pricing.error}
-                      </p>
-                    ) : null}
+                <div className="rounded-2xl border border-base-300 bg-base-100 px-4 py-4">
+                  <div className="flex justify-between text-sm text-base-content/70">
+                    <span>Meal sessions</span>
+                    <span>{mealSessionRequests.length}</span>
                   </div>
+                  <div className="mt-2 flex justify-between text-sm text-base-content/70">
+                    <span>Total portions selected</span>
+                    <span>{totalItems}</span>
+                  </div>
+                  <div className="mt-2 flex justify-between text-sm text-base-content/70">
+                    <span>Food subtotal</span>
+                    <span>£{pricing?.subtotal.toFixed(2) ?? "0.00"}</span>
+                  </div>
+                  <div className="mt-2 flex justify-between text-sm text-base-content/70">
+                    <span>Delivery</span>
+                    <span>
+                      {pricingLoading ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Calculating
+                        </span>
+                      ) : (
+                        `£${pricing?.deliveryFee.toFixed(2) ?? "0.00"}`
+                      )}
+                    </span>
+                  </div>
+                  <div className="mt-4 flex justify-between border-t border-base-300 pt-3 text-lg font-bold text-base-content">
+                    <span>Catering total</span>
+                    <span>£{pricing?.total.toFixed(2) ?? "0.00"}</span>
+                  </div>
+                  {pricing?.error ? (
+                    <p className="mt-3 text-xs text-warning-content bg-warning/10 border border-warning/30 rounded-lg p-2">
+                      {pricing.error}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="-mt-1">
@@ -571,7 +577,7 @@ function AddCateringCheckoutContent() {
                 <div className="flex flex-wrap gap-3">
                   <Link
                     href={`/coworking/${spaceSlug}/view/${token}/add-catering`}
-                    className="rounded-full border border-base-300 bg-base-100 px-5 py-3 text-sm font-semibold text-base-content"
+                    className="inline-flex items-center justify-center rounded-2xl border border-base-300 bg-base-100 px-5 py-3 text-sm font-semibold text-base-content"
                   >
                     Back
                   </Link>
