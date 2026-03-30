@@ -534,6 +534,31 @@ export default function Step3ContactInfo() {
         };
       });
 
+    // Flat orderItems across all sessions grouped by restaurant.
+    // Needed by the backend pricing service which does not read mealSessions.
+    const flatOrderItemsByRestaurant = new Map<string, { menuItemId: string; quantity: number; selectedAddons?: { name: string; quantity: number }[] }[]>();
+    mealSessions
+      .filter(session => session.orderItems.length > 0)
+      .forEach(session => {
+        session.orderItems.forEach(({ item, quantity }) => {
+          const restaurantId = item.restaurantId;
+          if (!flatOrderItemsByRestaurant.has(restaurantId)) {
+            flatOrderItemsByRestaurant.set(restaurantId, []);
+          }
+          flatOrderItemsByRestaurant.get(restaurantId)!.push({
+            menuItemId: item.id,
+            quantity,
+            selectedAddons: item.selectedAddons?.map(addon => ({
+              name: addon.name,
+              quantity: addon.quantity,
+            })),
+          });
+        });
+      });
+    const flatOrderItems = Array.from(flatOrderItemsByRestaurant.entries()).map(
+      ([restaurantId, menuItems]) => ({ restaurantId, menuItems })
+    );
+
     const additionalAnswers = bookingQuestionnaire
       ? {
           eventUrl: bookingQuestionnaire.eventUrl,
@@ -559,6 +584,7 @@ export default function Step3ContactInfo() {
         },
         venueId: selectedVenue?.id,
         customerPhone: formData.phone,
+        orderItems: flatOrderItems.length > 0 ? flatOrderItems : undefined,
         mealSessions: builtMealSessions,
         promoCodes:
           hasSelectedCatering && promoCodes.length > 0
