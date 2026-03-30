@@ -77,7 +77,7 @@ export default function PricingSummary({
             Pending Balance
           </p>
           <p className="mt-2 text-sm font-semibold text-slate-900">
-            These are estimated remaining costs for the booking.
+            Catering is shown at its current total, while venue hire remains estimated.
           </p>
           <p className="mt-1 text-sm text-slate-600">
             The deposit below is paid now and deducted from the final amount later.
@@ -198,9 +198,6 @@ export default function PricingSummary({
             <div className="mt-2 flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-slate-900">Estimated Hire Fee</p>
-                <p className="mt-1 text-xs italic text-slate-500">
-                  Pending approval and reduced by the deposit already paid
-                </p>
               </div>
               <p className="text-lg font-bold text-slate-900">
                 £{pricing.venueHireFee!.toFixed(2)}
