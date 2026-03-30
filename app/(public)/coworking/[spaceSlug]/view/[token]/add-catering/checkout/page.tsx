@@ -119,7 +119,7 @@ function AddCateringCheckoutContent() {
             token,
             spaceSlug,
             venueName: orderView.venueName,
-            deliveryAddress: orderView.roomLocationDetails || orderView.venueName || "",
+            deliveryAddress: orderView.venueName || orderView.roomLocationDetails || "",
             deliveryLocation: matchedVenue
               ? { latitude: matchedVenue.latitude, longitude: matchedVenue.longitude }
               : null,

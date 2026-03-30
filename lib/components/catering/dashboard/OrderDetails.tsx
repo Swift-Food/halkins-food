@@ -28,6 +28,14 @@ const formatTime = (time?: string | null) => {
 };
 
 export default function OrderDetails({ order }: OrderDetailsProps) {
+  const locationLabel =
+    (order as CateringOrderResponse & { venueName?: string | null }).venueName ||
+    formatDeliveryAddress(order.deliveryAddress);
+  const coworkingTiming = order as CateringOrderResponse & {
+    bookingStartTime?: string | null;
+    bookingEndTime?: string | null;
+  };
+
   // Calculate event date range from meal sessions
   const eventDateInfo = useMemo(() => {
     const formatDate = (date: string | Date) => {
@@ -39,7 +47,36 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
       });
     };
 
-    // If no meal sessions, fall back to order.eventDate
+    // For coworking orders, always prefer the booking window when available so
+    // Event Details stays consistent before and after catering is added.
+    const bookingStart = coworkingTiming.bookingStartTime;
+    const bookingEnd = coworkingTiming.bookingEndTime;
+    if (bookingStart) {
+      const start = new Date(bookingStart);
+      const end = bookingEnd ? new Date(bookingEnd) : null;
+      const isSingleDate = !end || start.toDateString() === end.toDateString();
+
+      return {
+        isSingleDate,
+        startDate: formatDate(start),
+        startTime: start.toLocaleTimeString("en-GB", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        }),
+        endDate: isSingleDate || !end ? null : formatDate(end),
+        endTime:
+          end && !Number.isNaN(end.getTime())
+            ? end.toLocaleTimeString("en-GB", {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+              })
+            : null,
+      };
+    }
+
+    // If no meal sessions, fall back to top-level event date/time.
     if (!order.mealSessions || order.mealSessions.length === 0) {
       return {
         isSingleDate: true,
@@ -73,7 +110,13 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
       endDate: isSingleDate ? null : formatDate(lastSession.sessionDate),
       endTime: isSingleDate ? null : formatTime(lastSession.eventTime),
     };
-  }, [order.mealSessions, order.eventDate, order.eventTime]);
+  }, [
+    coworkingTiming.bookingEndTime,
+    coworkingTiming.bookingStartTime,
+    order.mealSessions,
+    order.eventDate,
+    order.eventTime,
+  ]);
 
   return (
     <div className="bg-white rounded-xl p-4 sm:p-6">
@@ -119,7 +162,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
           <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-1 flex-shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-xs sm:text-sm text-gray-600">Delivery Address</p>
-            <p className="font-semibold text-sm sm:text-base text-gray-900 break-words">{formatDeliveryAddress(order.deliveryAddress)}</p>
+            <p className="font-semibold text-sm sm:text-base text-gray-900 break-words">{locationLabel}</p>
           </div>
         </div>
 

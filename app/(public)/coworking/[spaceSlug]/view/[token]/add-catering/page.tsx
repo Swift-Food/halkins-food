@@ -78,7 +78,7 @@ function AddCateringPageContent() {
           token,
           spaceSlug,
           venueName: orderView.venueName,
-          deliveryAddress: orderView.roomLocationDetails || orderView.venueName || "",
+          deliveryAddress: orderView.venueName || orderView.roomLocationDetails || "",
           deliveryLocation: matchedVenue
             ? {
                 latitude: matchedVenue.latitude,

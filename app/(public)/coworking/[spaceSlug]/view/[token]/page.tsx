@@ -51,6 +51,17 @@ function formatDateTime(value?: string | null) {
   });
 }
 
+function getDisplayOrder(order: CoworkingOrderViewResponse): CoworkingOrderViewResponse {
+  return {
+    ...order,
+    eventDate: order.eventDate || order.bookingStartTime || "",
+    deliveryAddress: order.venueName || order.deliveryAddress || order.roomLocationDetails || "",
+    customerName: order.customerName || "Booking owner",
+    customerEmail: order.customerEmail || order.memberEmail || "",
+    customerPhone: order.customerPhone || "",
+  };
+}
+
 function CoworkingOrderViewPageContent() {
   const params = useParams();
   const spaceSlug = params.spaceSlug as string;
@@ -211,6 +222,7 @@ function CoworkingOrderViewPageContent() {
   const orderReference = getOrderReference(order);
   const orderIdentifier = getOrderIdentifier(order);
   const hasCatering = Boolean(order.mealSessions && order.mealSessions.length > 0);
+  const displayOrder = getDisplayOrder(order);
   const bookingOwnerLoggedIn =
     !!member?.email &&
     !!order.memberEmail &&
@@ -246,9 +258,10 @@ function CoworkingOrderViewPageContent() {
         </div>
 
         {!hasCatering && order.requiresCatering ? (
-          <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_0.9fr] gap-4 sm:gap-6">
-            <div className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               <OrderStatusTimeline status={order.status} />
+              <OrderDetails order={displayOrder} />
               <div className="bg-white rounded-xl p-6 sm:p-8 shadow-sm">
                 <div className="flex items-start gap-4">
                   <div className="rounded-2xl bg-[#bd2429]/10 p-3">
@@ -260,7 +273,8 @@ function CoworkingOrderViewPageContent() {
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-600 sm:text-base">
                       This booking has a venue hold but no catering order yet. Add the food order
-                      on a separate page, then come back here to review the full booking.
+                      on a separate page, then come back here on the order dashboard to review the
+                      full booking.
                     </p>
 
                     <div className="mt-6 flex flex-wrap gap-3">
@@ -273,13 +287,6 @@ function CoworkingOrderViewPageContent() {
                           <ArrowRight className="h-4 w-4" />
                         </Link>
                       ) : null}
-
-                      <Link
-                        href={`/coworking/${spaceSlug}`}
-                        className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700"
-                      >
-                        Back to coworking
-                      </Link>
                     </div>
 
                     {isAuthenticated && !bookingOwnerLoggedIn ? (
@@ -293,32 +300,8 @@ function CoworkingOrderViewPageContent() {
             </div>
 
             <div className="space-y-4 sm:space-y-6">
-              <div className="bg-white rounded-xl p-6 shadow-sm">
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                  <MapPin className="h-4 w-4" />
-                  Event location
-                </div>
-                <p className="mt-3 text-base font-semibold text-slate-900">
-                  {order.venueName || "Venue confirmed"}
-                </p>
-                {order.roomLocationDetails ? (
-                  <p className="mt-1 text-sm text-slate-600">{order.roomLocationDetails}</p>
-                ) : null}
-              </div>
-
-              {(bookingStartLabel || bookingEndLabel) && (
-                <div className="bg-white rounded-xl p-6 shadow-sm">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                    <CalendarDays className="h-4 w-4" />
-                    Event window
-                  </div>
-                  <div className="mt-3 space-y-1 text-sm text-slate-600">
-                    {bookingStartLabel ? <p>Start: {bookingStartLabel}</p> : null}
-                    {bookingEndLabel ? <p>End: {bookingEndLabel}</p> : null}
-                    {order.bookingReference ? <p>Booking reference: {order.bookingReference}</p> : null}
-                  </div>
-                </div>
-              )}
+              <DeliveryInfo order={displayOrder} />
+              <OrderSummary order={displayOrder} depositOnly />
             </div>
           </div>
         ) : (
@@ -328,7 +311,7 @@ function CoworkingOrderViewPageContent() {
               {order.mealSessions && order.mealSessions.length > 0 && (
                 <DeliveryTracking sessions={order.mealSessions} trackingData={deliveryTracking} />
               )}
-              <OrderDetails order={order} />
+              <OrderDetails order={displayOrder} />
               {isManager && (
                 <DeliveryTimeManager order={order} onUpdate={loadOrder} accessToken={token} />
               )}
@@ -340,7 +323,7 @@ function CoworkingOrderViewPageContent() {
             </div>
 
             <div className="space-y-4 sm:space-y-6">
-              <DeliveryInfo order={order} />
+              <DeliveryInfo order={displayOrder} />
               <OrderSummary order={order} />
 
               {refunds.length > 0 && <RefundsList refunds={refunds} />}
