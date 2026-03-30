@@ -94,6 +94,45 @@ const STORAGE_KEYS = {
   SELECTED_ITEMS: "catering_selected_items",
 };
 
+const CHECKOUT_SNAPSHOT_KEY = "catering_checkout_storage_snapshot";
+
+export function saveCateringStorageSnapshot() {
+  if (typeof window === "undefined") return;
+
+  const snapshot = Object.fromEntries(
+    Object.values(STORAGE_KEYS).map((key) => [key, localStorage.getItem(key)])
+  );
+
+  localStorage.setItem(CHECKOUT_SNAPSHOT_KEY, JSON.stringify(snapshot));
+}
+
+export function restoreCateringStorageSnapshot() {
+  if (typeof window === "undefined") return false;
+
+  const rawSnapshot = localStorage.getItem(CHECKOUT_SNAPSHOT_KEY);
+  if (!rawSnapshot) return false;
+
+  try {
+    const snapshot = JSON.parse(rawSnapshot) as Record<string, string | null>;
+
+    Object.entries(snapshot).forEach(([key, value]) => {
+      if (value !== null) {
+        localStorage.setItem(key, value);
+      }
+    });
+
+    return true;
+  } catch (error) {
+    console.error("Failed to restore catering checkout snapshot:", error);
+    return false;
+  }
+}
+
+export function clearCateringStorageSnapshot() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(CHECKOUT_SNAPSHOT_KEY);
+}
+
 export function CateringProvider({ children }: { children: ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [currentStep, setCurrentStepState] = useState(1);

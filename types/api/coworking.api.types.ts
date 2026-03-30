@@ -105,6 +105,9 @@ export interface CoworkingMealSessionRequest {
   sessionName?: string;
   sessionDate: string; // "YYYY-MM-DD"
   eventTime: string; // "HH:MM"
+  collectionTime?: string; // "HH:MM"
+  guestCount?: number;
+  specialRequirements?: string;
   orderItems: CoworkingRestaurantOrder[];
 }
 
@@ -280,6 +283,7 @@ export interface CoworkingCheckoutPricingResponse {
   subtotal: number;
   deliveryFee: number;
   restaurantPromotionDiscount?: number;
+  promotionDiscount?: number;
   totalDiscount?: number;
   promoDiscount?: number;
   venueHireFee?: number;
@@ -301,6 +305,18 @@ export interface CoworkingCheckoutPricingResponse {
     perDayRate: number;
     days: number;
   } | null;
+  appliedPromotions?: Array<{
+    restaurantId: string;
+    promotionId: string;
+    name: string;
+    promotionType: string;
+    discountPercentage: number | string;
+    discountTiers?: Array<{
+      minQuantity: number;
+      discountPercentage: number;
+    }> | null;
+    discount: number;
+  }>;
 }
 
 /**

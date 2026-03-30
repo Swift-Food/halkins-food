@@ -18,6 +18,69 @@ const STORAGE_KEYS = {
   VENUE_SELECTION: "coworking_venue_selection",
 } as const;
 
+const CHECKOUT_SNAPSHOT_KEY = "coworking_checkout_session_snapshot";
+
+export function saveCoworkingSessionSnapshot() {
+  if (typeof window === "undefined") return;
+
+  const snapshot = {
+    accessToken: coworkingService.getSessionToken(),
+    refreshToken: coworkingService.getRefreshToken(),
+    spaceSlug: coworkingService.getSpaceSlug(),
+    memberInfo: sessionStorage.getItem(STORAGE_KEYS.MEMBER_INFO),
+    spaceInfo: sessionStorage.getItem(STORAGE_KEYS.SPACE_INFO),
+    venueSelection: sessionStorage.getItem(STORAGE_KEYS.VENUE_SELECTION),
+  };
+
+  localStorage.setItem(CHECKOUT_SNAPSHOT_KEY, JSON.stringify(snapshot));
+}
+
+export function restoreCoworkingSessionSnapshot() {
+  if (typeof window === "undefined") return false;
+
+  const rawSnapshot = localStorage.getItem(CHECKOUT_SNAPSHOT_KEY);
+  if (!rawSnapshot) return false;
+
+  try {
+    const snapshot = JSON.parse(rawSnapshot) as {
+      accessToken?: string | null;
+      refreshToken?: string | null;
+      spaceSlug?: string | null;
+      memberInfo?: string | null;
+      spaceInfo?: string | null;
+      venueSelection?: string | null;
+    };
+
+    if (snapshot.accessToken && snapshot.refreshToken) {
+      coworkingService.setTokens(
+        snapshot.accessToken,
+        snapshot.refreshToken,
+        snapshot.spaceSlug ?? undefined
+      );
+    }
+
+    if (snapshot.memberInfo) {
+      sessionStorage.setItem(STORAGE_KEYS.MEMBER_INFO, snapshot.memberInfo);
+    }
+    if (snapshot.spaceInfo) {
+      sessionStorage.setItem(STORAGE_KEYS.SPACE_INFO, snapshot.spaceInfo);
+    }
+    if (snapshot.venueSelection) {
+      sessionStorage.setItem(STORAGE_KEYS.VENUE_SELECTION, snapshot.venueSelection);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Failed to restore coworking checkout snapshot:", error);
+    return false;
+  }
+}
+
+export function clearCoworkingSessionSnapshot() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(CHECKOUT_SNAPSHOT_KEY);
+}
+
 export function clearCoworkingSessionStorage() {
   if (typeof window === "undefined") return;
 

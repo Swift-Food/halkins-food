@@ -4,7 +4,11 @@
 
 import { useState, FormEvent, useEffect, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
-import { useCatering } from "@/context/CateringContext";
+import {
+  clearCateringStorageSnapshot,
+  saveCateringStorageSnapshot,
+  useCatering,
+} from "@/context/CateringContext";
 import { cateringService } from "@/services/api/catering.api";
 import { SessionExpiredError } from "@/services/api/coworking.api";
 import { CateringPricingResult, ContactInfo } from "@/types/catering.types";
@@ -23,6 +27,7 @@ import PricingSummary from "./contact/PricingSummary";
 import { coworkingService } from "@/services/api";
 import { CreateCoworkingOrderRequest, type CoworkingCheckoutPricingResponse } from "@/types/api";
 import {
+  saveCoworkingSessionSnapshot,
   useCoworking,
 } from "@/context/CoworkingContext";
 import CoworkingAuthForm from "@/lib/components/coworking/CoworkingAuthForm";
@@ -500,13 +505,20 @@ export default function Step3ContactInfo() {
     }
 
     const firstSession = mealSessions[0];
-    const sessionDate = firstSession?.sessionDate || '';
-    const sessionTime = firstSession?.eventTime || eventDetails?.eventTime || '';
+    const sessionDate =
+      eventStartDate || firstSession?.sessionDate || eventDetails?.eventDate || "";
+    const sessionTime =
+      eventStartTime || firstSession?.eventTime || eventDetails?.eventTime || "";
+    const endDate = eventEndDate || sessionDate;
+    const endTime = eventEndTime || sessionTime;
+
+    const nonEmptyMealSessions = mealSessions.filter(
+      (session) => session.orderItems.length > 0
+    );
 
     // Build per-session meal sessions with items grouped by restaurant
-    const builtMealSessions = mealSessions
-      .filter(session => session.orderItems.length > 0)
-      .map(session => {
+    const builtMealSessions = nonEmptyMealSessions
+      .map((session, index) => {
         const itemsByRestaurant = new Map<string, { menuItemId: string; quantity: number; selectedAddons?: { name: string; quantity: number }[] }[]>();
         session.orderItems.forEach(({ item, quantity }) => {
           const restaurantId = item.restaurantId;
@@ -524,9 +536,12 @@ export default function Step3ContactInfo() {
         });
 
         return {
-          sessionName: session.sessionName,
+          sessionName: session.sessionName || `Session ${index + 1}`,
           sessionDate: session.sessionDate,
           eventTime: session.eventTime,
+          collectionTime: session.eventTime,
+          guestCount: session.guestCount,
+          specialRequirements: session.specialRequirements,
           orderItems: Array.from(itemsByRestaurant.entries()).map(([restaurantId, menuItems]) => ({
             restaurantId,
             menuItems,
@@ -559,6 +574,31 @@ export default function Step3ContactInfo() {
       ([restaurantId, menuItems]) => ({ restaurantId, menuItems })
     );
 
+    // The coworking backend accepts both flat orderItems and mealSessions.
+    // If session metadata has fallen out of sync but we still have items plus
+    // a booking window, synthesize a single meal session so downstream DTOs
+    // always receive the delivery timing context they expect.
+    const fallbackMealSessions =
+      builtMealSessions.length === 0 &&
+      flatOrderItems.length > 0 &&
+      sessionDate &&
+      sessionTime
+        ? [
+            {
+              sessionName: "Main Event",
+              sessionDate,
+              eventTime: sessionTime,
+              collectionTime: sessionTime,
+              guestCount: eventDetails?.guestCount,
+              specialRequirements: specialInstructions || undefined,
+              orderItems: flatOrderItems,
+            },
+          ]
+        : [];
+
+    const mealSessionsPayload =
+      builtMealSessions.length > 0 ? builtMealSessions : fallbackMealSessions;
+
     const additionalAnswers = bookingQuestionnaire
       ? {
           eventUrl: bookingQuestionnaire.eventUrl,
@@ -579,13 +619,13 @@ export default function Step3ContactInfo() {
       orderData: {
         deliveryAddress,
         deliveryLocation: {
-          latitude: deliveryLat,
-          longitude: deliveryLng,
+          latitude: Number(deliveryLat),
+          longitude: Number(deliveryLng),
         },
         venueId: selectedVenue?.id,
         customerPhone: formData.phone,
         orderItems: flatOrderItems.length > 0 ? flatOrderItems : undefined,
-        mealSessions: builtMealSessions,
+        mealSessions: mealSessionsPayload.length > 0 ? mealSessionsPayload : undefined,
         promoCodes:
           hasSelectedCatering && promoCodes.length > 0
             ? promoCodes
@@ -598,8 +638,8 @@ export default function Step3ContactInfo() {
           deliveryDate: sessionDate,
           deliveryTime: sessionTime,
         }),
-        ...(eventEndDate && eventEndTime && {
-          eventEndDateTime: `${eventEndDate}T${eventEndTime}:00`,
+        ...(endDate && endTime && {
+          eventEndDateTime: `${endDate}T${endTime}:00`,
         }),
         ...(additionalAnswers && { additionalAnswers }),
       },
@@ -625,6 +665,9 @@ export default function Step3ContactInfo() {
 
       
       const { spaceSlug, orderData } = buildCoworkingOrderData();
+      clearCateringStorageSnapshot();
+      saveCateringStorageSnapshot();
+      saveCoworkingSessionSnapshot();
       const checkoutResponse = await coworkingService.createCheckoutSession(
         spaceSlug,
         orderData
@@ -1058,7 +1101,7 @@ export default function Step3ContactInfo() {
                 {panelTitle}
               </h3>
 
-              <form onSubmit={handleSubmit} className="space-y-10">
+              <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Delivery Address */}
                 <div>
                   <div className="rounded-2xl border border-base-300 bg-base-100/80 px-4 py-4">
@@ -1124,7 +1167,7 @@ export default function Step3ContactInfo() {
                 )}
 
                 {/* Special Instructions */}
-                <div className="-mt-4 pt-2">
+                <div className="-mt-2">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-8 h-8 rounded-lg bg-gray-200 border border-gray-300 flex items-center justify-center text-base-content/70">
                       <FileText size={18} />
@@ -1166,15 +1209,18 @@ export default function Step3ContactInfo() {
                 )}
 
                 {depositInfo && (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm">
-                    <div className="flex justify-between items-center">
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                    <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="font-semibold text-amber-900">Deposit due now</p>
-                        <p className="text-amber-700 mt-0.5">
+                        <p className="text-sm font-semibold text-amber-950">Deposit due now</p>
+                        <p className="mt-1 text-xs text-amber-800/75">
                           £{depositInfo.perDayRate.toFixed(2)} × {depositInfo.days} day{depositInfo.days !== 1 ? "s" : ""}
                         </p>
+                        <p className="mt-1 text-xs text-amber-800/75">
+                          Deducted from the final booking balance later
+                        </p>
                       </div>
-                      <p className="text-lg font-bold text-amber-900">
+                      <p className="text-xl font-bold text-amber-950">
                         £{depositInfo.amount.toFixed(2)}
                       </p>
                     </div>
@@ -1182,7 +1228,7 @@ export default function Step3ContactInfo() {
                 )}
 
                 {/* Important Notes */}
-                <div>
+                <div className="-mt-1">
                   <div className="w-full bg-orange-50/50 border border-orange-200 rounded-xl p-4">
                     <button
                       type="button"
