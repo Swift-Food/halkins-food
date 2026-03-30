@@ -133,6 +133,11 @@ export function clearCateringStorageSnapshot() {
   localStorage.removeItem(CHECKOUT_SNAPSHOT_KEY);
 }
 
+export function clearCateringOrderStorage() {
+  if (typeof window === "undefined") return;
+  Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+}
+
 export function CateringProvider({ children }: { children: ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [currentStep, setCurrentStepState] = useState(1);
@@ -525,7 +530,7 @@ export function CateringProvider({ children }: { children: ReactNode }) {
   };
 
   const clearOrderStorage = () => {
-    Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+    clearCateringOrderStorage();
   };
 
   const resetOrder = () => {

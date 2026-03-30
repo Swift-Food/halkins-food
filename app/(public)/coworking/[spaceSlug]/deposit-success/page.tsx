@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -12,6 +12,7 @@ import {
   ReceiptPoundSterling,
 } from "lucide-react";
 import {
+  clearCateringOrderStorage,
   clearCateringStorageSnapshot,
 } from "@/context/CateringContext";
 import { coworkingService } from "@/services/api/coworking.api";
@@ -36,7 +37,6 @@ function formatDateTime(value?: string | null) {
 
 export default function CoworkingDepositSuccessPage() {
   const params = useParams<{ spaceSlug: string }>();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const spaceSlug = params.spaceSlug;
   const sessionId =
@@ -64,12 +64,7 @@ export default function CoworkingDepositSuccessPage() {
 
         clearCoworkingSessionSnapshot();
         clearCateringStorageSnapshot();
-
-        if (result.accessToken) {
-          router.replace(`/coworking/${spaceSlug}/view/${result.accessToken}`);
-          return;
-        }
-
+        clearCateringOrderStorage();
         setOrderView(result);
       } catch (err) {
         if (cancelled) return;
@@ -91,7 +86,7 @@ export default function CoworkingDepositSuccessPage() {
     return () => {
       cancelled = true;
     };
-  }, [router, sessionId, spaceSlug]);
+  }, [sessionId, spaceSlug]);
 
   const bookingStartLabel = formatDateTime(orderView?.bookingStartTime);
   const bookingEndLabel = formatDateTime(orderView?.bookingEndTime);
@@ -222,15 +217,29 @@ export default function CoworkingDepositSuccessPage() {
           </div>
 
           <div className="flex flex-wrap gap-3">
+            {orderView?.accessToken && !requiresCatering ? (
+              <Link
+                href={`/coworking/${spaceSlug}/view/${orderView.accessToken}`}
+                className="inline-flex items-center gap-2 rounded-full bg-[#bd2429] px-5 py-3 text-sm font-semibold text-white"
+              >
+                View booking
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            ) : null}
+
             {requiresCatering ? (
               <Link
-                href={`/coworking/${spaceSlug}`}
+                href={
+                  orderView?.accessToken
+                    ? `/coworking/${spaceSlug}/view/${orderView.accessToken}`
+                    : `/coworking/${spaceSlug}`
+                }
                 className="inline-flex items-center gap-2 rounded-full bg-[#bd2429] px-5 py-3 text-sm font-semibold text-white"
               >
                 Add catering now
                 <ArrowRight className="h-4 w-4" />
               </Link>
-            ) : (
+            ) : !orderView?.accessToken ? (
               <Link
                 href={`/coworking/${spaceSlug}`}
                 className="inline-flex items-center gap-2 rounded-full bg-[#bd2429] px-5 py-3 text-sm font-semibold text-white"
@@ -238,7 +247,7 @@ export default function CoworkingDepositSuccessPage() {
                 Back to coworking
                 <ArrowRight className="h-4 w-4" />
               </Link>
-            )}
+            ) : null}
 
             <Link
               href={`/coworking/${spaceSlug}`}
