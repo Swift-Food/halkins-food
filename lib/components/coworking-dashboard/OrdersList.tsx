@@ -9,7 +9,6 @@ import {
   Hash,
   List,
   MapPin,
-  PlayCircle,
   User,
   XCircle,
 } from "lucide-react";
@@ -34,7 +33,6 @@ const statusTabs: {
   { value: "awaiting_catering", label: "Awaiting Catering", icon: Clock, color: "bg-blue-100 text-blue-700" },
   { value: "needs_review", label: "Needs Review", icon: AlertTriangle, color: "bg-amber-100 text-amber-700" },
   { value: "upcoming", label: "Upcoming", icon: Clock, color: "bg-yellow-100 text-yellow-700" },
-  { value: "active", label: "Active", icon: PlayCircle, color: "bg-blue-100 text-blue-700" },
   { value: "completed", label: "Completed", icon: CheckCircle, color: "bg-green-100 text-green-700" },
   { value: "cancelled", label: "Cancelled", icon: XCircle, color: "bg-red-100 text-red-700" },
 ];
@@ -215,7 +213,7 @@ export default function OrdersList({
                     </span>
                     <span className="flex items-center gap-1">
                       <Hash className="h-3.5 w-3.5" />
-                      {order.bookingReference}
+                      {order.id.slice(0, 4)}
                     </span>
                     {order.roomLocationDetails && (
                       <span className="flex items-center gap-1">

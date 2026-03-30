@@ -90,6 +90,7 @@ export interface CreateCoworkingOrderRequest {
   bookingReference?: string;
   roomLocation?: string; // max 200 chars
   customerPhone?: string;
+  
   orderItems?: CoworkingRestaurantOrder[]; // flat items (single-session fallback)
   mealSessions?: CoworkingMealSessionRequest[]; // per-session items with date/time
   specialInstructions?: string; // max 1000 chars
@@ -402,6 +403,6 @@ export interface CoworkingOrderViewResponse extends CateringOrderResponse {
   bookingReference: string | null;
   roomLocationDetails: string | null;
   requiresCatering: boolean;
-  currentUserRole: "viewer" | "editor" | "manager" | null;
+  currentUserRole: "viewer" | "manager" | null;
   mealSessions?: MealSessionResponse[];
 }

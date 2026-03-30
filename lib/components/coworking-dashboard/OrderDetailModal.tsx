@@ -246,6 +246,7 @@ export default function OrderDetailModal({
       setShowRejectInput(false);
       setRejectReason("");
       onOrderUpdated?.();
+      onClose();
     } catch (caughtError: unknown) {
       setActionError(getErrorMessage(caughtError, "Failed to reject order"));
     } finally {
@@ -480,7 +481,7 @@ export default function OrderDetailModal({
                   <div className="space-y-1.5 text-sm text-gray-700">
                     <p className="flex items-center gap-2">
                       <Hash className="h-4 w-4 text-gray-400" />
-                      Ref: {order.booking.reference}
+                      Ref: {order.id.slice(0, 4)}
                     </p>
                     {order.booking.venueName && (
                       <p className="flex items-center gap-2 font-semibold text-primary">
@@ -558,6 +559,7 @@ export default function OrderDetailModal({
                   </div>
                 )}
 
+                {!isDepositPaid && (
                 <div className="space-y-2 rounded-lg bg-gray-50 p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <Receipt className="h-4 w-4 text-primary" />
@@ -578,61 +580,7 @@ export default function OrderDetailModal({
                         {formatCurrency(order.total.deliveryFee)}
                       </span>
                     </div>
-                    {!isDepositPaid && (
-                      <>
-                        {feeIsLocked ? (
-                          <div className="flex justify-between text-sm text-gray-700">
-                            <span>Event Hire Fee</span>
-                            <span className="font-semibold">
-                              {formatCurrency(order.total.venueHireFee || 0)}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
-                            <div className="flex items-center gap-1.5">
-                              <label className="block text-xs font-semibold text-indigo-700">
-                                Event Hire Fee
-                              </label>
-                              <div className="group relative">
-                                <Info className="h-3.5 w-3.5 cursor-help text-indigo-400" />
-                                <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-72 -translate-x-1/2 rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
-                                  <p className="mb-2 font-semibold">How the event hire fee works:</p>
-                                  <ul className="list-disc space-y-1 pl-3.5">
-                                    <li>The pre-filled amount is an auto-calculated suggestion based on the catering subtotal.</li>
-                                    <li>You can adjust it to any amount before sending.</li>
-                                    <li>Clicking &quot;Send Quote&quot; saves the fee and emails the customer a full breakdown of their order total.</li>
-                                    <li>You can update the fee and resend at any time — the customer will receive an updated quote email.</li>
-                                    <li>Once the customer has paid, the fee can no longer be changed.</li>
-                                  </ul>
-                                  <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="relative flex-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">£</span>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  value={venueHireFeeInput}
-                                  onChange={(e) => setVenueHireFeeInput(e.target.value)}
-                                  placeholder="0.00"
-                                  className="w-full rounded-lg border border-indigo-300 py-2 pl-7 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                                />
-                              </div>
-                              <button
-                                onClick={handleSetVenueHireFee}
-                                disabled={actionLoading !== null || !venueHireFeeInput}
-                                className="whitespace-nowrap rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                              >
-                                {actionLoading === "setFee" ? "Sending..." : "Send Quote"}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    )}
+                  
                     <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900">
                       <span>Total</span>
                       <span className="text-primary">
@@ -647,6 +595,7 @@ export default function OrderDetailModal({
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* Action section — only shown for deposit_paid (reject only) or pending_admin_review (approve + reject) */}
                 {(isDepositPaid || isPendingAdminReview) && (

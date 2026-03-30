@@ -540,6 +540,7 @@ class CoworkingService {
     spaceSlug: string,
     data: CreateCoworkingOrderRequest
   ): Promise<CoworkingCreateCheckoutResponse> {
+    console.log("data is", JSON.stringify(data))
     const response = await this.fetchWithSession(
       `${API_BASE_URL}${API_ENDPOINTS.COWORKING_CREATE_CHECKOUT(spaceSlug)}`,
       {

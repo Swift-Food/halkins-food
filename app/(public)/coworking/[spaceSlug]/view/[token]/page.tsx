@@ -73,7 +73,7 @@ function CoworkingOrderViewPageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<
-    "viewer" | "editor" | "manager" | null
+    "viewer" | "manager" | null
   >(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
@@ -81,15 +81,17 @@ function CoworkingOrderViewPageContent() {
     Record<string, DeliveryTrackingDto>
   >({});
 
+
   const loadOrder = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await coworkingService.getOrderViewByToken(spaceSlug, token);
       setOrder(data);
-
+      console.log("data is", JSON.stringify(data))
       setCurrentUserRole(
-        data.currentUserRole ||
+        (token === data.accessToken ? "manager" : null) ||
+          data.currentUserRole ||
           data.sharedAccessUsers?.find((u) => u.accessToken === token)?.role ||
           null
       );
@@ -100,20 +102,20 @@ function CoworkingOrderViewPageContent() {
     }
   }, [spaceSlug, token]);
 
-  const loadRefunds = useCallback(async () => {
-    if (!order) return;
-    const refundOrderId = getOrderIdentifier(order);
-    if (!refundOrderId) return;
-    setLoadingRefunds(true);
-    try {
-      const data = await refundService.getOrderRefunds(refundOrderId);
-      setRefunds(data);
-    } catch (err) {
-      console.error("Failed to load refunds:", err);
-    } finally {
-      setLoadingRefunds(false);
-    }
-  }, [order]);
+  // const loadRefunds = useCallback(async () => {
+  //   if (!order) return;
+  //   const refundOrderId = getOrderIdentifier(order);
+  //   if (!refundOrderId) return;
+  //   setLoadingRefunds(true);
+  //   try {
+  //     const data = await refundService.getOrderRefunds(refundOrderId);
+  //     setRefunds(data);
+  //   } catch (err) {
+  //     console.error("Failed to load refunds:", err);
+  //   } finally {
+  //     setLoadingRefunds(false);
+  //   }
+  // }, [order]);
 
   const loadDeliveryTracking = useCallback(async (orderData: CateringOrderResponse) => {
     const trackableStatuses = [
@@ -148,10 +150,10 @@ function CoworkingOrderViewPageContent() {
 
   useEffect(() => {
     if (order && order.mealSessions && order.mealSessions.length > 0) {
-      loadRefunds();
+      // loadRefunds();
       loadDeliveryTracking(order);
     }
-  }, [loadDeliveryTracking, loadRefunds, order]);
+  }, [loadDeliveryTracking,  order]);
 
   const handleDownloadPdf = () => {
     if (!order) return;
@@ -217,8 +219,10 @@ function CoworkingOrderViewPageContent() {
       </div>
     );
   }
-
+  console.log("current user", currentUserRole)
   const isManager = currentUserRole === "manager";
+
+
   const orderReference = getOrderReference(order);
   const orderIdentifier = getOrderIdentifier(order);
   const hasCatering = Boolean(order.mealSessions && order.mealSessions.length > 0);
