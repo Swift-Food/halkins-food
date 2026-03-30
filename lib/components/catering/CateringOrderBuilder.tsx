@@ -931,6 +931,7 @@ export default function CateringOrderBuilder({
   };
 
   const activeSession = mealSessions[activeSessionIndex];
+  const activeSessionHasItems = Boolean(activeSession?.orderItems.length);
 
   return (
     <div className="min-h-screen bg-base-100">
@@ -1051,9 +1052,17 @@ export default function CateringOrderBuilder({
             />
           </div>
 
-          <div className="hidden h-[calc(100vh-7rem)] flex-shrink-0 self-start md:block md:w-[50%] md:sticky md:top-24 xl:w-[40%]">
+          <div
+            className={`hidden flex-shrink-0 self-start md:block md:w-[50%] md:sticky md:top-24 xl:w-[40%] ${
+              activeSessionHasItems ? "h-[calc(100vh-7rem)]" : ""
+            }`}
+          >
             {activeSession && (
-              <div className="flex h-full flex-col gap-3 overflow-hidden">
+              <div
+                className={`flex flex-col gap-3 ${
+                  activeSessionHasItems ? "h-full overflow-hidden" : ""
+                }`}
+              >
                 <ActiveSessionPanel
                   session={activeSession}
                   sessionIndex={activeSessionIndex}
@@ -1077,6 +1086,7 @@ export default function CateringOrderBuilder({
                   onCheckout={handleCheckout}
                   showCheckoutButton={false}
                   restaurants={restaurants}
+                  contentMaxHeightClass={activeSessionHasItems ? "max-h-[calc(100vh-14rem)]" : undefined}
                 />
                 <div className="flex-shrink-0">
                   <button
