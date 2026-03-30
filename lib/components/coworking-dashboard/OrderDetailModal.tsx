@@ -14,7 +14,6 @@ import {
   MapPin,
   Clock,
   Receipt,
-  Check,
   XCircle,
   ChevronLeft,
   ChevronRight,
@@ -84,6 +83,7 @@ const questionLookup = questionsConfig.sections.reduce<
 }, {});
 
 const statusBadgeColor: Record<string, string> = {
+  deposit_paid: "bg-blue-100 text-blue-800 border-blue-300",
   pending_review: "bg-yellow-100 text-yellow-800 border-yellow-300",
   pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
   admin_reviewed: "bg-blue-100 text-blue-800 border-blue-300",
@@ -99,6 +99,7 @@ const statusBadgeColor: Record<string, string> = {
 };
 
 const statusLabel: Record<string, string> = {
+  deposit_paid: "Date Hold",
   pending_review: "Under Review",
   admin_reviewed: "Awaiting Restaurants",
   restaurant_reviewed: "Awaiting Payment",
@@ -144,6 +145,40 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function DepositInfoCard({ deposit }: { deposit: DashboardOrderDetailResponse['deposit'] }) {
+  if (!deposit) return null;
+
+  const paidDate = deposit.paidAt
+    ? new Date(deposit.paidAt).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : null;
+
+  return (
+    <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 mb-2">
+        Deposit
+      </p>
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-blue-800 font-semibold">
+          £{deposit.amount.toFixed(2)}
+        </span>
+        <span className="text-blue-600 text-xs">
+          {deposit.status === "paid" ? "Paid" : deposit.status}
+          {paidDate ? ` · ${paidDate}` : ""}
+        </span>
+      </div>
+      {deposit.perDayRate != null && deposit.days != null && (
+        <p className="text-xs text-blue-500 mt-1">
+          £{deposit.perDayRate}/day × {deposit.days} day{deposit.days !== 1 ? "s" : ""}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function OrderDetailModal({
   spaceId,
   orderId,
@@ -156,14 +191,13 @@ export default function OrderDetailModal({
   const [isSheetVisible, setIsSheetVisible] = useState(false);
 
   const [actionLoading, setActionLoading] = useState<
-    "approve" | "reject" | "setFee" | null
+    "reject" | "setFee" | null
   >(null);
   const [actionError, setActionError] = useState("");
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [showResponses, setShowResponses] = useState(false);
   const [venueHireFeeInput, setVenueHireFeeInput] = useState("");
-  const [depositAmountInput, setDepositAmountInput] = useState("");
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -198,25 +232,6 @@ export default function OrderDetailModal({
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
-
-  const handleApprove = async () => {
-    setActionLoading("approve");
-    setActionError("");
-    try {
-      const deposit = depositAmountInput ? parseFloat(depositAmountInput) : undefined;
-      const updated = await coworkingDashboardService.approveOrder(
-        spaceId,
-        orderId,
-        deposit,
-      );
-      setOrder(updated);
-      onOrderUpdated?.();
-    } catch (caughtError: unknown) {
-      setActionError(getErrorMessage(caughtError, "Failed to approve order"));
-    } finally {
-      setActionLoading(null);
-    }
-  };
 
   const handleReject = async () => {
     setActionLoading("reject");
@@ -261,10 +276,12 @@ export default function OrderDetailModal({
     }
   };
 
-  const isPending = order?.adminReviewStatus === "pending_admin_review";
-  const needsReview =
-    order?.adminReviewStatus === "pending_admin_review";
-  const feeIsLocked = order ? ["paid", "confirmed", "completed", "cancelled"].includes(order.status) : false;
+  const isDepositPaid = order?.status === "deposit_paid";
+  const isPendingAdminReview = order?.adminReviewStatus === "pending_admin_review";
+  const needsReview = isPendingAdminReview;
+  const feeIsLocked = order
+    ? ["paid", "confirmed", "completed", "cancelled"].includes(order.status)
+    : false;
 
   // Pre-fill venue hire fee input: use DB value if set, otherwise auto-calculate recommendation
   useEffect(() => {
@@ -511,6 +528,10 @@ export default function OrderDetailModal({
                   </button>
                 )}
 
+                {order.deposit && (
+                  <DepositInfoCard deposit={order.deposit} />
+                )}
+
                 {sortedMealSessions.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
@@ -557,71 +578,78 @@ export default function OrderDetailModal({
                         {formatCurrency(order.total.deliveryFee)}
                       </span>
                     </div>
-                    {feeIsLocked ? (
-                      <div className="flex justify-between text-sm text-gray-700">
-                        <span>Event Hire Fee</span>
-                        <span className="font-semibold">
-                          {formatCurrency(order.total.venueHireFee || 0)}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
-                        <div className="flex items-center gap-1.5">
-                          <label className="block text-xs font-semibold text-indigo-700">
-                            Event Hire Fee
-                          </label>
-                          <div className="group relative">
-                            <Info className="h-3.5 w-3.5 cursor-help text-indigo-400" />
-                            <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-72 -translate-x-1/2 rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
-                              <p className="mb-2 font-semibold">How the event hire fee works:</p>
-                              <ul className="list-disc space-y-1 pl-3.5">
-                                <li>The pre-filled amount is an auto-calculated suggestion based on the catering subtotal.</li>
-                                <li>You can adjust it to any amount before sending.</li>
-                                <li>Clicking &quot;Send Quote&quot; saves the fee and emails the customer a full breakdown of their order total.</li>
-                                <li>You can update the fee and resend at any time — the customer will receive an updated quote email.</li>
-                                <li>Once the customer has paid, the fee can no longer be changed.</li>
-                              </ul>
-                              <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                    {!isDepositPaid && (
+                      <>
+                        {feeIsLocked ? (
+                          <div className="flex justify-between text-sm text-gray-700">
+                            <span>Event Hire Fee</span>
+                            <span className="font-semibold">
+                              {formatCurrency(order.total.venueHireFee || 0)}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+                            <div className="flex items-center gap-1.5">
+                              <label className="block text-xs font-semibold text-indigo-700">
+                                Event Hire Fee
+                              </label>
+                              <div className="group relative">
+                                <Info className="h-3.5 w-3.5 cursor-help text-indigo-400" />
+                                <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-72 -translate-x-1/2 rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
+                                  <p className="mb-2 font-semibold">How the event hire fee works:</p>
+                                  <ul className="list-disc space-y-1 pl-3.5">
+                                    <li>The pre-filled amount is an auto-calculated suggestion based on the catering subtotal.</li>
+                                    <li>You can adjust it to any amount before sending.</li>
+                                    <li>Clicking &quot;Send Quote&quot; saves the fee and emails the customer a full breakdown of their order total.</li>
+                                    <li>You can update the fee and resend at any time — the customer will receive an updated quote email.</li>
+                                    <li>Once the customer has paid, the fee can no longer be changed.</li>
+                                  </ul>
+                                  <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="relative flex-1">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">£</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={venueHireFeeInput}
+                                  onChange={(e) => setVenueHireFeeInput(e.target.value)}
+                                  placeholder="0.00"
+                                  className="w-full rounded-lg border border-indigo-300 py-2 pl-7 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                                />
+                              </div>
+                              <button
+                                onClick={handleSetVenueHireFee}
+                                disabled={actionLoading !== null || !venueHireFeeInput}
+                                className="whitespace-nowrap rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {actionLoading === "setFee" ? "Sending..." : "Send Quote"}
+                              </button>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="relative flex-1">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">£</span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={venueHireFeeInput}
-                              onChange={(e) => setVenueHireFeeInput(e.target.value)}
-                              placeholder="0.00"
-                              className="w-full rounded-lg border border-indigo-300 py-2 pl-7 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                            />
-                          </div>
-                          <button
-                            onClick={handleSetVenueHireFee}
-                            disabled={actionLoading !== null || !venueHireFeeInput}
-                            className="whitespace-nowrap rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {actionLoading === "setFee" ? "Sending..." : "Send Quote"}
-                          </button>
-                        </div>
-                      </div>
+                        )}
+                      </>
                     )}
                     <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900">
                       <span>Total</span>
                       <span className="text-primary">
-                        {formatCurrency(
-                          order.total.subtotal +
-                          order.total.deliveryFee +
-                          (parseFloat(venueHireFeeInput) || 0)
-                        )}
+                        {isDepositPaid
+                          ? formatCurrency(order.total.subtotal + order.total.deliveryFee)
+                          : formatCurrency(
+                              order.total.subtotal +
+                              order.total.deliveryFee +
+                              (parseFloat(venueHireFeeInput) || 0)
+                            )}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {isPending && (
+                {/* Action section — only shown for deposit_paid (reject only) or pending_admin_review (approve + reject) */}
+                {(isDepositPaid || isPendingAdminReview) && (
                   <div className="space-y-3 border-t border-gray-200 pt-2">
                     {actionError && (
                       <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -661,45 +689,61 @@ export default function OrderDetailModal({
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <div>
-                          <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
-                            Customer Deposit (£) <span className="text-gray-400 font-normal normal-case">(optional)</span>
-                          </label>
-                          <div className="relative">
-                            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-gray-400">£</span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={depositAmountInput}
-                              onChange={(e) => setDepositAmountInput(e.target.value)}
-                              placeholder="0.00"
-                              className="w-full rounded-lg border border-gray-300 py-2 pl-7 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                            />
+                        {/* Venue hire fee + approve — only for pending_admin_review */}
+                        {isPendingAdminReview && !feeIsLocked && (
+                          <div className="space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+                            <div className="flex items-center gap-1.5">
+                              <label className="block text-xs font-semibold text-indigo-700">
+                                Venue Hire Fee
+                              </label>
+                              <div className="group relative">
+                                <Info className="h-3.5 w-3.5 cursor-help text-indigo-400" />
+                                <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-72 -translate-x-1/2 rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
+                                  <p className="mb-2 font-semibold">How approval works:</p>
+                                  <ul className="list-disc space-y-1 pl-3.5">
+                                    <li>Set the venue hire fee and click Approve &amp; Send Quote.</li>
+                                    <li>The customer receives an email with the full order breakdown.</li>
+                                    <li>Swift Food is unblocked to accept the catering order.</li>
+                                    <li>You can update the fee and resend until the customer pays.</li>
+                                    <li>Once paid, the fee can no longer be changed.</li>
+                                  </ul>
+                                  <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="relative flex-1">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">£</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={venueHireFeeInput}
+                                  onChange={(e) => setVenueHireFeeInput(e.target.value)}
+                                  placeholder="0.00"
+                                  className="w-full rounded-lg border border-indigo-300 py-2 pl-7 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                                />
+                              </div>
+                              <button
+                                onClick={handleSetVenueHireFee}
+                                disabled={actionLoading !== null || !venueHireFeeInput}
+                                className="whitespace-nowrap rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {actionLoading === "setFee" ? "Sending..." : "Approve & Send Quote"}
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <button
-                            onClick={handleApprove}
-                            disabled={actionLoading !== null}
-                            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {actionLoading === "approve" ? (
-                              <span className="loading loading-spinner loading-sm" />
-                            ) : (
-                              <Check className="h-4 w-4" />
-                            )}
-                            Approve Order
-                          </button>
-                          <button
-                            onClick={() => setShowRejectInput(true)}
-                            disabled={actionLoading !== null}
-                            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <XCircle className="h-4 w-4" />
-                            Reject Order
-                          </button>
-                        </div>
+                        )}
+
+                        {/* Reject button — shown for both deposit_paid and pending_admin_review */}
+                        <button
+                          onClick={() => setShowRejectInput(true)}
+                          disabled={actionLoading !== null}
+                          className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <XCircle className="h-4 w-4" />
+                          Reject Order
+                        </button>
                       </div>
                     )}
                   </div>
