@@ -362,8 +362,6 @@ export default function Step3ContactInfo() {
       case "postalCode":
         if (!billing?.postalCode?.trim()) {
           error = "Postcode is required";
-        } else if (!validateUKPostcode(billing.postalCode)) {
-          error = "Please enter a valid UK postcode (e.g., SW1A 1AA)";
         }
         break;
     }
@@ -383,14 +381,6 @@ export default function Step3ContactInfo() {
     if (field in errors) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
-  };
-
-  // UK Postcode validation regex
-  const UK_POSTCODE_REGEX = /^([A-Z]{1,2}\d{1,2}[A-Z]?)\s?(\d[A-Z]{2})$/i;
-
-  const validateUKPostcode = (postcode: string): boolean => {
-    if (!postcode) return false;
-    return UK_POSTCODE_REGEX.test(postcode.trim());
   };
 
   // Check if billing address has any data entered
@@ -416,8 +406,6 @@ export default function Step3ContactInfo() {
     }
     if (!billing?.postalCode?.trim()) {
       billingErrors.postalCode = "Postcode is required";
-    } else if (!validateUKPostcode(billing.postalCode)) {
-      billingErrors.postalCode = "Please enter a valid UK postcode (e.g., SW1A 1AA)";
     }
 
     // Return undefined if no errors, otherwise return the errors object
