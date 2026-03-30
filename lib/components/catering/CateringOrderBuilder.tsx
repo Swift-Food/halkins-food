@@ -51,10 +51,12 @@ type PdfPreviewItem = LocalMealSession["orderItems"][number]["item"];
 
 interface CateringOrderBuilderProps {
   nextStep?: number;
+  desktopCheckoutNotice?: React.ReactNode;
 }
 
 export default function CateringOrderBuilder({
   nextStep = 2,
+  desktopCheckoutNotice,
 }: CateringOrderBuilderProps) {
   const searchParams = useSearchParams();
   const { eventStartDate, eventStartTime, eventEndDate, eventEndTime } = useCoworking();
@@ -1088,6 +1090,7 @@ export default function CateringOrderBuilder({
                   restaurants={restaurants}
                   contentMaxHeightClass={activeSessionHasItems ? "max-h-[calc(100vh-14rem)]" : undefined}
                 />
+                {desktopCheckoutNotice && <div className="hidden md:block">{desktopCheckoutNotice}</div>}
                 <div className="flex-shrink-0">
                   <button
                     onClick={handleCheckout}

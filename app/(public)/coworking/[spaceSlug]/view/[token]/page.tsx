@@ -26,6 +26,15 @@ import DeliveryTracking from "@/lib/components/catering/dashboard/DeliveryTracki
 import { DeliveryTrackingDto } from "@/types/api";
 import { coworkingService } from "@/services/api";
 
+const getOrderIdentifier = (order: Partial<CoworkingOrderViewResponse> | null) =>
+  order?.id || order?.cateringOrderId || order?.orderId || order?.coworkingOrderId || null;
+
+const getOrderReference = (order: Partial<CoworkingOrderViewResponse> | null) =>
+  order?.orderReference ||
+  order?.bookingReference ||
+  getOrderIdentifier(order)?.substring(0, 4).toUpperCase() ||
+  "ORDER";
+
 export default function CoworkingOrderViewPage() {
   const params = useParams();
   const spaceSlug = params.spaceSlug as string;
@@ -65,9 +74,11 @@ export default function CoworkingOrderViewPage() {
 
   const loadRefunds = useCallback(async () => {
     if (!order) return;
+    const refundOrderId = getOrderIdentifier(order);
+    if (!refundOrderId) return;
     setLoadingRefunds(true);
     try {
-      const data = await refundService.getOrderRefunds(order.id);
+      const data = await refundService.getOrderRefunds(refundOrderId);
       setRefunds(data);
     } catch (err) {
       console.error("Failed to load refunds:", err);
@@ -141,7 +152,7 @@ export default function CoworkingOrderViewPage() {
       const link = document.createElement("a");
       link.href = url;
       const suffix = withPrices ? "-with-prices" : "";
-      link.download = `order-${order.id.substring(0, 4).toUpperCase()}${suffix}.pdf`;
+      link.download = `order-${getOrderReference(order)}${suffix}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -186,6 +197,8 @@ export default function CoworkingOrderViewPage() {
   }
 
   const isManager = currentUserRole === "manager";
+  const orderReference = getOrderReference(order);
+  const orderIdentifier = getOrderIdentifier(order);
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
@@ -208,7 +221,7 @@ export default function CoworkingOrderViewPage() {
               <p className="text-white/80 text-sm sm:text-base">
                 Reference:{" "}
                 <span className="font-mono font-bold">
-                  #{order.id.substring(0, 4).toUpperCase()}
+                  #{orderReference}
                 </span>
               </p>
             </div>
@@ -249,13 +262,13 @@ export default function CoworkingOrderViewPage() {
             <OrderSummary order={order} />
 
             {refunds.length > 0 && <RefundsList refunds={refunds} />}
-            {order.status === "completed" && (
+            {order.status === "completed" && orderIdentifier && (
               <div className="bg-white rounded-xl p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">
                   Need a Refund?
                 </h3>
                 <RefundRequestButton
-                  orderId={order.id}
+                  orderId={orderIdentifier}
                   orderType="catering"
                   orderCompletedAt={
                     typeof order.updatedAt === "string"

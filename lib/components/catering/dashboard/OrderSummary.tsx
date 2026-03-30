@@ -14,6 +14,7 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
     venueHireFee?: number;
     depositAmount?: number;
     depositStatus?: string;
+    adminReviewStatus?: string;
   };
   const mealSessions = coworkingOrder.mealSessions as
     | Array<{
@@ -48,7 +49,7 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
           <div className="flex justify-between items-start text-gray-700 text-sm sm:text-base gap-2">
             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
               <span className="font-medium whitespace-nowrap">Delivery Fee:</span>
-              {distanceInMiles && (
+              {typeof distanceInMiles === "number" && distanceInMiles > 0 && (
                 <span className="text-xs text-gray-500">
                   ({distanceInMiles.toFixed(1)} mi)
                 </span>
@@ -90,16 +91,7 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
           )}
         </div>
 
-        {(coworkingOrder.venueHireFee ?? 0) > 0 && (
-          <div className="flex justify-between text-gray-700 text-sm sm:text-base">
-            <span className="font-medium">Estimated Venue Hire Fee:</span>
-            <span className="font-semibold">
-              £{Number(coworkingOrder.venueHireFee).toFixed(2)}
-            </span>
-          </div>
-        )}
-
-        {order.promoDiscount && order.promoDiscount > 0 && (
+        {(order.promoDiscount ?? 0) > 0 && (
           <div className="flex justify-between text-green-600 text-sm sm:text-base">
             <span className="font-semibold">Promo Discount:</span>
             <span className="font-bold">
@@ -124,14 +116,27 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
           </div>
         )}
 
-        <div className="flex justify-between text-lg sm:text-xl font-bold text-gray-900 pt-2 sm:pt-3 border-t-2 border-gray-200">
-          <span>Total:</span>
+        <div className="flex justify-between text-lg sm:text-xl font-bold text-gray-900 pt-1 sm:pt-2">
+          <span>Catering Total:</span>
           <span className="text-primary">
             £{Number(order.finalTotal ?? order.estimatedTotal).toFixed(2)}
           </span>
         </div>
 
-        {coworkingOrder.depositAmount && coworkingOrder.depositAmount > 0 && (
+        {(coworkingOrder.venueHireFee ?? 0) > 0 && (
+          <div className="flex justify-between text-gray-700 text-sm sm:text-base pt-2 sm:pt-3 border-t border-gray-200">
+            <span className="font-medium">
+              {coworkingOrder.adminReviewStatus === "approved"
+                ? "Venue Hire Fee:"
+                : "Estimated Venue Hire Fee:"}
+            </span>
+            <span className="font-semibold">
+              £{Number(coworkingOrder.venueHireFee).toFixed(2)}
+            </span>
+          </div>
+        )}
+
+        {(coworkingOrder.depositAmount ?? 0) > 0 && (
           <div className="pt-2 sm:pt-3 border-t border-gray-200">
             <div className="flex justify-between text-gray-700 text-sm sm:text-base">
               <span className="font-medium">Deposit Amount:</span>

@@ -498,15 +498,12 @@ export default function CoworkingOrderFlow() {
           {currentStep === 2 && <CoworkingBookingQuestionsStep />}
           {currentStep === 3 && (
             <div className="space-y-4">
-              <div className="mx-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 md:mx-10">
+              <div className="mx-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 md:mx-10 md:hidden">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="font-semibold">Catering is optional at this stage.</p>
                     <p className="mt-1 text-amber-800/85">
-                      You can add food now, or skip ahead and just secure the venue with your deposit first.
-                    </p>
-                    <p className="mt-1 text-amber-800/85">
-                      You&apos;ll still need to place your catering order later to fully seal the booking.
+                      Add food now, or continue with the deposit and return to catering later.
                     </p>
                   </div>
                   {!hasSelectedCatering && (
@@ -520,7 +517,30 @@ export default function CoworkingOrderFlow() {
                   )}
                 </div>
               </div>
-              <CateringOrderBuilder nextStep={4} />
+              <CateringOrderBuilder
+                nextStep={4}
+                desktopCheckoutNotice={
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <p className="font-semibold">Catering is optional at this stage.</p>
+                        <p className="mt-1 text-amber-800/85">
+                          Add food now, or continue with the deposit and return to catering later.
+                        </p>
+                      </div>
+                      {!hasSelectedCatering && (
+                        <button
+                          type="button"
+                          onClick={() => setCurrentStep(4)}
+                          className="self-start rounded-full bg-white px-4 py-2 text-sm font-semibold text-primary shadow-sm ring-1 ring-amber-200 transition hover:bg-primary hover:text-white"
+                        >
+                          Skip catering for now
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                }
+              />
             </div>
           )}
           {currentStep === 4 && <Step3ContactInfo />}
