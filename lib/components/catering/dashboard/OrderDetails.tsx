@@ -1,24 +1,25 @@
 // app/components/catering/dashboard/OrderDetails.tsx
 import React, { useMemo } from 'react';
 import { CateringOrderResponse } from '@/types/api';
-import { MapPin, FileText, Calendar } from 'lucide-react';
+import { MapPin, Calendar } from 'lucide-react';
 
 
 interface OrderDetailsProps {
   order: CateringOrderResponse;
 }
 
-export function formatDeliveryAddress(address: any): string {
+export function formatDeliveryAddress(address: unknown): string {
   if (typeof address === 'string') return address;
   if (typeof address === 'object' && address !== null) {
-    const { street, city, postcode, country } = address;
+    const { street, city, postcode, country } = address as Record<string, string | undefined>;
     return [street, city, postcode, country].filter(Boolean).join(', ');
   }
   return '';
 }
 
 // Helper to format time from 24h to 12h format
-const formatTime = (time: string) => {
+const formatTime = (time?: string | null) => {
+  if (!time) return null;
   const [hours, minutes] = time.split(':');
   const hour = parseInt(hours, 10);
   const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -54,7 +55,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
       const dateA = new Date(a.sessionDate).getTime();
       const dateB = new Date(b.sessionDate).getTime();
       if (dateA !== dateB) return dateA - dateB;
-      return a.eventTime.localeCompare(b.eventTime);
+      return (a.eventTime || '').localeCompare(b.eventTime || '');
     });
 
     const firstSession = sortedSessions[0];
