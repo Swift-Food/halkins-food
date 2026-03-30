@@ -186,7 +186,7 @@ function CoworkingDashboardInner({
       }
 
       const data = await coworkingDashboardService.getOrders(spaceId, {
-        status: apiStatus as any,
+        status: apiStatus as DashboardOrderStatusFilter,
         limit: 50,
       });
 

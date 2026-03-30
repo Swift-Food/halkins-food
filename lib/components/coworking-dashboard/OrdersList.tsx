@@ -159,6 +159,8 @@ export default function OrdersList({
             <p className="text-sm mt-1">
               {activeStatus === "needs_review"
                 ? "No orders are currently awaiting your review."
+                : activeStatus === "awaiting_catering"
+                ? "No venue holds awaiting catering details yet."
                 : "There are no orders with this status yet."}
             </p>
           </div>
