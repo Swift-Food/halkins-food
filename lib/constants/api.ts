@@ -93,6 +93,8 @@ export const API_ENDPOINTS = {
     `/coworking/${spaceSlug}/create-checkout`,
   COWORKING_CONFIRM_CHECKOUT: (spaceSlug: string) =>
     `/coworking/${spaceSlug}/confirm-checkout`,
+  COWORKING_VIEW_BY_TOKEN: (spaceSlug: string, token: string) =>
+    `/coworking/${spaceSlug}/view/${token}`,
   COWORKING_VENUES: (spaceSlug: string) => `/coworking-dashboard/${spaceSlug}/venues`,
 
   // Coworking Admin

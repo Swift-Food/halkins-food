@@ -10,11 +10,26 @@ interface OrderSummaryProps {
 
 export default function OrderSummary({ order }: OrderSummaryProps) {
   const [showDeliveryBreakdown, setShowDeliveryBreakdown] = useState(false);
+  const coworkingOrder = order as CateringOrderResponse & {
+    venueHireFee?: number;
+    depositAmount?: number;
+    depositStatus?: string;
+  };
+  const mealSessions = coworkingOrder.mealSessions as
+    | Array<{
+        sessionName?: string;
+        deliveryFee?: number;
+        deliveryFeeBreakdown?: {
+          requiresCustomQuote?: boolean;
+        };
+        distanceInMiles?: number;
+      }>
+    | undefined;
 
 
   // Extract delivery breakdown from meal sessions if available
-  const deliveryBreakdown = (order as any).mealSessions?.[0]?.deliveryFeeBreakdown;
-  const distanceInMiles = (order as any).mealSessions?.[0]?.distanceInMiles;
+  const deliveryBreakdown = mealSessions?.[0]?.deliveryFeeBreakdown;
+  const distanceInMiles = mealSessions?.[0]?.distanceInMiles;
   return (
     <div className="bg-white rounded-xl p-4 sm:p-6">
       <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
@@ -43,7 +58,7 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
               <span className="font-semibold">
                 £{Number(order.deliveryFee).toFixed(2)}
               </span>
-              {deliveryBreakdown && (order as any).mealSessions && (
+              {deliveryBreakdown && mealSessions && (
                 <button
                   onClick={() => setShowDeliveryBreakdown(!showDeliveryBreakdown)}
                   className="text-xs text-primary hover:underline whitespace-nowrap"
@@ -56,12 +71,12 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
           </div>
 
           {/* Delivery fee breakdown - Show per session */}
-          {showDeliveryBreakdown && (order as any).mealSessions && (
+          {showDeliveryBreakdown && mealSessions && (
             <div className="pl-4 space-y-1 text-xs text-gray-600">
-              {(order as any).mealSessions.map((session: any, index: number) => (
+              {mealSessions.map((session, index: number) => (
                 <div key={index} className="flex justify-between">
                   <span>{session.sessionName}:</span>
-                  <span>£{session.deliveryFee.toFixed(2)}</span>
+                  <span>£{Number(session.deliveryFee || 0).toFixed(2)}</span>
                 </div>
               ))}
               {deliveryBreakdown?.requiresCustomQuote && (
@@ -74,6 +89,15 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
             </div>
           )}
         </div>
+
+        {(coworkingOrder.venueHireFee ?? 0) > 0 && (
+          <div className="flex justify-between text-gray-700 text-sm sm:text-base">
+            <span className="font-medium">Estimated Venue Hire Fee:</span>
+            <span className="font-semibold">
+              £{Number(coworkingOrder.venueHireFee).toFixed(2)}
+            </span>
+          </div>
+        )}
 
         {order.promoDiscount && order.promoDiscount > 0 && (
           <div className="flex justify-between text-green-600 text-sm sm:text-base">
@@ -107,14 +131,19 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
           </span>
         </div>
 
-        {order.depositAmount && order.depositAmount > 0 && (
+        {coworkingOrder.depositAmount && coworkingOrder.depositAmount > 0 && (
           <div className="pt-2 sm:pt-3 border-t border-gray-200">
             <div className="flex justify-between text-gray-700 text-sm sm:text-base">
               <span className="font-medium">Deposit Amount:</span>
               <span className="font-semibold text-blue-600">
-                £{Number(order.depositAmount).toFixed(2)}
+                £{Number(coworkingOrder.depositAmount).toFixed(2)}
               </span>
             </div>
+            {coworkingOrder.depositStatus ? (
+              <p className="mt-1 text-xs text-gray-500">
+                Deposit status: {coworkingOrder.depositStatus}
+              </p>
+            ) : null}
           </div>
         )}
       </div>

@@ -26,6 +26,7 @@ import {
   GetOrderDetailResponse,
   ConfirmCoworkingCheckoutResponse,
   CoworkingCheckoutPricingResponse,
+  CoworkingOrderViewResponse,
   type CoworkingCreateCheckoutResponse,
   RefreshTokenResponse,
   CateringAddonRequest,
@@ -551,6 +552,26 @@ class CoworkingService {
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.message || 'Failed to confirm checkout');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Public coworking order view by shared-access token.
+   * Returns the catering order payload plus coworking-specific fields.
+   */
+  async getOrderViewByToken(
+    spaceSlug: string,
+    token: string
+  ): Promise<CoworkingOrderViewResponse> {
+    const response = await fetch(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_VIEW_BY_TOKEN(spaceSlug, token)}`
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to fetch coworking order');
     }
 
     return response.json();

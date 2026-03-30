@@ -19,7 +19,7 @@ import { Calendar, Clock, MapPin, Pencil, X } from "lucide-react";
 const coworkingSteps = [
   { step: 1, label: "Booking details" },
   { step: 2, label: "Questions form" },
-  { step: 3, label: "Catering optional" },
+  { step: 3, label: "Catering" },
   { step: 4, label: "Contact details" },
 ] as const;
 

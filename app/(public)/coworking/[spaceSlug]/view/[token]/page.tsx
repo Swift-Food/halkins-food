@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { cateringService } from "@/services/api/catering.api";
-import { CateringOrderResponse } from "@/types/api";
+import { CateringOrderResponse, CoworkingOrderViewResponse } from "@/types/api";
 import OrderStatusBadge from "@/lib/components/catering/dashboard/OrderStatusBadge";
 import OrderDetails from "@/lib/components/catering/dashboard/OrderDetails";
 import OrderItemsByCategory from "@/lib/components/catering/dashboard/OrderItemsByCategory";
@@ -24,13 +24,15 @@ import OrderSummary from "@/lib/components/catering/dashboard/OrderSummary";
 import { OrderStatusTimeline } from "@/lib/components/catering/dashboard/OrderStatusTimeline";
 import DeliveryTracking from "@/lib/components/catering/dashboard/DeliveryTracking";
 import { DeliveryTrackingDto } from "@/types/api";
+import { coworkingService } from "@/services/api";
 
 export default function CoworkingOrderViewPage() {
   const params = useParams();
+  const spaceSlug = params.spaceSlug as string;
   const token = params.token as string;
   const [refunds, setRefunds] = useState<RefundRequest[]>([]);
   const [, setLoadingRefunds] = useState(false);
-  const [order, setOrder] = useState<CateringOrderResponse | null>(null);
+  const [order, setOrder] = useState<CoworkingOrderViewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<
@@ -42,36 +44,26 @@ export default function CoworkingOrderViewPage() {
     Record<string, DeliveryTrackingDto>
   >({});
 
-  useEffect(() => {
-    loadOrder();
-  }, [token]);
-
-  useEffect(() => {
-    if (order) {
-      loadRefunds();
-      loadDeliveryTracking(order);
-    }
-  }, [order]);
-
-  const loadOrder = async () => {
+  const loadOrder = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await cateringService.getOrderByToken(token);
+      const data = await coworkingService.getOrderViewByToken(spaceSlug, token);
       setOrder(data);
 
-      const currentUser = data.sharedAccessUsers?.find(
-        (u) => u.accessToken === token
+      setCurrentUserRole(
+        data.currentUserRole ||
+          data.sharedAccessUsers?.find((u) => u.accessToken === token)?.role ||
+          null
       );
-      setCurrentUserRole(currentUser?.role || null);
-    } catch (err: any) {
-      setError(err.message || "Failed to load order");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load order");
     } finally {
       setLoading(false);
     }
-  };
+  }, [spaceSlug, token]);
 
-  const loadRefunds = async () => {
+  const loadRefunds = useCallback(async () => {
     if (!order) return;
     setLoadingRefunds(true);
     try {
@@ -82,9 +74,9 @@ export default function CoworkingOrderViewPage() {
     } finally {
       setLoadingRefunds(false);
     }
-  };
+  }, [order]);
 
-  const loadDeliveryTracking = async (orderData: CateringOrderResponse) => {
+  const loadDeliveryTracking = useCallback(async (orderData: CateringOrderResponse) => {
     const trackableStatuses = [
       "restaurant_reviewed",
       "paid",
@@ -110,7 +102,18 @@ export default function CoworkingOrderViewPage() {
     } catch (err) {
       console.error("Failed to load delivery tracking:", err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadOrder();
+  }, [loadOrder]);
+
+  useEffect(() => {
+    if (order) {
+      loadRefunds();
+      loadDeliveryTracking(order);
+    }
+  }, [loadDeliveryTracking, loadRefunds, order]);
 
   const handleDownloadPdf = () => {
     if (!order) return;
@@ -258,7 +261,9 @@ export default function CoworkingOrderViewPage() {
                     typeof order.updatedAt === "string"
                       ? order.updatedAt
                       : order.updatedAt?.toISOString() ??
-                        new Date().toISOString()
+                        (typeof order.createdAt === "string"
+                          ? order.createdAt
+                          : order.createdAt?.toISOString() ?? new Date().toISOString())
                   }
                   totalAmount={order.finalTotal ?? 0}
                   orderItems={order.restaurants || order.orderItems || []}

@@ -9,6 +9,8 @@
  * IMPORTANT: Do not modify these types without updating the corresponding backend DTOs
  */
 
+import type { CateringOrderResponse, MealSessionResponse } from "./catering.api.types";
+
 // ============================================================================
 // REQUEST TYPES
 // ============================================================================
@@ -368,4 +370,23 @@ export interface ConfirmCoworkingCheckoutResponse {
   requiresCatering?: boolean;
   cateringOrder?: unknown | null;
   accessToken?: string | null;
+}
+
+export interface CoworkingOrderViewResponse extends CateringOrderResponse {
+  coworkingOrderId: string;
+  cateringOrderId: string;
+  orderId: string;
+  adminReviewStatus: string;
+  depositStatus: string;
+  depositAmount: number;
+  venueHireFee: number;
+  venueId: string | null;
+  venueName: string | null;
+  bookingStartTime: string | null;
+  bookingEndTime: string | null;
+  bookingReference: string | null;
+  roomLocationDetails: string | null;
+  requiresCatering: boolean;
+  currentUserRole: "viewer" | "editor" | "manager" | null;
+  mealSessions?: MealSessionResponse[];
 }
