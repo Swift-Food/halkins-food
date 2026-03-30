@@ -16,6 +16,11 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
     depositStatus?: string;
     adminReviewStatus?: string;
   };
+  const hasApprovedVenueHireFee =
+    coworkingOrder.adminReviewStatus === "approved" &&
+    (coworkingOrder.venueHireFee ?? 0) > 0;
+  const isVenueFeePendingReview =
+    coworkingOrder.adminReviewStatus !== "approved";
   const mealSessions = coworkingOrder.mealSessions as
     | Array<{
         sessionName?: string;
@@ -123,16 +128,25 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
           </span>
         </div>
 
-        {(coworkingOrder.venueHireFee ?? 0) > 0 && (
-          <div className="flex justify-between text-gray-700 text-sm sm:text-base pt-2 sm:pt-3 border-t border-gray-200">
-            <span className="font-medium">
-              {coworkingOrder.adminReviewStatus === "approved"
-                ? "Venue Hire Fee:"
-                : "Estimated Venue Hire Fee:"}
-            </span>
-            <span className="font-semibold">
-              £{Number(coworkingOrder.venueHireFee).toFixed(2)}
-            </span>
+        {(hasApprovedVenueHireFee || isVenueFeePendingReview) && (
+          <div className="pt-2 sm:pt-3 border-t border-gray-200">
+            <div className="flex justify-between text-gray-700 text-sm sm:text-base">
+              <span className="font-medium">
+                {hasApprovedVenueHireFee ? "Venue Hire Fee:" : "Estimated Venue Hire Fee:"}
+              </span>
+              {hasApprovedVenueHireFee ? (
+                <span className="font-semibold">
+                  £{Number(coworkingOrder.venueHireFee).toFixed(2)}
+                </span>
+              ) : (
+                <span className="font-semibold text-gray-400">Pending</span>
+              )}
+            </div>
+            {isVenueFeePendingReview && (
+              <p className="mt-1 text-xs text-gray-500">
+                Awaiting venue organiser review to confirm the final fee.
+              </p>
+            )}
           </div>
         )}
 
