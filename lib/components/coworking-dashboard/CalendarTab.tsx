@@ -78,6 +78,12 @@ function getTodayKey(): string {
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
 }
 
+function shouldCountForCalendarIndicator(order: CalendarOrderItem): boolean {
+  if (order.status === "cancelled") return false;
+  if (order.adminReviewStatus === "rejected") return false;
+  return true;
+}
+
 export default function CalendarTab({ spaceId }: CalendarTabProps) {
   const [calendarData, setCalendarData] = useState<CalendarResponse | null>(null);
   const [venues, setVenues] = useState<CoworkingVenueAdmin[]>([]);
@@ -124,13 +130,14 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
       if (!selectedVenueIds.has(venueKey)) continue;
 
       for (const dateGroup of venue.dates) {
+        const visibleCount = dateGroup.orders.filter(shouldCountForCalendarIndicator).length;
         if (!indicators[dateGroup.date]) indicators[dateGroup.date] = [];
-        if (dateGroup.orders.length > 0) {
+        if (visibleCount > 0) {
           indicators[dateGroup.date].push({
             venueId: venue.venueId,
             venueName: venue.venueName,
             color: venueColorMap[venueKey],
-            count: dateGroup.orders.length,
+            count: visibleCount,
           });
         }
       }
@@ -150,6 +157,7 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
       for (const dateGroup of venue.dates) {
         if (dateGroup.date === selectedDate) {
           for (const order of dateGroup.orders) {
+            if (!shouldCountForCalendarIndicator(order)) continue;
             orders.push({
               order,
               venueName: venue.venueName,
