@@ -405,8 +405,9 @@ export interface CateringPricingResult {
   isValid: boolean;
   subtotal: number;
   deliveryFee: number;
-  restaurantPromotionDiscount?: number; // NEW: Restaurant promotion discount
-  totalDiscount?: number; // NEW: Combined discount
+  promotionDiscount?: number; // Restaurant promotion discount (backend field name)
+  restaurantPromotionDiscount?: number; // Alias for backward compatibility
+  totalDiscount?: number; // Combined discount
   promoDiscount?: number;
   venueHireFee?: number; // Venue hire fee (coworking orders only)
   venueHireDiscount?: number; // Discount on venue hire fee from promo codes
@@ -424,6 +425,17 @@ export interface CateringPricingResult {
     finalDeliveryFee: number;      // Subtotal × multiplier
     requiresCustomQuote: boolean;  // true if >6 miles
   };
+
+  // Backend-calculated per-promotion breakdown (source of truth for display)
+  appliedPromotions?: Array<{
+    restaurantId: string;
+    promotionId: string;
+    name: string;
+    promotionType: string;
+    discountPercentage: number;
+    discountTiers?: Array<{ minQuantity: number; discountPercentage: number }>;
+    discount: number;
+  }>;
 }
 
 export interface PromoCodeValidation {

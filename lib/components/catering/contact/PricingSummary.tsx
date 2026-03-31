@@ -1,5 +1,6 @@
 import { CateringPricingResult } from "@/types/catering.types";
 import { useState } from "react";
+import { Tag } from "lucide-react";
 
 interface PricingSummaryProps {
   pricing: CateringPricingResult | null;
