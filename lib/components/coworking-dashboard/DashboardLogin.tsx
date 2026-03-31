@@ -23,10 +23,10 @@ export default function DashboardLogin({
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login-consumer`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login-coworking-admin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, role: "coworking_partner" }),
+        body: JSON.stringify({ email, password }),
       });
 
       if (!response.ok) {
