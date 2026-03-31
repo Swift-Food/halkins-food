@@ -20,7 +20,9 @@ export type DashboardOrderStatusFilter =
   | 'completed'
   | 'cancelled'
   | 'all'
-  | 'needs_review'; // frontend-only: fetches 'upcoming' + filters by adminReviewStatus === 'pending_admin_review'
+  | 'needs_review'       // frontend-only: fetches 'all', filters by adminReviewStatus === 'pending_admin_review'
+  | 'awaiting_catering'  // frontend-only: sends status='deposit_paid' to API
+  | 'deposit_paid';      // direct API value (used internally when mapping awaiting_catering)
 
 /**
  * Query parameters for listing orders
@@ -87,11 +89,25 @@ export interface PaginationInfo {
 }
 
 /**
+ * Deposit information for a coworking order
+ * Backend: CoworkingOrderDepositInfo
+ */
+export interface CoworkingOrderDepositInfo {
+  status: string;
+  amount: number;
+  perDayRate: number | null;
+  days: number | null;
+  paidAt: string | null;
+  canResend: boolean;
+}
+
+/**
  * Order summary for list view
  * Backend: DashboardOrderSummary
  */
 export interface DashboardOrderSummary {
   id: string;
+  cateringOrderId: string | null;  // null = no catering added yet
   status: string;
   adminReviewStatus: string;
   memberEmail: string;
@@ -179,6 +195,7 @@ export interface DashboardOrderDetailResponse {
   eventDate: string | null;
   createdAt: string;
   estimatedDelivery: string | null;
+  deposit: CoworkingOrderDepositInfo;  // new field
 }
 
 // ============================================================================

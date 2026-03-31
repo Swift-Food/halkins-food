@@ -1,17 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { DashboardOrderSummary, DashboardOrderStatusFilter } from "@/types/api";
 import {
   AlertTriangle,
-  Check,
   CheckCircle,
   ChevronRight,
   Clock,
   Hash,
   List,
   MapPin,
-  PlayCircle,
   User,
   XCircle,
 } from "lucide-react";
@@ -20,9 +17,9 @@ interface OrdersListProps {
   orders: DashboardOrderSummary[];
   activeStatus: DashboardOrderStatusFilter;
   pendingCount: number;
+  awaitingCateringCount: number;
   onStatusChange: (status: DashboardOrderStatusFilter) => void;
   onOrderClick: (orderId: string) => void;
-  onQuickApprove: (orderId: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -32,45 +29,16 @@ const statusTabs: {
   icon: typeof Clock;
   color: string;
 }[] = [
-  {
-    value: "all",
-    label: "All",
-    icon: List,
-    color: "bg-gray-100 text-gray-700",
-  },
-  {
-    value: "needs_review",
-    label: "Needs Review",
-    icon: AlertTriangle,
-    color: "bg-amber-100 text-amber-700",
-  },
-  {
-    value: "upcoming",
-    label: "Upcoming",
-    icon: Clock,
-    color: "bg-yellow-100 text-yellow-700",
-  },
-  {
-    value: "active",
-    label: "Active",
-    icon: PlayCircle,
-    color: "bg-blue-100 text-blue-700",
-  },
-  {
-    value: "completed",
-    label: "Completed",
-    icon: CheckCircle,
-    color: "bg-green-100 text-green-700",
-  },
-  {
-    value: "cancelled",
-    label: "Cancelled",
-    icon: XCircle,
-    color: "bg-red-100 text-red-700",
-  },
+  { value: "all", label: "All", icon: List, color: "bg-gray-100 text-gray-700" },
+  { value: "awaiting_catering", label: "Awaiting Catering", icon: Clock, color: "bg-blue-100 text-blue-700" },
+  { value: "needs_review", label: "Needs Review", icon: AlertTriangle, color: "bg-amber-100 text-amber-700" },
+  { value: "upcoming", label: "Upcoming", icon: Clock, color: "bg-yellow-100 text-yellow-700" },
+  { value: "completed", label: "Completed", icon: CheckCircle, color: "bg-green-100 text-green-700" },
+  { value: "cancelled", label: "Cancelled", icon: XCircle, color: "bg-red-100 text-red-700" },
 ];
 
 const statusBadgeColor: Record<string, string> = {
+  deposit_paid: "bg-blue-100 text-blue-800 border-blue-300",
   pending_review: "bg-yellow-100 text-yellow-800 border-yellow-300",
   pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
   admin_reviewed: "bg-blue-100 text-blue-800 border-blue-300",
@@ -86,6 +54,7 @@ const statusBadgeColor: Record<string, string> = {
 };
 
 const statusLabel: Record<string, string> = {
+  deposit_paid: "Date Hold",
   pending_review: "Under Review",
   admin_reviewed: "Awaiting Restaurants",
   restaurant_reviewed: "Awaiting Payment",
@@ -110,23 +79,11 @@ export default function OrdersList({
   orders,
   activeStatus,
   pendingCount,
+  awaitingCateringCount,
   onStatusChange,
   onOrderClick,
-  onQuickApprove,
   loading,
 }: OrdersListProps) {
-  const [approvingId, setApprovingId] = useState<string | null>(null);
-
-  const handleQuickApprove = async (e: React.MouseEvent, orderId: string) => {
-    e.stopPropagation();
-    setApprovingId(orderId);
-    try {
-      await onQuickApprove(orderId);
-    } finally {
-      setApprovingId(null);
-    }
-  };
-
   const handleRowKeyDown = (
     e: React.KeyboardEvent<HTMLDivElement>,
     orderId: string,
@@ -149,6 +106,13 @@ export default function OrdersList({
             const Icon = tab.icon;
             const isActive = activeStatus === tab.value;
             const isNeedsReview = tab.value === "needs_review";
+            const isAwaitingCatering = tab.value === "awaiting_catering";
+            const badgeCount = isNeedsReview
+              ? pendingCount
+              : isAwaitingCatering
+              ? awaitingCateringCount
+              : 0;
+
             return (
               <button
                 key={tab.value}
@@ -157,15 +121,21 @@ export default function OrdersList({
                   isActive
                     ? isNeedsReview
                       ? "bg-amber-100 text-amber-700 border border-amber-300"
+                      : isAwaitingCatering
+                      ? "bg-blue-100 text-blue-700 border border-blue-300"
                       : "bg-primary/10 text-primary border border-primary/30"
                     : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-transparent"
                 }`}
               >
                 <Icon className="h-4 w-4" />
                 {tab.label}
-                {isNeedsReview && pendingCount > 0 && (
-                  <span className="ml-0.5 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold bg-amber-500 text-white">
-                    {pendingCount}
+                {badgeCount > 0 && (
+                  <span
+                    className={`ml-0.5 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold text-white ${
+                      isNeedsReview ? "bg-amber-500" : "bg-blue-500"
+                    }`}
+                  >
+                    {badgeCount}
                   </span>
                 )}
               </button>
@@ -187,14 +157,15 @@ export default function OrdersList({
             <p className="text-sm mt-1">
               {activeStatus === "needs_review"
                 ? "No orders are currently awaiting your review."
+                : activeStatus === "awaiting_catering"
+                ? "No venue holds awaiting catering details yet."
                 : "There are no orders with this status yet."}
             </p>
           </div>
         ) : (
           orders.map((order) => {
-            const needsReview =
-              order.adminReviewStatus === "pending_admin_review";
-            const isApproving = approvingId === order.id;
+            const isDepositPaid = order.status === "deposit_paid";
+            const needsReview = order.adminReviewStatus === "pending_admin_review";
 
             return (
               <div
@@ -206,6 +177,8 @@ export default function OrdersList({
                 className={`w-full flex items-center gap-4 p-4 sm:px-6 sm:py-5 transition-colors text-left ${
                   needsReview
                     ? "border-l-4 border-amber-400 bg-amber-50/40 hover:bg-amber-50"
+                    : isDepositPaid
+                    ? "border-l-4 border-blue-300 bg-blue-50/30 hover:bg-blue-50/50"
                     : "hover:bg-gray-50"
                 }`}
               >
@@ -240,7 +213,7 @@ export default function OrdersList({
                     </span>
                     <span className="flex items-center gap-1">
                       <Hash className="h-3.5 w-3.5" />
-                      {order.bookingReference}
+                      {order.id.slice(0, 4)}
                     </span>
                     {order.roomLocationDetails && (
                       <span className="flex items-center gap-1">
@@ -251,31 +224,24 @@ export default function OrdersList({
                   </div>
 
                   <div className="flex items-center gap-4 mt-1.5 text-sm">
-                    <span className="text-gray-500">
-                      {order.itemCount} item{order.itemCount !== 1 ? "s" : ""}
-                    </span>
-                    <span className="font-semibold text-gray-900">
-                      £{order.total.toFixed(2)}
-                    </span>
+                    {isDepositPaid ? (
+                      <span className="text-blue-600 font-medium text-xs">
+                        Deposit paid · Awaiting catering
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-gray-500">
+                          {order.itemCount} item{order.itemCount !== 1 ? "s" : ""}
+                        </span>
+                        <span className="font-semibold text-gray-900">
+                          £{order.total.toFixed(2)}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                {needsReview ? (
-                  <button
-                    onClick={(e) => handleQuickApprove(e, order.id)}
-                    disabled={isApproving}
-                    className="flex-shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {isApproving ? (
-                      <span className="loading loading-spinner loading-xs" />
-                    ) : (
-                      <Check className="h-3.5 w-3.5" />
-                    )}
-                    Approve
-                  </button>
-                ) : (
-                  <ChevronRight className="h-5 w-5 text-gray-300 flex-shrink-0" />
-                )}
+                <ChevronRight className="h-5 w-5 text-gray-300 flex-shrink-0" />
               </div>
             );
           })

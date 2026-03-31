@@ -23,7 +23,7 @@ export default function SharedAccessManager({ order, onUpdate, currentUserRole }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<string | null>(null);
-
+  console.log("role is", currentUserRole, "order is", JSON.stringify(order))
   const sharedUsers = order.sharedAccessUsers || [];
   const isManager = currentUserRole === 'manager';
 
@@ -208,7 +208,7 @@ export default function SharedAccessManager({ order, onUpdate, currentUserRole }
                           : 'bg-blue-100 text-blue-700'
                       }`}
                     >
-                      {user.role === 'manager' || user.role === 'editor' ? (
+                      {user.role === 'manager' ? (
                         <>
                           <Shield className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                           Manager

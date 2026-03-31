@@ -140,31 +140,6 @@ class CoworkingDashboardService {
   }
 
   /**
-   * Approve a pending order
-   */
-  async approveOrder(
-    spaceId: string,
-    orderId: string,
-    depositAmount?: number,
-  ): Promise<DashboardOrderDetailResponse> {
-    const body = depositAmount !== undefined ? JSON.stringify({ depositAmount }) : undefined;
-    const response = await fetchWithAuth(
-      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_APPROVE_ORDER(spaceId, orderId)}`,
-      {
-        method: 'POST',
-        ...(body ? { headers: { 'Content-Type': 'application/json' }, body } : {}),
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || 'Failed to approve order');
-    }
-
-    return response.json();
-  }
-
-  /**
    * Set the venue hire fee for an order and send a quote email to the customer
    */
   async setVenueHireFee(
