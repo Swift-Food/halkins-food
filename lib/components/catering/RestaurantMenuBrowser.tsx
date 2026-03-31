@@ -11,6 +11,7 @@ import {
   Clock3,
   Info,
   Package,
+  Tag,
 } from "lucide-react";
 import { MenuItem, Restaurant } from "@/types/restaurant.types";
 import { DietaryFilter } from "@/types/menuItem";
@@ -18,6 +19,7 @@ import { CategoryWithSubcategories } from "@/types/catering.types";
 import { CateringBundleItem, CateringBundleResponse } from "@/types/api/catering.api.types";
 import { categoryService } from "@/services/api/category.api";
 import { cateringService } from "@/services/api/catering.api";
+import { getActivePromotions, Promotion } from "@/services/api/promotion.api";
 import { useActiveCatering } from "@/context/useActiveCatering";
 import MenuItemCard from "./MenuItemCard";
 import BundleCard from "./BundleCard";
@@ -419,6 +421,7 @@ export default function RestaurantMenuBrowser({
   const [selectedBundle, setSelectedBundle] =
     useState<CateringBundleResponse | null>(null);
   const [addingBundleId, setAddingBundleId] = useState<string | null>(null);
+  const [restaurantPromotions, setRestaurantPromotions] = useState<Promotion[]>([]);
   const [menuItemsCache, setMenuItemsCache] = useState<MenuItem[] | null>(null);
   const [openHoursInfoRestaurantId, setOpenHoursInfoRestaurantId] = useState<string | null>(null);
   const [hoveredHoursInfoRestaurantId, setHoveredHoursInfoRestaurantId] = useState<string | null>(null);
@@ -942,6 +945,23 @@ export default function RestaurantMenuBrowser({
     };
 
     fetchRestaurantBundles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRestaurantId]);
+
+  useEffect(() => {
+    if (!selectedRestaurantId) {
+      setRestaurantPromotions([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    getActivePromotions(selectedRestaurantId, "CATERING").then((promos) => {
+      if (!cancelled) setRestaurantPromotions(promos);
+    });
 
     return () => {
       cancelled = true;
@@ -1502,6 +1522,49 @@ export default function RestaurantMenuBrowser({
                   })}
                 </div>
               </div>
+
+              {restaurantPromotions.length > 0 && (
+                <div className="mb-4 flex flex-col gap-2">
+                  {restaurantPromotions.map((promo) => {
+                    let label = "";
+                    let detail = "";
+
+                    if (promo.promotionType === "BUY_MORE_SAVE_MORE" && promo.discountTiers?.length) {
+                      const sorted = [...promo.discountTiers].sort((a, b) => a.minQuantity - b.minQuantity);
+                      label = "Buy More, Save More";
+                      detail = sorted.map((t) => `${t.minQuantity}+ items: ${t.discountPercentage}% off`).join(" · ");
+                    } else if (promo.promotionType === "BOGO") {
+                      label = "Buy One Get One";
+                      detail =
+                        promo.buyQuantity && promo.getQuantity
+                          ? `Buy ${promo.buyQuantity} get ${promo.getQuantity} free`
+                          : "Buy one get one free";
+                    } else if (promo.discountPercentage) {
+                      label = promo.name;
+                      detail = `${promo.discountPercentage}% off`;
+                      if (promo.minOrderAmount) detail += ` on orders over £${promo.minOrderAmount}`;
+                    } else {
+                      label = promo.name;
+                      detail = promo.description;
+                    }
+
+                    return (
+                      <div
+                        key={promo.id}
+                        className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3"
+                      >
+                        <Tag className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-green-800">{label}</p>
+                          {detail && (
+                            <p className="text-xs text-green-700 mt-0.5">{detail}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {restaurantGroups.map((group) => {
                 const isCollapsed = collapsedGroups.has(group.name);
