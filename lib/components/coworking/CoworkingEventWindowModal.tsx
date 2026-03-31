@@ -67,45 +67,31 @@ function formatCompactDateTime(date: string, time: string) {
 
 function formatTimeLabel(value: string) {
   const [hours, minutes] = value.split(":").map(Number);
-  const period = hours >= 12 ? "PM" : "AM";
-  const h12 = hours % 12 || 12;
-  return `${h12}:${minutes.toString().padStart(2, "0")} ${period}`;
+  return `${String(hours).padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 }
 
 function parseTimeParts(value: string) {
   if (!value) {
-    return { hour: "", minute: "00", period: "AM" as const };
+    return { hour: "", minute: "00" };
   }
 
   const [rawHours, rawMinutes] = value.split(":").map(Number);
-  const period = (rawHours >= 12 ? "PM" : "AM") as "AM" | "PM";
-  const hour12 = rawHours % 12 || 12;
 
   return {
-    hour: String(hour12),
+    hour: String(rawHours).padStart(2, "0"),
     minute: rawMinutes.toString().padStart(2, "0"),
-    period,
   };
 }
 
-function build24HourTime(
-  hour: string,
-  minute: string,
-  period: "AM" | "PM"
-) {
+function build24HourTime(hour: string, minute: string) {
   if (!hour) return "";
 
   const parsedHour = Number(hour);
-  if (Number.isNaN(parsedHour) || parsedHour < 1 || parsedHour > 12) {
+  if (Number.isNaN(parsedHour) || parsedHour < 0 || parsedHour > 23) {
     return "";
   }
 
-  let hours24 = parsedHour % 12;
-  if (period === "PM") {
-    hours24 += 12;
-  }
-
-  return `${String(hours24).padStart(2, "0")}:${minute}`;
+  return `${String(parsedHour).padStart(2, "0")}:${minute}`;
 }
 
 function toMinutes(value: string) {
@@ -205,34 +191,35 @@ export default function CoworkingEventWindowModal({
 
   const isEditingEndTime = editTarget === "end";
   const activeTimeOptions = isEditingEndTime ? allowedEndTimes : timeSlots;
-  const activeTimeValues = activeTimeOptions.map((slot) => slot.value);
 
   const manualTimeParts =
     isEditingEndTime ? draftEndTimeParts : draftStartTimeParts;
-  const selectedManualTime = build24HourTime(
-    manualTimeParts.hour,
-    manualTimeParts.minute,
-    manualTimeParts.period
-  );
-  const isManualTimeComplete = Boolean(selectedManualTime);
-  const isManualTimeAllowed = (() => {
-    if (!selectedManualTime) return true;
+  const selectedManualTime = build24HourTime(manualTimeParts.hour, manualTimeParts.minute);
+  const invalidTimeMessage = (() => {
+    if (!selectedManualTime) return null;
+
     const mins = toMinutes(selectedManualTime);
     const inOperatingHours = mins >= toMinutes("07:00") && mins <= toMinutes("22:00");
-    if (!inOperatingHours) return false;
-    // For end time on same day, must be after start time
-    if (isEditingEndTime && isSameDay(draftStartDate, draftEndDate) && draftStartTime) {
-      return mins > toMinutes(draftStartTime);
-    }
-    return true;
-  })();
 
-  const invalidTimeMessage =
-    !isEditingEndTime
-      ? "Start time must be between 7:00 AM and 10:00 PM."
-      : isSameDay(draftStartDate, draftEndDate) && draftStartTime
-        ? `End time must be later than ${formatTimeLabel(draftStartTime)} on the same day.`
-        : "End time must be between 7:00 AM and 10:00 PM.";
+    if (!inOperatingHours) {
+      return `${isEditingEndTime ? "End" : "Start"} time must be between 07:00 and 22:00.`;
+    }
+
+    if (
+      isEditingEndTime &&
+      isSameDay(draftStartDate, draftEndDate) &&
+      draftStartTime &&
+      mins <= toMinutes(draftStartTime)
+    ) {
+      return `End time must be later than ${formatTimeLabel(draftStartTime)} on the same day.`;
+    }
+
+    if (!activeTimeOptions.some((slot) => slot.value === selectedManualTime)) {
+      return `${isEditingEndTime ? "End" : "Start"} time is unavailable.`;
+    }
+
+    return null;
+  })();
 
   useEffect(() => {
     if (typeof window === "undefined" || window.innerWidth >= 1024) {
@@ -308,20 +295,18 @@ export default function CoworkingEventWindowModal({
   const handleManualTimeChange = ({
     hour = manualTimeParts.hour,
     minute = manualTimeParts.minute,
-    period = manualTimeParts.period,
   }: {
     hour?: string;
     minute?: string;
-    period?: "AM" | "PM";
   }) => {
-    const nextParts = { hour, minute, period };
+    const nextParts = { hour, minute };
     if (isEditingEndTime) {
       setDraftEndTimeParts(nextParts);
     } else {
       setDraftStartTimeParts(nextParts);
     }
 
-    const nextTime = build24HourTime(hour, minute, period);
+    const nextTime = build24HourTime(hour, minute);
 
     if (!nextTime) {
       if (isEditingEndTime) {
@@ -372,14 +357,14 @@ export default function CoworkingEventWindowModal({
         <label className="text-sm font-medium text-slate-700">
           Exact time
         </label>
-        <div className="grid grid-cols-[1fr_1fr_auto] gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
           <select
             value={manualTimeParts.hour}
             onChange={(e) => handleManualTimeChange({ hour: e.target.value })}
             className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
           >
             <option value="">Hour</option>
-            {Array.from({ length: 12 }, (_, index) => String(index + 1)).map((hour) => (
+            {Array.from({ length: 16 }, (_, index) => String(index + 7).padStart(2, "0")).map((hour) => (
               <option key={hour} value={hour}>
                 {hour}
               </option>
@@ -398,27 +383,8 @@ export default function CoworkingEventWindowModal({
             ))}
           </select>
 
-          <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-1">
-            {(["AM", "PM"] as const).map((period) => {
-              const isActive = manualTimeParts.period === period;
-              return (
-                <button
-                  key={period}
-                  type="button"
-                  onClick={() => handleManualTimeChange({ period })}
-                  className={`rounded-[0.9rem] px-3 py-2 text-sm font-semibold transition-all ${
-                    isActive
-                      ? "bg-primary text-white"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  {period}
-                </button>
-              );
-            })}
-          </div>
         </div>
-        {isManualTimeComplete && !isManualTimeAllowed && (
+        {invalidTimeMessage && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             <p className="font-semibold">Invalid time</p>
             <p className="mt-1">{invalidTimeMessage}</p>

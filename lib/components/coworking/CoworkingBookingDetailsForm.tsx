@@ -48,9 +48,7 @@ export function generateCoworkingTimeSlots(): TimeSlot[] {
       if (h === 22 && m > 0) break;
       const hh = String(h).padStart(2, "0");
       const mm = String(m).padStart(2, "0");
-      const period = h < 12 ? "AM" : "PM";
-      const h12 = h % 12 || 12;
-      slots.push({ value: `${hh}:${mm}`, label: `${h12}:${mm} ${period}` });
+      slots.push({ value: `${hh}:${mm}`, label: `${hh}:${mm}` });
     }
   }
 
