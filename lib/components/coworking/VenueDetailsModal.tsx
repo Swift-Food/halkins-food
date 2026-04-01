@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Users, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, X, Maximize2, Sparkles, Lightbulb } from "lucide-react";
 import { CoworkingVenue } from "@/types/api";
 
 function formatAttendanceTag(tag: string): string {
@@ -29,6 +29,7 @@ export default function VenueDetailsModal({
     venue.coverPhoto,
     ...(venue.galleryPhotos ?? []),
   ].filter((p): p is string => Boolean(p));
+  console.log("venue is", JSON.stringify(venue))
 
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -155,15 +156,25 @@ export default function VenueDetailsModal({
         )}
 
         {/* Info */}
-        <div className="px-5 pt-4 pb-6 space-y-3">
+        <div className="px-5 pt-4 pb-6 space-y-4">
+          {/* Name + quick stats */}
           <div>
             <h3 className="text-lg font-semibold text-slate-900">{venue.name}</h3>
-            <span className="flex items-center gap-1.5 text-sm text-slate-500 mt-1">
-              <Users className="h-4 w-4" />
-              Up to {venue.capacity} guests
-            </span>
+            <div className="mt-2 flex flex-wrap gap-3">
+              <span className="flex items-center gap-1.5 text-sm text-slate-500">
+                <Users className="h-4 w-4 shrink-0" />
+                Up to {venue.capacity} guests
+              </span>
+              {venue.sizeM2 && (
+                <span className="flex items-center gap-1.5 text-sm text-slate-500">
+                  <Maximize2 className="h-4 w-4 shrink-0" />
+                  {venue.sizeM2} m²
+                </span>
+              )}
+            </div>
           </div>
 
+          {/* Attendance tags */}
           {formattedTags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {formattedTags.map((tag) => (
@@ -177,8 +188,47 @@ export default function VenueDetailsModal({
             </div>
           )}
 
+          {/* Description */}
           {venue.description && (
             <p className="text-sm leading-6 text-slate-600">{venue.description}</p>
+          )}
+
+          {/* Features + Ideal For */}
+          {((venue.features?.length ?? 0) > 0 || (venue.idealFor?.length ?? 0) > 0) && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(venue.features?.length ?? 0) > 0 && (
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+            
+                    <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Features</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {venue.features!.map((f) => (
+                      <span key={f} className="rounded-full bg-white border border-slate-200 px-2.5 py-1 text-xs text-slate-700 font-medium shadow-sm">
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(venue.idealFor?.length ?? 0) > 0 && (
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-white shadow-sm text-primary">
+                      <Lightbulb className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Ideal for</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {venue.idealFor!.map((f) => (
+                      <span key={f} className="rounded-full bg-white border border-slate-200 px-2.5 py-1 text-xs text-slate-700 font-medium shadow-sm">
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           <button

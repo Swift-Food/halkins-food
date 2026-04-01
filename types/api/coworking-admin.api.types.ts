@@ -206,6 +206,9 @@ export interface CoworkingVenueAdmin {
   galleryPhotos?: string[] | null;
   description?: string | null;
   attendanceTags?: CoworkingVenueAttendanceTag[] | null;
+  sizeM2?: number | null;
+  features?: string[] | null;
+  idealFor?: string[] | null;
   createdAt: string;
   updatedAt: string;
   coworkingSpaceId: string;
@@ -224,6 +227,9 @@ export interface CreateCoworkingVenueRequest {
   galleryPhotos?: string[];
   description?: string;
   attendanceTags?: CoworkingVenueAttendanceTag[];
+  sizeM2?: number;
+  features?: string[];
+  idealFor?: string[];
 }
 
 /**
@@ -239,6 +245,9 @@ export interface UpdateCoworkingVenueRequest {
   galleryPhotos?: string[];
   description?: string;
   attendanceTags?: CoworkingVenueAttendanceTag[];
+  sizeM2?: number;
+  features?: string[];
+  idealFor?: string[];
 }
 
 /**

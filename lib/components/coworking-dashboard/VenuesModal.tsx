@@ -39,6 +39,9 @@ const emptyForm: CreateCoworkingVenueRequest = {
   coverPhoto: "",
   description: "",
   attendanceTags: [],
+  sizeM2: undefined,
+  features: [],
+  idealFor: [],
 };
 
 type FormMode = "list" | "create" | "edit";
@@ -73,6 +76,8 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
   const [galleryUploading, setGalleryUploading] = useState(false);
   const [hasSelectedAddress, setHasSelectedAddress] = useState(false);
   const [addressSearchError, setAddressSearchError] = useState("");
+  const [featuresInput, setFeaturesInput] = useState("");
+  const [idealForInput, setIdealForInput] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -109,6 +114,8 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
     setGalleryPhotos([]);
     setHasSelectedAddress(false);
     setAddressSearchError("");
+    setFeaturesInput("");
+    setIdealForInput("");
     setError("");
     setMode("create");
   };
@@ -124,10 +131,15 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
       coverPhoto: venue.coverPhoto ?? "",
       description: venue.description ?? "",
       attendanceTags: venue.attendanceTags ?? [],
+      sizeM2: venue.sizeM2 ?? undefined,
+      features: venue.features ?? [],
+      idealFor: venue.idealFor ?? [],
     });
     setGalleryPhotos(venue.galleryPhotos ?? []);
     setHasSelectedAddress(false);
     setAddressSearchError("");
+    setFeaturesInput("");
+    setIdealForInput("");
     setError("");
     setMode("edit");
   };
@@ -145,6 +157,9 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
         coverPhoto: form.coverPhoto || undefined,
         galleryPhotos,
         description: form.description || undefined,
+        sizeM2: form.sizeM2 ? Number(form.sizeM2) : undefined,
+        features: form.features?.length ? form.features : undefined,
+        idealFor: form.idealFor?.length ? form.idealFor : undefined,
       };
       if (mode === "create") {
         await coworkingDashboardService.createVenue(spaceId, payload);
@@ -607,6 +622,20 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
                           placeholder="80"
                         />
                       </div>
+                      <div>
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          Size (m²)
+                        </label>
+                        <input
+                          name="sizeM2"
+                          type="number"
+                          value={form.sizeM2 ?? ""}
+                          onChange={handleChange}
+                          min={1}
+                          className="input h-12 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 shadow-none focus:border-primary focus:bg-white"
+                          placeholder="120"
+                        />
+                      </div>
                       <div className="sm:col-span-2">
                         <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                           Description
@@ -643,6 +672,108 @@ export default function VenuesModal({ spaceId, onClose }: VenuesModalProps) {
                               <span className="font-medium">{option.label}</span>
                             </label>
                           ))}
+                        </div>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          Features
+                        </label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {(form.features ?? []).map((f, i) => (
+                            <span key={i} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+                              {f}
+                              <button
+                                type="button"
+                                onClick={() => setForm((prev) => ({ ...prev, features: prev.features?.filter((_, idx) => idx !== i) }))}
+                                className="text-slate-400 hover:text-slate-600"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            value={featuresInput}
+                            onChange={(e) => setFeaturesInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === ",") {
+                                e.preventDefault();
+                                const val = featuresInput.trim();
+                                if (val && !(form.features ?? []).includes(val)) {
+                                  setForm((prev) => ({ ...prev, features: [...(prev.features ?? []), val] }));
+                                }
+                                setFeaturesInput("");
+                              }
+                            }}
+                            className="input h-10 flex-1 rounded-2xl border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 shadow-none focus:border-primary focus:bg-white"
+                            placeholder="e.g. WiFi, Projector — press Enter to add"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const val = featuresInput.trim();
+                              if (val && !(form.features ?? []).includes(val)) {
+                                setForm((prev) => ({ ...prev, features: [...(prev.features ?? []), val] }));
+                              }
+                              setFeaturesInput("");
+                            }}
+                            className="btn btn-sm rounded-full border-slate-200 bg-white text-slate-700 shadow-none hover:bg-slate-50"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          Ideal for
+                        </label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {(form.idealFor ?? []).map((f, i) => (
+                            <span key={i} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+                              {f}
+                              <button
+                                type="button"
+                                onClick={() => setForm((prev) => ({ ...prev, idealFor: prev.idealFor?.filter((_, idx) => idx !== i) }))}
+                                className="text-slate-400 hover:text-slate-600"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            value={idealForInput}
+                            onChange={(e) => setIdealForInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === ",") {
+                                e.preventDefault();
+                                const val = idealForInput.trim();
+                                if (val && !(form.idealFor ?? []).includes(val)) {
+                                  setForm((prev) => ({ ...prev, idealFor: [...(prev.idealFor ?? []), val] }));
+                                }
+                                setIdealForInput("");
+                              }
+                            }}
+                            className="input h-10 flex-1 rounded-2xl border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 shadow-none focus:border-primary focus:bg-white"
+                            placeholder="e.g. Meetings, Events — press Enter to add"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const val = idealForInput.trim();
+                              if (val && !(form.idealFor ?? []).includes(val)) {
+                                setForm((prev) => ({ ...prev, idealFor: [...(prev.idealFor ?? []), val] }));
+                              }
+                              setIdealForInput("");
+                            }}
+                            className="btn btn-sm rounded-full border-slate-200 bg-white text-slate-700 shadow-none hover:bg-slate-50"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
                     </div>

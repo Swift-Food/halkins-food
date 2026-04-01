@@ -144,6 +144,9 @@ export interface CoworkingVenue {
   galleryPhotos?: string[] | null;
   description?: string;
   attendanceTags?: string[] | null;
+  sizeM2?: number | null;
+  features?: string[] | null;
+  idealFor?: string[] | null;
 }
 
 // ============================================================================
