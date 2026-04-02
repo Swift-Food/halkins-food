@@ -9,6 +9,7 @@ import {
 import {
   AlertTriangle,
   Archive,
+  CalendarRange,
   Check,
   CheckCircle,
   ChevronRight,
@@ -91,6 +92,23 @@ function formatDate(dateStr: string) {
   });
 }
 
+function formatTimeOnly(dateStr: string) {
+  return new Date(dateStr).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function isSameDay(a: string, b: string) {
+  const da = new Date(a);
+  const db = new Date(b);
+  return (
+    da.getFullYear() === db.getFullYear() &&
+    da.getMonth() === db.getMonth() &&
+    da.getDate() === db.getDate()
+  );
+}
+
 export default function OrdersList({
   orders,
   activeTier,
@@ -131,6 +149,7 @@ export default function OrdersList({
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg sm:text-xl font-bold text-gray-900">Orders</h2>
 
+          <div className="flex items-center gap-2">
           {/* Tier segmented control */}
           <div className="inline-flex bg-gray-100 rounded-xl p-1 gap-0.5">
             <button
@@ -160,6 +179,7 @@ export default function OrdersList({
               <Archive className="h-3.5 w-3.5" />
               Archive
             </button>
+          </div>
           </div>
         </div>
 
@@ -250,9 +270,6 @@ export default function OrdersList({
                           : statusLabel[order.status] || order.status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                       </span>
                     )}
-                    <span className="text-xs text-gray-400">
-                      {formatDate(order.createdAt)}
-                    </span>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
@@ -268,6 +285,29 @@ export default function OrdersList({
                       <span className="flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5" />
                         {order.roomLocationDetails}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Dates row */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 mt-1.5 text-xs text-gray-400">
+                    <span>
+                      <span className="font-medium text-gray-500">Created: </span>
+                      {formatDate(order.createdAt)}
+                    </span>
+                    {order.bookingStartTime && (
+                      <span className="flex items-center gap-1 flex-wrap">
+                        <CalendarRange className="h-3 w-3 shrink-0" />
+                        <span className="font-medium text-gray-500">Booking:</span>
+                        <span className="whitespace-nowrap">{formatDate(order.bookingStartTime)}</span>
+                        {order.bookingEndTime && (
+                          <span className="whitespace-nowrap">
+                            {"– "}
+                            {isSameDay(order.bookingStartTime, order.bookingEndTime)
+                              ? formatTimeOnly(order.bookingEndTime)
+                              : formatDate(order.bookingEndTime)}
+                          </span>
+                        )}
                       </span>
                     )}
                   </div>
