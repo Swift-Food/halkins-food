@@ -127,6 +127,16 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
   const [selectedDate, setSelectedDate] = useState(getTodayKey());
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedVenueIds, setSelectedVenueIds] = useState<Set<string>>(new Set());
+  const [priceView, setPriceView] = useState<"total" | "venue_hire">(() => {
+    if (typeof window === "undefined") return "total";
+    return (localStorage.getItem("orders_price_view") as "total" | "venue_hire") ?? "total";
+  });
+
+  const handlePriceViewChange = () => {
+    const next = priceView === "total" ? "venue_hire" : "total";
+    setPriceView(next);
+    localStorage.setItem("orders_price_view", next);
+  };
 
   const fetchCalendar = useCallback(async () => {
     setLoading(true);
@@ -334,11 +344,17 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
                   </span>
                   {selectedDayOrders.length > 0 && (
                     <span className="text-xs font-semibold text-primary">
-                      £{selectedDayOrders.reduce((sum, o) => sum + o.order.total, 0).toFixed(2)}
+                      £{selectedDayOrders.reduce((sum, o) => sum + (priceView === "total" ? o.order.total : o.order.venueHireFee), 0).toFixed(2)}
                     </span>
                   )}
                 </div>
               </div>
+              <button
+                onClick={handlePriceViewChange}
+                className="w-24 justify-center flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+              >
+                {priceView === "total" ? "Total fee" : "Hire fee"}
+              </button>
             </div>
           </div>
 
@@ -380,7 +396,7 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
                           {order.memberName || order.memberEmail}
                         </p>
                         <span className="text-sm font-bold text-primary flex-shrink-0">
-                          £{order.total.toFixed(2)}
+                          £{(priceView === "total" ? order.total : order.venueHireFee).toFixed(2)}
                         </span>
                       </div>
 
