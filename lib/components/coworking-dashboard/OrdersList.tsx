@@ -127,44 +127,44 @@ export default function OrdersList({
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
       {/* Tier + Status Tabs */}
-      <div className="border-b border-gray-200 px-4 sm:px-6 pt-4 sm:pt-6">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
-          Orders
-        </h2>
+      <div className="px-4 sm:px-6 pt-4 sm:pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Orders</h2>
 
-        {/* Tier toggle */}
-        <div className="flex gap-2 mb-3">
-          <button
-            onClick={() => onTierChange("active")}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              activeTier === "active"
-                ? "bg-primary text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            <PlayCircle className="h-4 w-4" />
-            Active
-            {pendingCount > 0 && activeTier !== "active" && (
-              <span className="ml-0.5 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold bg-amber-500 text-white">
-                {pendingCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => onTierChange("archive")}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              activeTier === "archive"
-                ? "bg-gray-700 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            <Archive className="h-4 w-4" />
-            Archive
-          </button>
+          {/* Tier segmented control */}
+          <div className="inline-flex bg-gray-100 rounded-xl p-1 gap-0.5">
+            <button
+              onClick={() => onTierChange("active")}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                activeTier === "active"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <PlayCircle className="h-3.5 w-3.5" />
+              Active
+              {pendingCount > 0 && (
+                <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full text-xs font-bold bg-amber-500 text-white">
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => onTierChange("archive")}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                activeTier === "archive"
+                  ? "bg-white text-gray-700 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Archive className="h-3.5 w-3.5" />
+              Archive
+            </button>
+          </div>
         </div>
 
-        {/* Subtab filters */}
-        <div className="flex gap-2 overflow-x-auto pb-3 -mb-px">
+        {/* Subtab filters — underline style to visually distinguish from tier toggle */}
+        <div className="flex gap-0 overflow-x-auto border-b border-gray-200 -mx-4 sm:-mx-6 px-4 sm:px-6">
           {(activeTier === "active" ? activeTierTabs : archiveTierTabs).map((tab) => {
             const Icon = tab.icon;
             const isActive = activeStatus === tab.value;
@@ -173,18 +173,18 @@ export default function OrdersList({
               <button
                 key={tab.value}
                 onClick={() => onStatusChange(tab.value)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors ${
                   isActive
                     ? isNeedsReview
-                      ? "bg-amber-100 text-amber-700 border border-amber-300"
-                      : "bg-primary/10 text-primary border border-primary/30"
-                    : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-transparent"
+                      ? "border-amber-500 text-amber-700"
+                      : "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-3.5 w-3.5" />
                 {tab.label}
                 {isNeedsReview && pendingCount > 0 && (
-                  <span className="ml-0.5 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold bg-amber-500 text-white">
+                  <span className="ml-0.5 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full text-xs font-bold bg-amber-500 text-white">
                     {pendingCount}
                   </span>
                 )}
