@@ -197,6 +197,7 @@ export interface DashboardOrderDetailResponse {
   status: string;
   adminReviewStatus: string;
   adminReviewedAt: string | null;
+  adminReviewNotes: string | null;
   member: DashboardOrderMember;
   booking: DashboardOrderBooking;
   mealSessions: DashboardOrderMealSession[];

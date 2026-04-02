@@ -21,6 +21,8 @@ import {
   MessageSquareText,
   Info,
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface OrderDetailModalProps {
@@ -144,6 +146,21 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function getAdminReviewNotesPreview(notes: string | null): string | null {
+  if (!notes) return null;
+
+  const lines = notes
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const importedEventLine = lines.find((line) =>
+    line.toLowerCase().startsWith("imported event:")
+  );
+
+  return importedEventLine || lines[0] || null;
+}
+
 export default function OrderDetailModal({
   spaceId,
   orderId,
@@ -162,6 +179,7 @@ export default function OrderDetailModal({
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [showResponses, setShowResponses] = useState(false);
+  const [showAdminReviewNotes, setShowAdminReviewNotes] = useState(false);
   const [venueHireFeeInput, setVenueHireFeeInput] = useState("");
   const [depositAmountInput, setDepositAmountInput] = useState("");
 
@@ -181,6 +199,10 @@ export default function OrderDetailModal({
 
   useEffect(() => {
     setShowResponses(false);
+  }, [orderId]);
+
+  useEffect(() => {
+    setShowAdminReviewNotes(false);
   }, [orderId]);
 
   useEffect(() => {
@@ -265,6 +287,9 @@ export default function OrderDetailModal({
   const needsReview =
     order?.adminReviewStatus === "pending_admin_review";
   const feeIsLocked = order ? ["paid", "confirmed", "completed", "cancelled"].includes(order.status) : false;
+  const shouldShowAdminReviewNotes =
+    !!order?.adminReviewNotes && order.adminReviewStatus !== "pending_admin_review";
+  const adminReviewNotesPreview = getAdminReviewNotesPreview(order?.adminReviewNotes ?? null);
 
   // Pre-fill venue hire fee input: use DB value if set, otherwise auto-calculate recommendation
   useEffect(() => {
@@ -487,6 +512,37 @@ export default function OrderDetailModal({
                     )}
                   </div>
                 </div>
+
+                {shouldShowAdminReviewNotes && (
+                  <div className="overflow-hidden rounded-lg border border-emerald-200 bg-emerald-50">
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminReviewNotes((current) => !current)}
+                      className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-emerald-100/60"
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold uppercase tracking-wide text-gray-600">
+                          Admin Review Notes
+                        </span>
+                        {!showAdminReviewNotes && adminReviewNotesPreview && (
+                          <span className="mt-1 block truncate text-sm font-medium text-gray-800">
+                            {adminReviewNotesPreview}
+                          </span>
+                        )}
+                      </span>
+                      {showAdminReviewNotes ? (
+                        <ChevronUp className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
+                      ) : (
+                        <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
+                      )}
+                    </button>
+                    {showAdminReviewNotes && (
+                      <div className="border-t border-emerald-200 px-4 py-4 text-sm text-gray-700">
+                        <p className="whitespace-pre-wrap leading-6">{order.adminReviewNotes}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {responseEntries.length > 0 && (
                   <button
