@@ -1,9 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { DashboardOrderSummary, DashboardOrderStatusFilter } from "@/types/api";
+import {
+  DashboardOrderSummary,
+  DashboardOrderStatusFilter,
+  DashboardOrderTier,
+} from "@/types/api";
 import {
   AlertTriangle,
+  Archive,
   Check,
   CheckCircle,
   ChevronRight,
@@ -18,56 +23,34 @@ import {
 
 interface OrdersListProps {
   orders: DashboardOrderSummary[];
+  activeTier: DashboardOrderTier;
   activeStatus: DashboardOrderStatusFilter;
   pendingCount: number;
+  onTierChange: (tier: DashboardOrderTier) => void;
   onStatusChange: (status: DashboardOrderStatusFilter) => void;
   onOrderClick: (orderId: string) => void;
   onQuickApprove: (orderId: string) => Promise<void>;
   loading: boolean;
 }
 
-const statusTabs: {
+const activeTierTabs: {
   value: DashboardOrderStatusFilter;
   label: string;
   icon: typeof Clock;
-  color: string;
 }[] = [
-  {
-    value: "all",
-    label: "All",
-    icon: List,
-    color: "bg-gray-100 text-gray-700",
-  },
-  {
-    value: "needs_review",
-    label: "Needs Review",
-    icon: AlertTriangle,
-    color: "bg-amber-100 text-amber-700",
-  },
-  {
-    value: "upcoming",
-    label: "Upcoming",
-    icon: Clock,
-    color: "bg-yellow-100 text-yellow-700",
-  },
-  {
-    value: "active",
-    label: "Active",
-    icon: PlayCircle,
-    color: "bg-blue-100 text-blue-700",
-  },
-  {
-    value: "completed",
-    label: "Completed",
-    icon: CheckCircle,
-    color: "bg-green-100 text-green-700",
-  },
-  {
-    value: "cancelled",
-    label: "Cancelled",
-    icon: XCircle,
-    color: "bg-red-100 text-red-700",
-  },
+  { value: "all", label: "All", icon: List },
+  { value: "needs_review", label: "Needs Review", icon: AlertTriangle },
+  { value: "upcoming", label: "Upcoming", icon: Clock },
+];
+
+const archiveTierTabs: {
+  value: DashboardOrderStatusFilter;
+  label: string;
+  icon: typeof Clock;
+}[] = [
+  { value: "all", label: "All", icon: List },
+  { value: "completed", label: "Completed", icon: CheckCircle },
+  { value: "cancelled", label: "Cancelled", icon: XCircle },
 ];
 
 const statusBadgeColor: Record<string, string> = {
@@ -110,8 +93,10 @@ function formatDate(dateStr: string) {
 
 export default function OrdersList({
   orders,
+  activeTier,
   activeStatus,
   pendingCount,
+  onTierChange,
   onStatusChange,
   onOrderClick,
   onQuickApprove,
@@ -141,13 +126,46 @@ export default function OrdersList({
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-      {/* Status Tabs */}
+      {/* Tier + Status Tabs */}
       <div className="border-b border-gray-200 px-4 sm:px-6 pt-4 sm:pt-6">
         <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
           Orders
         </h2>
+
+        {/* Tier toggle */}
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={() => onTierChange("active")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              activeTier === "active"
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            <PlayCircle className="h-4 w-4" />
+            Active
+            {pendingCount > 0 && activeTier !== "active" && (
+              <span className="ml-0.5 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-bold bg-amber-500 text-white">
+                {pendingCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => onTierChange("archive")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              activeTier === "archive"
+                ? "bg-gray-700 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            <Archive className="h-4 w-4" />
+            Archive
+          </button>
+        </div>
+
+        {/* Subtab filters */}
         <div className="flex gap-2 overflow-x-auto pb-3 -mb-px">
-          {statusTabs.map((tab) => {
+          {(activeTier === "active" ? activeTierTabs : archiveTierTabs).map((tab) => {
             const Icon = tab.icon;
             const isActive = activeStatus === tab.value;
             const isNeedsReview = tab.value === "needs_review";
@@ -189,6 +207,8 @@ export default function OrdersList({
             <p className="text-sm mt-1">
               {activeStatus === "needs_review"
                 ? "No orders are currently awaiting your review."
+                : activeTier === "archive"
+                ? "No past orders found."
                 : "There are no orders with this status yet."}
             </p>
           </div>

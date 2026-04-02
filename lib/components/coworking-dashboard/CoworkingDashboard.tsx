@@ -9,6 +9,7 @@ import {
   DashboardStatsResponse,
   DashboardOrderSummary,
   DashboardOrderStatusFilter,
+  DashboardOrderTier,
 } from "@/types/api";
 import DashboardLogin from "./DashboardLogin";
 import StatsCards from "./StatsCards";
@@ -84,6 +85,7 @@ function CoworkingDashboardInner({
   const [me, setMe] = useState<DashboardMeResponse | null>(null);
   const [stats, setStats] = useState<DashboardStatsResponse | null>(null);
   const [orders, setOrders] = useState<DashboardOrderSummary[]>([]);
+  const [activeTier, setActiveTier] = useState<DashboardOrderTier>("active");
   const [activeStatus, setActiveStatus] =
     useState<DashboardOrderStatusFilter>("all");
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -174,32 +176,72 @@ function CoworkingDashboardInner({
     fetchStats();
   }, [fetchStats]);
 
-  // Step 3: Fetch orders when spaceId or status filter changes
+  const handleTierChange = useCallback((tier: DashboardOrderTier) => {
+    setActiveTier(tier);
+    setActiveStatus("all");
+  }, []);
+
+  // Step 3: Fetch orders when spaceId, tier, or status filter changes
   const fetchOrders = useCallback(async () => {
     if (!spaceId) return;
     setOrdersLoading(true);
     try {
-      // "needs_review" is a frontend pseudo-filter: fetch all, then filter client-side
-      const apiStatus = activeStatus === "needs_review" ? "all" : activeStatus;
+      // Determine what to send to the API
+      let apiStatus: DashboardOrderStatusFilter;
+      if (activeTier === "active") {
+        // needs_review and all both require fetching everything then filtering client-side
+        apiStatus = activeStatus === "needs_review" || activeStatus === "all" ? "all" : activeStatus;
+      } else {
+        // archive: 'all', 'completed', or 'cancelled' — all valid API params
+        apiStatus = activeStatus;
+      }
+
       const data = await coworkingDashboardService.getOrders(spaceId, {
         status: apiStatus,
         sortBy: "event_start_time",
         limit: 50,
       });
-      const filtered =
-        activeStatus === "needs_review"
-          ? data.orders.filter(
+
+      let filtered = data.orders;
+
+      if (activeTier === "active") {
+        // Exclude completed, cancelled, and rejected regardless of subtab
+        filtered = filtered.filter(
+          (o) =>
+            o.status !== "completed" &&
+            o.status !== "cancelled" &&
+            o.adminReviewStatus !== "rejected",
+        );
+        if (activeStatus === "needs_review") {
+          filtered = filtered.filter(
+            (o) => o.adminReviewStatus === "pending_admin_review",
+          );
+        } else if (activeStatus === "all") {
+          // Pin needs-review orders to top, rest keep event_start_time order from API
+          filtered = [
+            ...filtered.filter((o) => o.adminReviewStatus === "pending_admin_review"),
+            ...filtered.filter((o) => o.adminReviewStatus !== "pending_admin_review"),
+          ];
+        }
+      } else {
+        // archive: filter to completed, cancelled, and rejected when fetching 'all'
+        if (activeStatus === "all") {
+          filtered = filtered.filter(
             (o) =>
-              o.adminReviewStatus === "pending_admin_review",
-          )
-          : data.orders;
+              o.status === "completed" ||
+              o.status === "cancelled" ||
+              o.adminReviewStatus === "rejected",
+          );
+        }
+      }
+
       setOrders(filtered);
     } catch (err: unknown) {
       console.error("Failed to fetch orders:", err);
     } finally {
       setOrdersLoading(false);
     }
-  }, [spaceId, activeStatus]);
+  }, [spaceId, activeTier, activeStatus]);
 
   const handleQuickApprove = useCallback(
     async (orderId: string) => {
@@ -342,8 +384,8 @@ function CoworkingDashboardInner({
         <>
           {stats && <StatsCards stats={stats} />}
 
-          {/* Pending approval banner */}
-          {spaceId && pendingCount > 0 && activeStatus !== "needs_review" && (
+          {/* Pending approval banner — only accurate when Active > All is loaded */}
+          {spaceId && pendingCount > 0 && activeTier === "active" && activeStatus !== "needs_review" && (
             <button
               onClick={() => setActiveStatus("needs_review")}
               className="w-full flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 text-left hover:bg-amber-100 transition-colors"
@@ -364,8 +406,10 @@ function CoworkingDashboardInner({
           {spaceId && (
             <OrdersList
               orders={orders}
+              activeTier={activeTier}
               activeStatus={activeStatus}
               pendingCount={pendingCount}
+              onTierChange={handleTierChange}
               onStatusChange={setActiveStatus}
               onOrderClick={setSelectedOrderId}
               onQuickApprove={handleQuickApprove}

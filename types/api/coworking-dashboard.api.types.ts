@@ -14,13 +14,14 @@
 /**
  * Filter status for dashboard order listing
  */
+export type DashboardOrderTier = 'active' | 'archive';
+
 export type DashboardOrderStatusFilter =
   | 'upcoming'
-  | 'active'
   | 'completed'
   | 'cancelled'
   | 'all'
-  | 'needs_review'; // frontend-only: fetches 'upcoming' + filters by adminReviewStatus === 'pending_admin_review'
+  | 'needs_review'; // frontend-only: fetches 'all' + filters by adminReviewStatus === 'pending_admin_review'
 
 export type DashboardOrderSortBy = 'created_at' | 'event_start_time';
 
@@ -133,6 +134,8 @@ export interface DashboardOrderSummary {
   total: number;
   itemCount: number;
   estimatedDelivery: string | null;
+  bookingStartTime: string | null;
+  bookingEndTime: string | null;
   createdAt: string;
 }
 
