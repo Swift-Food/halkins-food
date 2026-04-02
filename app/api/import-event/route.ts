@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as cheerio from "cheerio";
+import type { AnyNode } from "domhandler";
 
 export const dynamic = "force-dynamic";
 
@@ -593,7 +594,7 @@ function extractFromDom($: cheerio.CheerioAPI): ImportedEventData {
     "article",
   ];
 
-  let bodyRoot: cheerio.Cheerio<cheerio.Element> | null = null;
+  let bodyRoot: cheerio.Cheerio<AnyNode> | null = null;
   for (const selector of bodySelectors) {
     const element = $(selector).first();
     if (element.length) {
