@@ -21,6 +21,7 @@ import {
 
 interface CalendarTabProps {
   spaceId: string;
+  refreshToken?: number;
 }
 
 // Predefined venue color palette - distinct, accessible colors
@@ -84,7 +85,7 @@ function shouldCountForCalendarIndicator(order: CalendarOrderItem): boolean {
   return true;
 }
 
-export default function CalendarTab({ spaceId }: CalendarTabProps) {
+export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabProps) {
   const [calendarData, setCalendarData] = useState<CalendarResponse | null>(null);
   const [venues, setVenues] = useState<CoworkingVenueAdmin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,7 +112,7 @@ export default function CalendarTab({ spaceId }: CalendarTabProps) {
 
   useEffect(() => {
     fetchCalendar();
-  }, [fetchCalendar]);
+  }, [fetchCalendar, refreshToken]);
 
   const venueColorMap = useMemo(() => {
     const map: Record<string, string> = {};

@@ -44,6 +44,15 @@ export interface DashboardStatsQuery {
   to?: string; // ISO 8601 date
 }
 
+export interface CreateAdminEventRequest {
+  memberEmail: string;
+  memberName: string;
+  venueId: string;
+  bookingStartTime: string;
+  bookingEndTime: string;
+  notes?: string;
+}
+
 // ============================================================================
 // RESPONSE TYPES
 // ============================================================================

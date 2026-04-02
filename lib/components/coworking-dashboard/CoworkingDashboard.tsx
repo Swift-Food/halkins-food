@@ -15,6 +15,7 @@ import StatsCards from "./StatsCards";
 import OrdersList from "./OrdersList";
 import OrderDetailModal from "./OrderDetailModal";
 import VenuesModal from "./VenuesModal";
+import ImportEventModal from "./ImportEventModal";
 import PaymentsTab from "./PaymentsTab";
 import CalendarTab from "./CalendarTab";
 import PromoCodesTab from "./PromoCodesTab";
@@ -27,6 +28,7 @@ import {
   AlertTriangle,
   CalendarDays,
   Tag,
+  CalendarPlus,
 } from "lucide-react";
 import StripeReturnPage from "./StripeReturnPage";
 
@@ -87,6 +89,8 @@ function CoworkingDashboardInner({
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [showVenues, setShowVenues] = useState(false);
+  const [showImportEvent, setShowImportEvent] = useState(false);
+  const [calendarRefreshToken, setCalendarRefreshToken] = useState(0);
   const [error, setError] = useState("");
   const tabs: Array<{
     id: DashboardTab;
@@ -156,18 +160,19 @@ function CoworkingDashboardInner({
   }, [authenticated, fetchMe]);
 
   // Step 2: Once we have spaceId, fetch stats
-  useEffect(() => {
+  const fetchStats = useCallback(async () => {
     if (!spaceId) return;
-    const fetchStats = async () => {
-      try {
-        const statsData = await coworkingDashboardService.getStats(spaceId);
-        setStats(statsData);
-      } catch (err: unknown) {
-        console.error("Failed to fetch stats:", err);
-      }
-    };
-    fetchStats();
+    try {
+      const statsData = await coworkingDashboardService.getStats(spaceId);
+      setStats(statsData);
+    } catch (err: unknown) {
+      console.error("Failed to fetch stats:", err);
+    }
   }, [spaceId]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   // Step 3: Fetch orders when spaceId or status filter changes
   const fetchOrders = useCallback(async () => {
@@ -224,6 +229,11 @@ function CoworkingDashboardInner({
     setOrders([]);
   };
 
+  const handleImportCreated = useCallback(async () => {
+    await Promise.all([fetchOrders(), fetchStats()]);
+    setCalendarRefreshToken((current) => current + 1);
+  }, [fetchOrders, fetchStats]);
+
   // Checking auth state
   if (checkingAuth) {
     return (
@@ -262,6 +272,13 @@ function CoworkingDashboardInner({
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowImportEvent(true)}
+            className="btn btn-sm btn-outline gap-2 border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+          >
+            <CalendarPlus className="h-4 w-4" />
+            Import Event
+          </button>
           <button
             onClick={() => setShowVenues(true)}
             className="btn btn-sm btn-primary gap-2"
@@ -366,7 +383,9 @@ function CoworkingDashboardInner({
       )}
 
       {/* Calendar Tab */}
-      {activeTab === "calendar" && spaceId && <CalendarTab spaceId={spaceId} />}
+      {activeTab === "calendar" && spaceId && (
+        <CalendarTab spaceId={spaceId} refreshToken={calendarRefreshToken} />
+      )}
 
       {/* Payments Tab */}
       {activeTab === "payment" && spaceId && <PaymentsTab spaceId={spaceId} />}
@@ -377,6 +396,14 @@ function CoworkingDashboardInner({
       {/* Venues Modal */}
       {showVenues && spaceId && (
         <VenuesModal spaceId={spaceId} onClose={() => setShowVenues(false)} />
+      )}
+
+      {showImportEvent && spaceId && (
+        <ImportEventModal
+          spaceId={spaceId}
+          onClose={() => setShowImportEvent(false)}
+          onImported={handleImportCreated}
+        />
       )}
     </div>
   );

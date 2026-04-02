@@ -44,6 +44,8 @@ export const API_ENDPOINTS = {
     `/coworking-dashboard/${spaceId}/orders/${orderId}/reject`,
   COWORKING_DASHBOARD_SET_VENUE_HIRE_FEE: (spaceId: string, orderId: string) =>
     `/coworking-dashboard/${spaceId}/orders/${orderId}/set-venue-hire-fee`,
+  COWORKING_DASHBOARD_IMPORT_EVENT: (spaceId: string) =>
+    `/coworking-dashboard/${spaceId}/events`,
   COWORKING_DASHBOARD_VENUES: (spaceId: string) =>
     `/coworking-dashboard/${spaceId}/venues`,
   COWORKING_DASHBOARD_VENUE: (spaceId: string, venueId: string) =>

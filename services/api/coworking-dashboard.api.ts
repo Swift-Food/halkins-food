@@ -16,6 +16,7 @@ import {
   DashboardStatsResponse,
   DashboardOrderQuery,
   DashboardStatsQuery,
+  CreateAdminEventRequest,
   CoworkingVenueAdmin,
   CreateCoworkingVenueRequest,
   UpdateCoworkingVenueRequest,
@@ -184,6 +185,30 @@ class CoworkingDashboardService {
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.message || 'Failed to set venue hire fee');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Create an admin-imported event booking.
+   */
+  async createAdminEvent(
+    spaceId: string,
+    data: CreateAdminEventRequest
+  ): Promise<DashboardOrderDetailResponse> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_IMPORT_EVENT(spaceId)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || "Failed to import event");
     }
 
     return response.json();
