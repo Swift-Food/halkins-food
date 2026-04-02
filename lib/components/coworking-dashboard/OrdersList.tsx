@@ -120,6 +120,16 @@ export default function OrdersList({
   loading,
 }: OrdersListProps) {
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [priceView, setPriceView] = useState<"total" | "venue_hire">(() => {
+    if (typeof window === "undefined") return "total";
+    return (localStorage.getItem("orders_price_view") as "total" | "venue_hire") ?? "total";
+  });
+
+  const handlePriceViewChange = () => {
+    const next = priceView === "total" ? "venue_hire" : "total";
+    setPriceView(next);
+    localStorage.setItem("orders_price_view", next);
+  };
 
   const handleQuickApprove = async (e: React.MouseEvent, orderId: string) => {
     e.stopPropagation();
@@ -145,10 +155,17 @@ export default function OrdersList({
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
       {/* Tier + Status Tabs */}
       <div className="px-4 sm:px-6 pt-4 sm:pt-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <h2 className="text-lg sm:text-xl font-bold text-gray-900">Orders</h2>
 
           <div className="flex items-center gap-2">
+            {/* Price view toggle */}
+            <button
+              onClick={handlePriceViewChange}
+              className="w-24 justify-center flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+            >
+              {priceView === "total" ? "Total fee" : "Hire fee"}
+            </button>
           {/* Tier segmented control */}
           <div className="inline-flex bg-gray-100 rounded-xl p-1 gap-0.5">
             <button
@@ -312,7 +329,7 @@ export default function OrdersList({
                       {order.itemCount} item{order.itemCount !== 1 ? "s" : ""}
                     </span>
                     <span className="font-semibold text-gray-900">
-                      £{order.total.toFixed(2)}
+                      £{(priceView === "total" ? order.total : order.venueHireFee).toFixed(2)}
                     </span>
                   </div>
                 </div>
