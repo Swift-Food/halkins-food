@@ -6,10 +6,16 @@ import {
   CoworkingVenueAdmin,
   CreateAdminEventRequest,
   DashboardOrderDetailResponse,
+  ImportedCoworkingEventData,
 } from "@/types/api";
 import {
+  AlertCircle,
   CalendarPlus,
+  CheckCircle2,
+  Link2,
+  Loader2,
   MapPin,
+  Sparkles,
   X,
 } from "lucide-react";
 
@@ -32,6 +38,77 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function toDatetimeLocal(value?: string): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const offsetMs = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function findVenueMatch(
+  importedEvent: ImportedCoworkingEventData,
+  venues: CoworkingVenueAdmin[]
+): string | null {
+  const candidates = [
+    importedEvent.location?.name,
+    importedEvent.location?.address,
+  ].filter((value): value is string => Boolean(value?.trim()));
+
+  for (const candidate of candidates) {
+    const normalizedCandidate = normalizeText(candidate);
+    if (!normalizedCandidate) continue;
+
+    const exactMatch = venues.find((venue) => normalizeText(venue.name) === normalizedCandidate);
+    if (exactMatch) return exactMatch.id;
+
+    const partialMatches = venues.filter((venue) => {
+      const normalizedVenue = normalizeText(venue.name);
+      return (
+        normalizedVenue.includes(normalizedCandidate) ||
+        normalizedCandidate.includes(normalizedVenue)
+      );
+    });
+
+    if (partialMatches.length === 1) {
+      return partialMatches[0].id;
+    }
+  }
+
+  return null;
+}
+
+function buildImportedNotes(
+  currentNotes: string,
+  importedEvent: ImportedCoworkingEventData
+): string {
+  const detailLines = [
+    importedEvent.name ? `Imported event: ${importedEvent.name}` : null,
+    importedEvent.url ? `Source URL: ${importedEvent.url}` : null,
+    importedEvent.location?.name ? `Imported location: ${importedEvent.location.name}` : null,
+    importedEvent.location?.address ? `Address: ${importedEvent.location.address}` : null,
+    importedEvent.location?.city ? `City: ${importedEvent.location.city}` : null,
+    importedEvent.location?.postalCode ? `Postcode: ${importedEvent.location.postalCode}` : null,
+  ].filter((value): value is string => Boolean(value));
+
+  if (detailLines.length === 0) return currentNotes;
+
+  const importedBlock = detailLines.join("\n");
+  return currentNotes.trim()
+    ? `${currentNotes.trim()}\n\n${importedBlock}`
+    : importedBlock;
+}
+
+type ImportStatus = "idle" | "loading" | "success" | "error";
+
 export default function ImportEventModal({
   spaceId,
   onClose,
@@ -41,6 +118,10 @@ export default function ImportEventModal({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [importUrl, setImportUrl] = useState("");
+  const [importStatus, setImportStatus] = useState<ImportStatus>("idle");
+  const [importError, setImportError] = useState("");
+  const [importedData, setImportedData] = useState<ImportedCoworkingEventData | null>(null);
   const [form, setForm] = useState(emptyForm);
 
   const fetchVenues = useCallback(async () => {
@@ -49,10 +130,6 @@ export default function ImportEventModal({
     try {
       const data = await coworkingDashboardService.listVenues(spaceId);
       setVenues(data);
-      setForm((current) => ({
-        ...current,
-        venueId: current.venueId || data[0]?.id || "",
-      }));
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Failed to load venues"));
     } finally {
@@ -80,6 +157,76 @@ export default function ImportEventModal({
   ) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const fetchImportedData = async () => {
+    if (!importUrl.trim()) {
+      setImportError("Please enter a URL");
+      setImportStatus("error");
+      return;
+    }
+
+    try {
+      new URL(importUrl);
+    } catch {
+      setImportError("Please enter a valid URL");
+      setImportStatus("error");
+      return;
+    }
+
+    setImportStatus("loading");
+    setImportError("");
+    setImportedData(null);
+
+    try {
+      const response = await fetch(`/api/import-event?url=${encodeURIComponent(importUrl)}`);
+      if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error || "Failed to fetch event data");
+      }
+
+      const data = (await response.json()) as ImportedCoworkingEventData;
+      const hasUsefulData =
+        data.name || data.startDate || data.endDate || data.location?.name || data.location?.address;
+
+      if (!hasUsefulData) {
+        throw new Error("Could not extract event details from this page");
+      }
+
+      setImportedData(data);
+      setImportStatus("success");
+    } catch (fetchError: unknown) {
+      setImportError(getErrorMessage(fetchError, "Failed to import event"));
+      setImportStatus("error");
+    }
+  };
+
+  const applyImportedData = () => {
+    if (!importedData) return;
+
+    const matchedVenueId = findVenueMatch(importedData, venues);
+
+    setForm((current) => ({
+      ...current,
+      venueId: matchedVenueId || current.venueId,
+      bookingStartTime: importedData.startDate
+        ? toDatetimeLocal(importedData.startDate) || current.bookingStartTime
+        : current.bookingStartTime,
+      bookingEndTime: importedData.endDate
+        ? toDatetimeLocal(importedData.endDate) || current.bookingEndTime
+        : current.bookingEndTime,
+      notes: buildImportedNotes(current.notes, importedData),
+    }));
+
+    setImportStatus("idle");
+    setImportError("");
+  };
+
+  const handleImportKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" && importStatus !== "loading") {
+      event.preventDefault();
+      fetchImportedData();
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -161,6 +308,120 @@ export default function ImportEventModal({
             </div>
           ) : (
             <form id="import-event-form" onSubmit={handleSubmit} className="space-y-5">
+              <section className="rounded-[24px] border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                <div className="mb-4 flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-slate-900">Import event details</h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Paste a public event URL to auto-fill the booking details below.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <Link2 className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="url"
+                    value={importUrl}
+                    onChange={(event) => {
+                      setImportUrl(event.target.value);
+                      if (importStatus === "error") {
+                        setImportStatus("idle");
+                        setImportError("");
+                      }
+                    }}
+                    onKeyDown={handleImportKeyDown}
+                    disabled={importStatus === "loading"}
+                    placeholder="Paste event URL..."
+                    className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-primary/60 disabled:opacity-50"
+                  />
+                </div>
+
+                {importStatus === "loading" && (
+                  <div className="rounded-xl border border-primary/20 bg-white p-4">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-slate-900">Fetching event details...</p>
+                        <p className="mt-0.5 text-xs text-slate-500">This may take a moment</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 space-y-2.5">
+                      <div className="h-4 w-3/4 animate-pulse rounded-md bg-slate-100" />
+                      <div className="h-3 w-1/2 animate-pulse rounded-md bg-slate-100" />
+                      <div className="h-3 w-2/3 animate-pulse rounded-md bg-slate-100" />
+                    </div>
+                  </div>
+                )}
+
+                {importStatus === "error" && (
+                  <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-400" />
+                      <div>
+                        <p className="text-sm font-medium text-red-300">Import failed</p>
+                        <p className="mt-0.5 text-xs text-red-200/80">{importError}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {importStatus === "success" && importedData && (
+                  <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-400" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-green-700">Data found!</p>
+                        {importedData.name && (
+                          <p className="mt-1.5 truncate text-sm font-medium text-slate-900">
+                            {importedData.name}
+                          </p>
+                        )}
+                        {importedData.startDate && (
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            {new Date(importedData.startDate).toLocaleDateString("en-GB", {
+                              weekday: "short",
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        )}
+                        {importedData.location?.name && (
+                          <p className="mt-0.5 truncate text-xs text-slate-500">
+                            {importedData.location.name}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={importStatus === "success" ? applyImportedData : fetchImportedData}
+                  disabled={importStatus === "loading" || (!importUrl.trim() && importStatus !== "success")}
+                  className="mt-4 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-[#b45d5f] disabled:text-white"
+                >
+                  {importStatus === "loading" ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Importing...
+                    </span>
+                  ) : importStatus === "success" ? (
+                    "Apply to Form"
+                  ) : (
+                    "Import Event"
+                  )}
+                </button>
+              </section>
+
               <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="mb-5">
                   <h3 className="text-base font-semibold text-slate-900">Event details</h3>
@@ -210,6 +471,9 @@ export default function ImportEventModal({
                       required
                       className="select h-12 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 shadow-none focus:border-primary focus:bg-white"
                     >
+                      <option value="" disabled>
+                        Select a venue
+                      </option>
                       {venues.map((venue) => (
                         <option key={venue.id} value={venue.id}>
                           {venue.name}

@@ -53,6 +53,24 @@ export interface CreateAdminEventRequest {
   notes?: string;
 }
 
+export interface ImportedCoworkingEventData {
+  name?: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  location?: {
+    name?: string;
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    latitude?: number;
+    longitude?: number;
+  };
+  image?: string;
+  url?: string;
+  eventFormat?: "IN_PERSON" | "VIRTUAL" | "BOTH";
+}
+
 // ============================================================================
 // RESPONSE TYPES
 // ============================================================================
