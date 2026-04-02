@@ -14,7 +14,6 @@ import {
   CheckCircle,
   ChevronRight,
   Clock,
-  Hash,
   List,
   MapPin,
   PlayCircle,
@@ -276,10 +275,6 @@ export default function OrdersList({
                     <span className="flex items-center gap-1">
                       <User className="h-3.5 w-3.5" />
                       {order.memberName || order.memberEmail}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Hash className="h-3.5 w-3.5" />
-                      {order.bookingReference}
                     </span>
                     {order.roomLocationDetails && (
                       <span className="flex items-center gap-1">

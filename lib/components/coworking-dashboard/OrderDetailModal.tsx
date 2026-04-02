@@ -488,10 +488,10 @@ export default function OrderDetailModal({
                     Booking
                   </h3>
                   <div className="space-y-1.5 text-sm text-gray-700">
-                    <p className="flex items-center gap-2">
+                    {/* <p className="flex items-center gap-2">
                       <Hash className="h-4 w-4 text-gray-400" />
                       Ref: {order.booking.reference}
-                    </p>
+                    </p> */}
                     {order.booking.venueName && (
                       <p className="flex items-center gap-2 font-semibold text-primary">
                         <MapPin className="h-4 w-4" />
