@@ -22,6 +22,8 @@ export type DashboardOrderStatusFilter =
   | 'all'
   | 'needs_review'; // frontend-only: fetches 'upcoming' + filters by adminReviewStatus === 'pending_admin_review'
 
+export type DashboardOrderSortBy = 'created_at' | 'event_start_time';
+
 /**
  * Query parameters for listing orders
  * Backend: DashboardOrderQueryDto
@@ -31,6 +33,7 @@ export interface DashboardOrderQuery {
   from?: string; // ISO 8601 date
   to?: string; // ISO 8601 date
   memberEmail?: string;
+  sortBy?: DashboardOrderSortBy;
   page?: number;
   limit?: number;
 }

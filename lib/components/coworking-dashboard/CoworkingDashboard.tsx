@@ -183,6 +183,7 @@ function CoworkingDashboardInner({
       const apiStatus = activeStatus === "needs_review" ? "all" : activeStatus;
       const data = await coworkingDashboardService.getOrders(spaceId, {
         status: apiStatus,
+        sortBy: "event_start_time",
         limit: 50,
       });
       const filtered =

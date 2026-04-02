@@ -41,6 +41,7 @@ const VENUE_COLORS = [
 const statusBadgeColor: Record<string, string> = {
   pending_review: "bg-yellow-100 text-yellow-800",
   pending: "bg-yellow-100 text-yellow-800",
+  approved: "bg-green-100 text-green-800",
   admin_reviewed: "bg-blue-100 text-blue-800",
   restaurant_reviewed: "bg-indigo-100 text-indigo-800",
   payment_link_sent: "bg-purple-100 text-purple-800",
@@ -55,6 +56,7 @@ const statusBadgeColor: Record<string, string> = {
 
 const statusLabel: Record<string, string> = {
   pending_review: "Under Review",
+  approved: "Approved",
   admin_reviewed: "Awaiting Restaurants",
   restaurant_reviewed: "Awaiting Payment",
   payment_link_sent: "Invoice Sent",
@@ -63,6 +65,39 @@ const statusLabel: Record<string, string> = {
   completed: "Completed",
   cancelled: "Cancelled",
 };
+
+function getDisplayStatus(status: string, adminReviewStatus: string): string {
+  if (status === "pending_review" && adminReviewStatus === "approved") {
+    return "admin_reviewed";
+  }
+
+  if (status === "approved" || status === "rejected" || status === "deposit_paid") {
+    return adminReviewStatus;
+  }
+
+  return status;
+}
+
+function formatStatus(status: string, adminReviewStatus: string): string {
+  const displayStatus = getDisplayStatus(status, adminReviewStatus);
+
+  if (displayStatus === "approved") {
+    return "Approved";
+  }
+
+  if (displayStatus === "rejected") {
+    return "Rejected";
+  }
+
+  if (displayStatus === "deposit_paid") {
+    return "Deposit Paid";
+  }
+
+  return (
+    statusLabel[displayStatus] ||
+    displayStatus.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
+  );
+}
 
 function formatDateTime(dateStr: string | null): string {
   if (!dateStr) return "";
@@ -315,75 +350,79 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
                 <p className="text-sm mt-1 text-gray-400">No orders for this date.</p>
               </div>
             ) : (
-              selectedDayOrders.map(({ order, venueName, color }) => (
-                <div
-                  key={order.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedOrderId(order.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setSelectedOrderId(order.id);
-                    }
-                  }}
-                  className="w-full flex items-start gap-3 px-4 py-3.5 sm:px-5 sm:py-4 transition-colors text-left hover:bg-base-200/30 cursor-pointer"
-                >
-                  {/* Venue color bar */}
+              selectedDayOrders.map(({ order, venueName, color }) => {
+                const displayStatus = getDisplayStatus(order.status, order.adminReviewStatus);
+
+                return (
                   <div
-                    className="w-1 self-stretch rounded-full flex-shrink-0 mt-0.5"
-                    style={{ backgroundColor: color }}
-                  />
+                    key={order.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedOrderId(order.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedOrderId(order.id);
+                      }
+                    }}
+                    className="w-full flex items-start gap-3 px-4 py-3.5 sm:px-5 sm:py-4 transition-colors text-left hover:bg-base-200/30 cursor-pointer"
+                  >
+                    {/* Venue color bar */}
+                    <div
+                      className="w-1 self-stretch rounded-full flex-shrink-0 mt-0.5"
+                      style={{ backgroundColor: color }}
+                    />
 
-                  <div className="flex-1 min-w-0">
-                    {/* Top row: member name + price */}
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-gray-900 truncate">
-                        {order.memberName || order.memberEmail}
-                      </p>
-                      <span className="text-sm font-bold text-primary flex-shrink-0">
-                        £{order.total.toFixed(2)}
-                      </span>
-                    </div>
-
-                    {/* Meta row: venue, status, ref */}
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
-                          statusBadgeColor[order.status] || "bg-gray-100 text-gray-700 border-gray-300"
-                        }`}
-                      >
-                        {statusLabel[order.status] || order.status.charAt(0).toUpperCase() + order.status.slice(1).replace(/_/g, " ")}
-                      </span>
-                      {venueName && (
-                        <span className="text-xs text-gray-400 font-medium">{venueName}</span>
-                      )}
-                      {order.bookingReference && (
-                        <span className="text-xs text-gray-400">#{order.bookingReference}</span>
-                      )}
-                    </div>
-
-                    {/* Bottom row: time + location */}
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5 text-xs text-gray-500">
-                      {(order.bookingStartTime || order.bookingEndTime) && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {formatDateTime(order.bookingStartTime)}
-                          {order.bookingEndTime && ` – ${formatDateTime(order.bookingEndTime)}`}
+                    <div className="flex-1 min-w-0">
+                      {/* Top row: member name + price */}
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {order.memberName || order.memberEmail}
+                        </p>
+                        <span className="text-sm font-bold text-primary flex-shrink-0">
+                          £{order.total.toFixed(2)}
                         </span>
-                      )}
-                      {order.roomLocationDetails && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {order.roomLocationDetails}
+                      </div>
+
+                      {/* Meta row: venue, status, ref */}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
+                            statusBadgeColor[displayStatus] || "bg-gray-100 text-gray-700 border-gray-300"
+                          }`}
+                        >
+                          {formatStatus(order.status, order.adminReviewStatus)}
                         </span>
-                      )}
+                        {venueName && (
+                          <span className="text-xs text-gray-400 font-medium">{venueName}</span>
+                        )}
+                        {order.bookingReference && (
+                          <span className="text-xs text-gray-400">#{order.bookingReference}</span>
+                        )}
+                      </div>
+
+                      {/* Bottom row: time + location */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5 text-xs text-gray-500">
+                        {(order.bookingStartTime || order.bookingEndTime) && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {formatDateTime(order.bookingStartTime)}
+                            {order.bookingEndTime && ` – ${formatDateTime(order.bookingEndTime)}`}
+                          </span>
+                        )}
+                        {order.roomLocationDetails && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {order.roomLocationDetails}
+                          </span>
+                        )}
+                      </div>
                     </div>
+
+                    <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0 mt-0.5" />
                   </div>
-
-                  <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0 mt-0.5" />
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

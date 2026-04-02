@@ -73,6 +73,7 @@ const statusTabs: {
 const statusBadgeColor: Record<string, string> = {
   pending_review: "bg-yellow-100 text-yellow-800 border-yellow-300",
   pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
+  approved: "bg-green-100 text-green-800 border-green-300",
   admin_reviewed: "bg-blue-100 text-blue-800 border-blue-300",
   restaurant_reviewed: "bg-indigo-100 text-indigo-800 border-indigo-300",
   payment_link_sent: "bg-purple-100 text-purple-800 border-purple-300",
@@ -87,6 +88,7 @@ const statusBadgeColor: Record<string, string> = {
 
 const statusLabel: Record<string, string> = {
   pending_review: "Under Review",
+  approved: "Approved",
   admin_reviewed: "Awaiting Restaurants",
   restaurant_reviewed: "Awaiting Payment",
   payment_link_sent: "Invoice Sent",

@@ -92,6 +92,9 @@ class CoworkingDashboardService {
     if (query?.memberEmail) {
       params.append('memberEmail', query.memberEmail);
     }
+    if (query?.sortBy) {
+      params.append('sortBy', query.sortBy);
+    }
     if (query?.page) {
       params.append('page', query.page.toString());
     }
