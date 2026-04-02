@@ -330,9 +330,12 @@ export default function ImportEventModal({
                     value={importUrl}
                     onChange={(event) => {
                       setImportUrl(event.target.value);
-                      if (importStatus === "error") {
+                      if (importStatus === "error" || importStatus === "success") {
                         setImportStatus("idle");
                         setImportError("");
+                      }
+                      if (importStatus === "success") {
+                        setImportedData(null);
                       }
                     }}
                     onKeyDown={handleImportKeyDown}
