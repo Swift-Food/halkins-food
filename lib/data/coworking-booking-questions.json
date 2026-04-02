@@ -59,7 +59,7 @@
           "title": "Event URL",
           "description": "Share the link where your attendees will register",
           "type": "short_text",
-          "required": true,
+          "required": false,
           "source": "bookingQuestionnaire",
           "inputType": "url",
           "placeholder": "https://luma.com/q108auy0"
