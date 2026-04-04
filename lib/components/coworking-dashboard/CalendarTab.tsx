@@ -429,8 +429,9 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
         <div className="max-w-3xl mx-auto space-y-2">
           {/* Venues filter + price toggle */}
           {venues.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-base-200 px-4 py-3 mb-4">
-              <div className="flex flex-wrap items-center gap-3">
+            <div className="bg-white rounded-xl shadow-sm border border-base-200 px-4 py-3 mb-4 space-y-2.5">
+              {/* Top row: All/Clear + price toggle */}
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <button
                     onClick={selectAll}
@@ -449,31 +450,32 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
                     Clear
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-1.5 flex-1">
-                  {venues.map((venue) => {
-                    const color = venueColorMap[venue.id];
-                    const isActive = selectedVenueIds.has(venue.id);
-                    return (
-                      <button
-                        key={venue.id}
-                        onClick={() => toggleVenue(venue.id)}
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                          isActive ? "border-transparent text-white shadow-sm" : "border-base-200 text-gray-400 bg-base-200/50"
-                        }`}
-                        style={isActive ? { backgroundColor: color } : undefined}
-                      >
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: isActive ? "rgba(255,255,255,0.5)" : color }} />
-                        {venue.name}
-                      </button>
-                    );
-                  })}
-                </div>
                 <button
                   onClick={handlePriceViewChange}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors flex-shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
                 >
                   {priceView === "total" ? "Total fee" : "Hire fee"}
                 </button>
+              </div>
+              {/* Venue pills */}
+              <div className="flex flex-wrap gap-1.5">
+                {venues.map((venue) => {
+                  const color = venueColorMap[venue.id];
+                  const isActive = selectedVenueIds.has(venue.id);
+                  return (
+                    <button
+                      key={venue.id}
+                      onClick={() => toggleVenue(venue.id)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                        isActive ? "border-transparent text-white shadow-sm" : "border-base-200 text-gray-400 bg-base-200/50"
+                      }`}
+                      style={isActive ? { backgroundColor: color } : undefined}
+                    >
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: isActive ? "rgba(255,255,255,0.5)" : color }} />
+                      {venue.name}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
