@@ -100,31 +100,31 @@ function CoworkingDashboardInner({
     label: string;
     icon: typeof ShoppingBag;
   }> = [
-      {
-        id: "orders",
-        href: `/coworking-dashboard/${spaceSlug}/orders`,
-        label: "Orders",
-        icon: ShoppingBag,
-      },
-      {
-        id: "calendar",
-        href: `/coworking-dashboard/${spaceSlug}/calendar`,
-        label: "Calendar",
-        icon: CalendarDays,
-      },
-      {
-        id: "payment",
-        href: `/coworking-dashboard/${spaceSlug}/payment`,
-        label: "Payment",
-        icon: CreditCard,
-      },
-      {
-        id: "promos",
-        href: `/coworking-dashboard/${spaceSlug}/promos`,
-        label: "Promo Codes",
-        icon: Tag,
-      },
-    ];
+    {
+      id: "orders",
+      href: `/coworking-dashboard/${spaceSlug}/orders`,
+      label: "Orders",
+      icon: ShoppingBag,
+    },
+    {
+      id: "calendar",
+      href: `/coworking-dashboard/${spaceSlug}/calendar`,
+      label: "Calendar",
+      icon: CalendarDays,
+    },
+    {
+      id: "payment",
+      href: `/coworking-dashboard/${spaceSlug}/payment`,
+      label: "Payment",
+      icon: CreditCard,
+    },
+    {
+      id: "promos",
+      href: `/coworking-dashboard/${spaceSlug}/promos`,
+      label: "Promo Codes",
+      icon: Tag,
+    },
+  ];
 
   // The resolved space ID from the getMe response
   const spaceId = me?.space.id ?? null;
@@ -190,7 +190,10 @@ function CoworkingDashboardInner({
       let apiStatus: DashboardOrderStatusFilter;
       if (activeTier === "active") {
         // needs_review and all both require fetching everything then filtering client-side
-        apiStatus = activeStatus === "needs_review" || activeStatus === "all" ? "all" : activeStatus;
+        apiStatus =
+          activeStatus === "needs_review" || activeStatus === "all"
+            ? "all"
+            : activeStatus;
       } else {
         // archive: 'all', 'completed', or 'cancelled' — all valid API params
         apiStatus = activeStatus;
@@ -219,8 +222,12 @@ function CoworkingDashboardInner({
         } else if (activeStatus === "all") {
           // Pin needs-review orders to top, rest keep event_start_time order from API
           filtered = [
-            ...filtered.filter((o) => o.adminReviewStatus === "pending_admin_review"),
-            ...filtered.filter((o) => o.adminReviewStatus !== "pending_admin_review"),
+            ...filtered.filter(
+              (o) => o.adminReviewStatus === "pending_admin_review",
+            ),
+            ...filtered.filter(
+              (o) => o.adminReviewStatus !== "pending_admin_review",
+            ),
           ];
         }
       } else {
@@ -299,7 +306,7 @@ function CoworkingDashboardInner({
 
   return (
     <div
-      className={`${readexPro.className} ${activeTab !== "calendar" ? "max-w-7xl" : ""} mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6`}
+      className={`${readexPro.className} max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6`}
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -365,10 +372,11 @@ function CoworkingDashboardInner({
                   key={tab.id}
                   href={tab.href}
                   aria-current={activeTab === tab.id ? "page" : undefined}
-                  className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id
-                    ? "border-primary text-primary"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
+                  className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? "border-primary text-primary"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
                 >
                   <Icon className="h-4 w-4" />
                   {tab.label}
@@ -385,23 +393,26 @@ function CoworkingDashboardInner({
           {stats && <StatsCards stats={stats} />}
 
           {/* Pending approval banner — only accurate when Active > All is loaded */}
-          {spaceId && pendingCount > 0 && activeTier === "active" && activeStatus !== "needs_review" && (
-            <button
-              onClick={() => setActiveStatus("needs_review")}
-              className="w-full flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 text-left hover:bg-amber-100 transition-colors"
-            >
-              <span className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
-                <span className="text-sm font-semibold text-amber-800">
-                  {pendingCount} order{pendingCount !== 1 ? "s" : ""} need
-                  {pendingCount === 1 ? "s" : ""} your approval
+          {spaceId &&
+            pendingCount > 0 &&
+            activeTier === "active" &&
+            activeStatus !== "needs_review" && (
+              <button
+                onClick={() => setActiveStatus("needs_review")}
+                className="w-full flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 text-left hover:bg-amber-100 transition-colors"
+              >
+                <span className="flex items-center gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                  <span className="text-sm font-semibold text-amber-800">
+                    {pendingCount} order{pendingCount !== 1 ? "s" : ""} need
+                    {pendingCount === 1 ? "s" : ""} your approval
+                  </span>
                 </span>
-              </span>
-              <span className="text-xs font-semibold text-amber-700 underline underline-offset-2">
-                Review now
-              </span>
-            </button>
-          )}
+                <span className="text-xs font-semibold text-amber-700 underline underline-offset-2">
+                  Review now
+                </span>
+              </button>
+            )}
 
           {spaceId && (
             <OrdersList
