@@ -264,7 +264,7 @@ export default function GridCalendar({
                     <div
                       key={order.id}
                       onClick={(e) => { e.stopPropagation(); onOrderSelect(order.id); }}
-                      className="flex items-start gap-2 px-2 py-2 rounded-lg hover:bg-base-200/60 cursor-pointer transition-colors border border-base-200/60 bg-white shadow-sm"
+                      className="flex items-start gap-1.5 px-1 py-0.5 rounded hover:bg-base-200/50 cursor-pointer transition-colors"
                     >
                       {/* Venue color bar */}
                       <div
@@ -273,15 +273,12 @@ export default function GridCalendar({
                       />
 
                       <div className="flex-1 min-w-0">
-                        {/* Name + price */}
-                        <div className="flex items-center justify-between gap-1">
-                          <p className="text-xs font-semibold text-gray-900 truncate">
-                            {order.memberName || order.memberEmail}
-                          </p>
-                          <span className="text-xs font-bold text-primary flex-shrink-0">
-                            £{price.toFixed(2)}
-                          </span>
-                        </div>
+                        <p className="text-xs font-semibold text-gray-900 truncate">
+                          {order.memberName || order.memberEmail}
+                        </p>
+                        <span className="text-xs font-bold text-primary">
+                          £{price.toFixed(2)}
+                        </span>
 
                         {/* Status + venue */}
                         <div className="flex flex-wrap items-center gap-1 mt-0.5">
