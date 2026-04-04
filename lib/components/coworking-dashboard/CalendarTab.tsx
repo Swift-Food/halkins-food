@@ -140,6 +140,19 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
     if (stored === "month" || stored === "grid" || stored === "agenda") return stored;
     return "month"; // migrate old "list" value
   });
+  const [isLargeScreen, setIsLargeScreen] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : true
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const handler = (e: MediaQueryListEvent) => setIsLargeScreen(e.matches);
+    mq.addEventListener("change", handler);
+    setIsLargeScreen(mq.matches);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const effectiveMode = calendarMode === "grid" && !isLargeScreen ? "month" : calendarMode;
 
   const handlePriceViewChange = () => {
     const next = priceView === "total" ? "venue_hire" : "total";
@@ -370,8 +383,8 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
               <button
                 key={mode}
                 onClick={() => handleCalendarModeChange(mode)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  calendarMode === mode
+                className={`${mode === "grid" ? "hidden lg:flex" : "flex"} items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  effectiveMode === mode
                     ? "bg-white shadow-sm text-gray-900"
                     : "text-gray-500 hover:text-gray-700"
                 }`}
@@ -384,7 +397,7 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
         </div>
       </div>
 
-      {calendarMode === "grid" ? (
+      {effectiveMode === "grid" ? (
         /* Grid mode: full-width calendar with inline events + narrow venues sidebar */
         <div className="flex flex-col lg:flex-row gap-4 items-start">
           <div className="flex-1 bg-white rounded-xl shadow-sm border border-base-200 p-4 sm:p-6 min-w-0">
@@ -411,7 +424,7 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
             </div>
           )}
         </div>
-      ) : calendarMode === "agenda" ? (
+      ) : effectiveMode === "agenda" ? (
         /* Agenda mode: flat date list, only days with events, max-width */
         <div className="max-w-3xl mx-auto space-y-2">
           {/* Venues filter + price toggle */}
