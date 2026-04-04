@@ -134,9 +134,11 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
     if (typeof window === "undefined") return "total";
     return (localStorage.getItem("orders_price_view") as "total" | "venue_hire") ?? "total";
   });
-  const [calendarMode, setCalendarMode] = useState<"list" | "grid">(() => {
-    if (typeof window === "undefined") return "list";
-    return (localStorage.getItem("calendar_mode") as "list" | "grid") ?? "list";
+  const [calendarMode, setCalendarMode] = useState<"month" | "grid" | "agenda">(() => {
+    if (typeof window === "undefined") return "month";
+    const stored = localStorage.getItem("calendar_mode");
+    if (stored === "month" || stored === "grid" || stored === "agenda") return stored;
+    return "month"; // migrate old "list" value
   });
 
   const handlePriceViewChange = () => {
@@ -145,7 +147,7 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
     localStorage.setItem("orders_price_view", next);
   };
 
-  const handleCalendarModeChange = (mode: "list" | "grid") => {
+  const handleCalendarModeChange = (mode: "month" | "grid" | "agenda") => {
     setCalendarMode(mode);
     localStorage.setItem("calendar_mode", mode);
   };
@@ -357,28 +359,28 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
       {/* Mode toggle */}
       <div className="flex justify-end">
         <div className="flex items-center bg-base-200/60 rounded-xl p-1 gap-0.5">
-          <button
-            onClick={() => handleCalendarModeChange("list")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              calendarMode === "list"
-                ? "bg-white shadow-sm text-gray-900"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <LayoutList size={14} />
-            List
-          </button>
-          <button
-            onClick={() => handleCalendarModeChange("grid")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              calendarMode === "grid"
-                ? "bg-white shadow-sm text-gray-900"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <LayoutGrid size={14} />
-            Grid
-          </button>
+          {(["month", "grid", "agenda"] as const).map((mode) => {
+            const labels: Record<typeof mode, string> = { month: "Month", grid: "Grid", agenda: "List" };
+            const icons = {
+              month: <CalendarDays size={14} />,
+              grid: <LayoutGrid size={14} />,
+              agenda: <LayoutList size={14} />,
+            };
+            return (
+              <button
+                key={mode}
+                onClick={() => handleCalendarModeChange(mode)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  calendarMode === mode
+                    ? "bg-white shadow-sm text-gray-900"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {icons[mode]}
+                {labels[mode]}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -409,8 +411,152 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
             </div>
           )}
         </div>
+      ) : calendarMode === "agenda" ? (
+        /* Agenda mode: flat date list, only days with events, max-width */
+        <div className="max-w-3xl mx-auto space-y-2">
+          {/* Venues filter + price toggle */}
+          {venues.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-base-200 px-4 py-3 mb-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={selectAll}
+                    disabled={allSelected}
+                    className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <CheckCheck size={12} />
+                    All
+                  </button>
+                  <button
+                    onClick={clearAll}
+                    disabled={selectedVenueIds.size === 0}
+                    className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <X size={12} />
+                    Clear
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5 flex-1">
+                  {venues.map((venue) => {
+                    const color = venueColorMap[venue.id];
+                    const isActive = selectedVenueIds.has(venue.id);
+                    return (
+                      <button
+                        key={venue.id}
+                        onClick={() => toggleVenue(venue.id)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                          isActive ? "border-transparent text-white shadow-sm" : "border-base-200 text-gray-400 bg-base-200/50"
+                        }`}
+                        style={isActive ? { backgroundColor: color } : undefined}
+                      >
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: isActive ? "rgba(255,255,255,0.5)" : color }} />
+                        {venue.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={handlePriceViewChange}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors flex-shrink-0"
+                >
+                  {priceView === "total" ? "Total fee" : "Hire fee"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Date groups */}
+          {Object.keys(allOrdersByDate).length === 0 ? (
+            <div className="text-center py-16 text-gray-400">
+              <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p className="font-medium text-gray-500">No upcoming events</p>
+            </div>
+          ) : (
+            Object.keys(allOrdersByDate)
+              .sort()
+              .map((dateKey) => {
+                const dayOrders = allOrdersByDate[dateKey];
+                const dateLabel = new Date(dateKey + "T00:00:00").toLocaleDateString("en-GB", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                });
+                const isToday = dateKey === getTodayKey();
+
+                return (
+                  <div key={dateKey}>
+                    {/* Date header */}
+                    <div className="flex items-center gap-3 px-1 py-2">
+                      <span className={`text-sm font-bold ${isToday ? "text-primary" : "text-gray-900"}`}>
+                        {dateLabel}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {dayOrders.length} order{dayOrders.length !== 1 ? "s" : ""}
+                        {" · "}£{dayOrders.reduce((s, o) => s + (priceView === "total" ? o.order.total : o.order.venueHireFee), 0).toFixed(2)}
+                      </span>
+                    </div>
+
+                    {/* Event cards */}
+                    <div className="bg-white rounded-xl shadow-sm border border-base-200 divide-y divide-base-200">
+                      {dayOrders.map(({ order, venueName, color }) => {
+                        const displayStatus = getDisplayStatus(order.status, order.adminReviewStatus);
+                        return (
+                          <div
+                            key={order.id}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setSelectedOrderId(order.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedOrderId(order.id); }
+                            }}
+                            className="w-full flex items-start gap-3 px-4 py-3.5 transition-colors text-left hover:bg-base-200/30 cursor-pointer"
+                          >
+                            <div className="w-1 self-stretch rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: color }} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-sm font-semibold text-gray-900 truncate">
+                                  {order.memberName || order.memberEmail}
+                                </p>
+                                <span className="text-sm font-bold text-primary flex-shrink-0">
+                                  £{(priceView === "total" ? order.total : order.venueHireFee).toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${statusBadgeColor[displayStatus] || "bg-gray-100 text-gray-700"}`}>
+                                  {formatStatus(order.status, order.adminReviewStatus)}
+                                </span>
+                                {venueName && <span className="text-xs text-gray-400 font-medium">{venueName}</span>}
+                                {order.bookingReference && <span className="text-xs text-gray-400">#{order.bookingReference}</span>}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5 text-xs text-gray-500">
+                                {(order.bookingStartTime || order.bookingEndTime) && (
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {formatDateTime(order.bookingStartTime)}
+                                    {order.bookingEndTime && ` – ${formatDateTime(order.bookingEndTime)}`}
+                                  </span>
+                                )}
+                                {order.roomLocationDetails && (
+                                  <span className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    {order.roomLocationDetails}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0 mt-0.5" />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })
+          )}
+        </div>
       ) : (
-        /* List mode: calendar + venues on left, orders panel on right */
+        /* Month mode: calendar + venues on left, orders panel on right */
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Calendar card */}
           <div className="lg:basis-3/5 lg:flex-shrink-0 space-y-4">
