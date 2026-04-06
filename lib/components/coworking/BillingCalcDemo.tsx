@@ -132,12 +132,12 @@ export function BillingCalcDemo() {
             phase >= 2 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
           }`}
         >
-          <div className="rounded-lg border border-dashed border-slate-300 bg-white/60 px-3 py-2.5 space-y-1">
+          <div className="space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[10px] tracking-widest text-slate-500">DELIVERY FEE</span>
               <span className="text-sm font-medium text-slate-500">TBD</span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-400 leading-relaxed pl-3">
               Calculated at checkout — not part of venue hire fee
             </p>
           </div>
