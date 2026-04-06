@@ -62,7 +62,9 @@ export function BillingCalcDemo() {
     const t2 = setTimeout(() => setPhase(2), 950);
     const t3 = setTimeout(() => setPhase(3), 1700);
     const t4 = setTimeout(() => setPhase(4), 2500);
-    return () => [t1, t2, t3, t4].forEach(clearTimeout);
+    const t5 = setTimeout(() => setPhase(5), 3300);
+    const t6 = setTimeout(() => setPhase(6), 4100);
+    return () => [t1, t2, t3, t4, t5, t6].forEach(clearTimeout);
   };
 
   useEffect(() => {
@@ -124,33 +126,50 @@ export function BillingCalcDemo() {
           visible={phase >= 1}
         />
 
-        {/* Step 2: 1:1 ratio */}
+        {/* Step 2: delivery fee — clearly outside the venue hire calculation */}
+        <div
+          className={`transition-all duration-500 ${
+            phase >= 2 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
+          }`}
+        >
+          <div className="rounded-lg border border-dashed border-slate-300 bg-white/60 px-3 py-2.5 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] tracking-widest text-slate-500">DELIVERY FEE</span>
+              <span className="text-sm font-medium text-slate-500">TBD</span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Calculated at checkout — not part of venue hire fee
+            </p>
+          </div>
+        </div>
+
+        {/* Step 3: 1:1 ratio */}
         <Row
           label="VENUE HIRE  1:1"
           value={`£${catering.toLocaleString()}`}
-          visible={phase >= 2}
+          visible={phase >= 3}
         />
 
-        {/* Step 3: round down */}
-        <div className={`transition-all duration-500 ${phase >= 3 ? "opacity-100" : "opacity-0"}`}>
+        {/* Step 4: round down */}
+        <div className={`transition-all duration-500 ${phase >= 4 ? "opacity-100" : "opacity-0"}`}>
           <div className="h-px bg-slate-200 my-3" />
           <Row
             label="ROUND DOWN → NEAREST £250"
             value={`£${rounded.toLocaleString()}`}
-            visible={phase >= 3}
+            visible={phase >= 4}
             accent
           />
         </div>
 
-        {/* Step 4: apply minimum / final fee */}
-        <div className={`transition-all duration-500 ${phase >= 4 ? "opacity-100" : "opacity-0"}`}>
+        {/* Step 5/6: apply minimum / final fee */}
+        <div className={`transition-all duration-500 ${phase >= 5 ? "opacity-100" : "opacity-0"}`}>
           {minimumApplies && (
             <div className="h-px bg-slate-200 my-3" />
           )}
           <Row
             label={minimumApplies ? "MINIMUM £250 APPLIED" : "VENUE HIRE FEE"}
             value={`£${fee.toLocaleString()}`}
-            visible={phase >= 4}
+            visible={phase >= 5}
             accent={!minimumApplies}
             bold
           />
