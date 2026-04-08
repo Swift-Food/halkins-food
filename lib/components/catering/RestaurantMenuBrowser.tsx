@@ -1581,26 +1581,16 @@ export default function RestaurantMenuBrowser({
                     style={{ scrollMarginTop: stickyTopOffset + 80 }}
                     className="mb-4"
                   >
-                    <button
-                      onClick={() => toggleGroupCollapse(group.name)}
-                      className="w-full flex items-center justify-between py-2 px-1 hover:bg-gray-50 rounded-lg transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-base font-bold text-primary">
-                          {group.name}
-                        </h3>
-                        <span className="text-xs text-gray-400 font-normal">
-                          ({groupCount})
-                        </span>
-                      </div>
-                      {isCollapsed ? (
-                        <ChevronDown className="w-4 h-4 text-gray-400" />
-                      ) : (
-                        <ChevronUp className="w-4 h-4 text-gray-400" />
-                      )}
-                    </button>
+                    <div className="w-full flex items-center gap-2 py-2 px-1">
+                      <h3 className="text-base font-bold text-primary">
+                        {group.name}
+                      </h3>
+                      <span className="text-xs text-gray-400 font-normal">
+                        ({groupCount})
+                      </span>
+                    </div>
 
-                    {group.type === "items" && group.information && !isCollapsed && (
+                    {group.type === "items" && group.information && (
                       <div className="flex items-start gap-1.5 px-1 pb-2">
                         <Info className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
                         <p className="text-xs text-gray-500 whitespace-pre-line">
@@ -1609,8 +1599,7 @@ export default function RestaurantMenuBrowser({
                       </div>
                     )}
 
-                    {!isCollapsed && (
-                      group.type === "bundles" ? (
+                    {group.type === "bundles" ? (
                         bundlesLoading ? (
                           <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
                             <span className="loading loading-spinner loading-sm text-primary" />
@@ -1664,8 +1653,7 @@ export default function RestaurantMenuBrowser({
                             </div>
                           ))}
                         </div>
-                      )
-                    )}
+                      )}
                   </div>
                 );
               })}

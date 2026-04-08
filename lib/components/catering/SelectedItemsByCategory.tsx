@@ -304,7 +304,7 @@ export default function SelectedItemsByCategory({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold italic text-gray-800">{item.menuItemName}</p>
             {item.selectedAddons && item.selectedAddons.length > 0 && (
-              <div className="mt-1 text-sm text-gray-600">{renderAddons(item.selectedAddons)}</div>
+              <div className={`mt-1 ${compactLayout ? "text-xs" : "text-sm"} text-gray-600`}>{renderAddons(item.selectedAddons)}</div>
             )}
             {renderAllergens(item, originalIndex)}
           </div>
