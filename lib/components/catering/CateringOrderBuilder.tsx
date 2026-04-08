@@ -997,59 +997,7 @@ export default function CateringOrderBuilder({
       )}
 
       <div className="mx-auto max-w-7xl p-2">
-        <div className="mb-6 flex gap-3">
-          <div className="flex flex-1 items-center justify-between rounded-xl border border-base-200 bg-white p-3 shadow-sm md:p-4">
-            <div>
-              <p className="text-xs text-gray-500 md:text-sm">
-                {totalDays > 0 ? `${totalDays} day${totalDays !== 1 ? "s" : ""}` : "No days scheduled"}{" "}
-                • {totalSessions} session{totalSessions !== 1 ? "s" : ""}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xl font-bold text-primary md:text-2xl">
-                £{getTotalPrice().toFixed(2)}
-              </p>
-              <p className="text-xs text-gray-500 md:text-sm">{totalItems} items total</p>
-            </div>
-          </div>
-
-          {totalItems > 0 && (
-            <button
-              onClick={handleViewMenu}
-              disabled={generatingPdf}
-              className="group flex flex-shrink-0 flex-col items-center justify-center rounded-xl border border-base-200 bg-white p-4 shadow-sm transition-colors hover:border-primary hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {generatingPdf ? (
-                <>
-                  <span className="loading loading-spinner loading-sm text-primary" />
-                  <span className="mt-1 hidden text-xs text-gray-500 md:block">Generating...</span>
-                </>
-              ) : (
-                <>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-primary"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                    />
-                  </svg>
-                  <span className="mt-1 hidden text-xs text-gray-500 transition-colors group-hover:text-primary md:block">
-                    Download Menu
-                  </span>
-                </>
-              )}
-            </button>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-6 md:flex-row">
+<div className="flex flex-col gap-6 md:flex-row">
           <div className="min-w-0 flex-1">
             <MenuBrowserColumn
               showBundleBrowser={showBundleBrowser}
@@ -1116,11 +1064,27 @@ export default function CateringOrderBuilder({
                   contentMaxHeightClass={activeSessionHasItems ? "max-h-[calc(100vh-14rem)]" : undefined}
                 />
                 {desktopCheckoutNotice && <div className="hidden md:block">{desktopCheckoutNotice}</div>}
-                <div className="flex-shrink-0">
+                <div className="flex flex-shrink-0 gap-2">
+                  {totalItems > 0 && (
+                    <button
+                      onClick={handleViewMenu}
+                      disabled={generatingPdf}
+                      className="flex flex-shrink-0 items-center gap-2 rounded-xl border border-primary px-4 py-3 font-semibold text-primary transition-colors hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {generatingPdf ? (
+                        <span className="loading loading-spinner loading-sm" />
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                      )}
+                      <span className="text-sm">Download Menu</span>
+                    </button>
+                  )}
                   <button
                     onClick={handleCheckout}
                     disabled={disableCheckoutWhenEmpty && !hasAnyItems}
-                    className={`flex w-full items-center justify-between rounded-xl px-5 py-3 font-semibold text-white transition-colors ${
+                    className={`flex flex-1 items-center justify-between rounded-xl px-5 py-3 font-semibold text-white transition-colors ${
                       disableCheckoutWhenEmpty && !hasAnyItems
                         ? "cursor-not-allowed bg-base-300 text-base-content/50"
                         : isCurrentSessionValid
@@ -1205,6 +1169,7 @@ export default function CateringOrderBuilder({
         collapsedCategories={collapsedCategories}
         onToggleCategory={handleToggleCategory}
         onViewMenu={handleViewMenu}
+        generatingPdf={generatingPdf}
         isCurrentSessionValid={isCurrentSessionValid}
         totalPrice={getTotalPrice()}
         onCheckout={handleCheckout}

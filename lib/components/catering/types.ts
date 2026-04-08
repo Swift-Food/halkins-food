@@ -165,6 +165,7 @@ export interface ViewOrderModalProps {
   collapsedCategories: Set<string>;
   onToggleCategory: (categoryName: string) => void;
   onViewMenu: () => void;
+  generatingPdf?: boolean;
   isCurrentSessionValid: boolean;
   totalPrice: number;
   onCheckout: () => void;

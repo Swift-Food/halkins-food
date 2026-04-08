@@ -29,6 +29,7 @@ export default function ViewOrderModal({
   collapsedCategories,
   onToggleCategory,
   onViewMenu,
+  generatingPdf,
   isCurrentSessionValid,
   totalPrice,
   onCheckout,
@@ -104,12 +105,28 @@ export default function ViewOrderModal({
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
       <div className="flex items-center justify-between border-b border-base-200 bg-white px-4 py-3">
         <h2 className="text-lg font-bold text-gray-900">Your Order</h2>
-        <button
-          onClick={onClose}
-          className="rounded-full p-2 transition-colors hover:bg-base-200"
-        >
-          <X className="h-5 w-5 text-gray-600" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onViewMenu}
+            disabled={generatingPdf}
+            className="flex items-center gap-1.5 rounded-lg border border-primary px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {generatingPdf ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            )}
+            {generatingPdf ? "Generating..." : "Download PDF"}
+          </button>
+          <button
+            onClick={onClose}
+            className="rounded-full p-2 transition-colors hover:bg-base-200"
+          >
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
       </div>
 
       <DateSessionNav
