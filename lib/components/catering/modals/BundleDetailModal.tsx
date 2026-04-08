@@ -32,9 +32,18 @@ export default function BundleDetailModal({
   onClose,
   allMenuItems,
 }: BundleDetailModalProps) {
-  const [quantity, setQuantity] = useState(Math.max(1, defaultQuantity));
+  const baseGuestCount = bundle.baseGuestCount ?? 1;
+  const [guestCountInput, setGuestCountInput] = useState(String(Math.max(1, defaultQuantity) * baseGuestCount));
+  const guestCount = Math.max(1, parseInt(guestCountInput, 10) || 1);
+  const [roundUp, setRoundUp] = useState(true);
   const [showDescriptions, setShowDescriptions] = useState(false);
-  const peopleServed = (bundle.baseGuestCount ?? 1) * quantity;
+
+  const exactBundles = guestCount / baseGuestCount;
+  const bundlesFloor = Math.max(1, Math.floor(exactBundles));
+  const bundlesCeil = Math.ceil(exactBundles);
+  const isExact = Number.isInteger(exactBundles);
+  const quantity = isExact ? bundlesCeil : (roundUp ? bundlesCeil : bundlesFloor);
+  const peopleServed = baseGuestCount * quantity;
 
   const sortedItems = [...bundle.items].sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -117,39 +126,64 @@ export default function BundleDetailModal({
           </button>
         </div>
 
-        {/* Quantity selector */}
+        {/* Guest count selector */}
         <div className="px-4 py-3 border-b border-base-200 bg-base-100/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-700">Bundle quantity</p>
-              <p className="text-xs text-gray-500">
-                Serves ~{peopleServed} people
-              </p>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Number of guests</p>
+                <p className="text-xs text-gray-500">
+                  {quantity} bundle{quantity !== 1 ? "s" : ""} • Serves ~{peopleServed} people
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setGuestCountInput((v) => String(Math.max(1, (parseInt(v, 10) || 1) - 1)))}
+                  className="w-8 h-8 flex items-center justify-center rounded-full border border-base-300 hover:bg-base-200 transition-colors"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={guestCountInput}
+                  onChange={(e) => setGuestCountInput(e.target.value.replace(/\D/g, ""))}
+                  onBlur={() => setGuestCountInput(String(Math.max(1, parseInt(guestCountInput, 10) || 1)))}
+                  className="w-14 text-center font-bold text-lg border border-base-300 rounded-lg py-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <button
+                  onClick={() => setGuestCountInput((v) => String((parseInt(v, 10) || 1) + 1))}
+                  className="w-8 h-8 flex items-center justify-center rounded-full border border-base-300 hover:bg-base-200 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="w-8 h-8 flex items-center justify-center rounded-full border border-base-300 hover:bg-base-200 transition-colors"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <input
-                type="number"
-                value={quantity}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  if (!isNaN(val) && val >= 1) setQuantity(val);
-                }}
-                className="w-14 text-center font-bold text-lg border border-base-300 rounded-lg py-1"
-                min={1}
-              />
-              <button
-                onClick={() => setQuantity((q) => q + 1)}
-                className="w-8 h-8 flex items-center justify-center rounded-full border border-base-300 hover:bg-base-200 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
+            {!isExact && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setRoundUp(false)}
+                  className={`flex-1 text-xs py-1.5 rounded-lg border transition-colors ${
+                    !roundUp
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-base-300 text-gray-600 hover:bg-base-100"
+                  }`}
+                >
+                  ↓ {bundlesFloor} bundle{bundlesFloor !== 1 ? "s" : ""} (~{bundlesFloor * baseGuestCount} people)
+                </button>
+                <button
+                  onClick={() => setRoundUp(true)}
+                  className={`flex-1 text-xs py-1.5 rounded-lg border transition-colors ${
+                    roundUp
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-base-300 text-gray-600 hover:bg-base-100"
+                  }`}
+                >
+                  ↑ {bundlesCeil} bundle{bundlesCeil !== 1 ? "s" : ""} (~{bundlesCeil * baseGuestCount} people)
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
