@@ -145,6 +145,7 @@ export interface ActiveSessionPanelProps {
   showCheckoutButton?: boolean;
   restaurants?: { id: string; restaurant_name: string; images: string[] }[];
   contentMaxHeightClass?: string;
+  className?: string;
 }
 
 export interface ViewOrderModalProps {

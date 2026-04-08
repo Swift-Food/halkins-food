@@ -502,11 +502,11 @@ export default function CoworkingOrderFlow() {
               <CateringOrderBuilder
                 nextStep={4}
                 desktopCheckoutNotice={
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-                    <div className="flex flex-col gap-3">
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900">
+                    <div className="flex flex-col gap-2">
                       <div>
                         <p className="font-semibold">Catering is optional at this stage.</p>
-                        <p className="mt-1 text-amber-800/85">
+                        <p className="mt-0.5 text-amber-800/85">
                           Add food now, or continue with the deposit and return to catering later.
                         </p>
                       </div>

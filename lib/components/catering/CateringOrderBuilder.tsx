@@ -272,6 +272,24 @@ export default function CateringOrderBuilder({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const basketColumnRef = useRef<HTMLDivElement>(null);
+  const [basketHeight, setBasketHeight] = useState("100vh");
+  useEffect(() => {
+    const updateHeight = () => {
+      if (basketColumnRef.current) {
+        const top = Math.max(0, basketColumnRef.current.getBoundingClientRect().top);
+        setBasketHeight(`calc(100vh - ${top}px)`);
+      }
+    };
+    updateHeight();
+    window.addEventListener("scroll", updateHeight, { passive: true });
+    window.addEventListener("resize", updateHeight);
+    return () => {
+      window.removeEventListener("scroll", updateHeight);
+      window.removeEventListener("resize", updateHeight);
+    };
+  }, []);
+
   useEffect(() => {
     if (!resolvedEventStartTime || mealSessions.length === 0) return;
     const firstSession = mealSessions[0];
@@ -962,26 +980,6 @@ export default function CateringOrderBuilder({
 
   return (
     <div className="min-h-screen bg-base-100">
-      <DateSessionNav
-        navMode={navMode}
-        dayGroups={dayGroups}
-        selectedDayDate={selectedDayDate}
-        currentDayGroup={currentDayGroup}
-        expandedSessionIndex={activeSessionIndex}
-        isNavSticky={isNavSticky}
-        onDateClick={handleDateClick}
-        onBackToDates={handleBackToDates}
-        onSessionPillClick={handleSessionPillClick}
-        onAddDay={handleAddDay}
-        onAddSessionToDay={handleAddSessionToDay}
-        formatTimeDisplay={formatTimeDisplay}
-        addDayNavButtonRef={addDayNavButtonRef}
-        backButtonRef={backButtonRef}
-        firstDayTabRef={firstDayTabRef}
-        firstSessionPillRef={firstSessionPillRef}
-        addSessionNavButtonRef={addSessionNavButtonRef}
-      />
-
       {editingSessionIndex !== null && (
         <SessionEditor
           session={mealSessions[editingSessionIndex]}
@@ -996,118 +994,138 @@ export default function CateringOrderBuilder({
         />
       )}
 
-      <div className="mx-auto max-w-7xl p-2">
-<div className="flex flex-col gap-6 md:flex-row">
-          <div className="min-w-0 flex-1">
-            <MenuBrowserColumn
-              showBundleBrowser={showBundleBrowser}
-              onToggleBundleBrowser={setShowBundleBrowser}
-              sessionIndex={activeSessionIndex}
-              sessionDate={mealSessions[activeSessionIndex]?.sessionDate}
-              eventTime={mealSessions[activeSessionIndex]?.eventTime}
-              allMenuItems={allMenuItems}
-              fetchAllMenuItems={fetchAllMenuItems}
-              defaultGuestCount={mealSessions[activeSessionIndex]?.guestCount ?? eventDetails?.guestCount ?? 1}
-              restaurants={restaurants}
-              restaurantsLoading={restaurantsLoading}
-              onAddItem={handleAddItem}
-              onUpdateQuantity={handleUpdateQuantity}
-              onAddOrderPress={handleAddOrderPress}
-              getItemQuantity={getItemQuantity}
-              expandedItemId={expandedItemId}
-              setExpandedItemId={setExpandedItemId}
-              selectedDietaryFilters={selectedDietaryFilters}
-              toggleDietaryFilter={toggleDietaryFilter}
-              categoriesRowRef={categoriesRowRef}
-              restaurantListRef={restaurantListRef}
-              firstMenuItemRef={firstMenuItemRef}
-              expandedSessionIndex={activeSessionIndex}
-              autoOpenFirstRestaurant={currentTutorialStep?.id === "menu-item"}
-              tutorialResetKey={tutorialResetKey}
-            />
+      {/* Two-Column Layout */}
+      <div className="flex flex-col md:flex-row">
+        {/* Left Column: Session Nav + Menu Browser — centered in remaining space */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          <DateSessionNav
+            navMode={navMode}
+            dayGroups={dayGroups}
+            selectedDayDate={selectedDayDate}
+            currentDayGroup={currentDayGroup}
+            expandedSessionIndex={activeSessionIndex}
+            isNavSticky={isNavSticky}
+            onDateClick={handleDateClick}
+            onBackToDates={handleBackToDates}
+            onSessionPillClick={handleSessionPillClick}
+            onAddDay={handleAddDay}
+            onAddSessionToDay={handleAddSessionToDay}
+            formatTimeDisplay={formatTimeDisplay}
+            addDayNavButtonRef={addDayNavButtonRef}
+            backButtonRef={backButtonRef}
+            firstDayTabRef={firstDayTabRef}
+            firstSessionPillRef={firstSessionPillRef}
+            addSessionNavButtonRef={addSessionNavButtonRef}
+          />
+          <div className="flex justify-center px-2 md:px-6">
+            <div className="w-full max-w-3xl">
+              <MenuBrowserColumn
+                showBundleBrowser={showBundleBrowser}
+                onToggleBundleBrowser={setShowBundleBrowser}
+                sessionIndex={activeSessionIndex}
+                sessionDate={mealSessions[activeSessionIndex]?.sessionDate}
+                eventTime={mealSessions[activeSessionIndex]?.eventTime}
+                allMenuItems={allMenuItems}
+                fetchAllMenuItems={fetchAllMenuItems}
+                defaultGuestCount={mealSessions[activeSessionIndex]?.guestCount ?? eventDetails?.guestCount ?? 1}
+                restaurants={restaurants}
+                restaurantsLoading={restaurantsLoading}
+                onAddItem={handleAddItem}
+                onUpdateQuantity={handleUpdateQuantity}
+                onAddOrderPress={handleAddOrderPress}
+                getItemQuantity={getItemQuantity}
+                expandedItemId={expandedItemId}
+                setExpandedItemId={setExpandedItemId}
+                selectedDietaryFilters={selectedDietaryFilters}
+                toggleDietaryFilter={toggleDietaryFilter}
+                categoriesRowRef={categoriesRowRef}
+                restaurantListRef={restaurantListRef}
+                firstMenuItemRef={firstMenuItemRef}
+                expandedSessionIndex={activeSessionIndex}
+                autoOpenFirstRestaurant={currentTutorialStep?.id === "menu-item"}
+                tutorialResetKey={tutorialResetKey}
+              />
+            </div>
           </div>
+        </div>
 
-          <div
-            className={`hidden flex-shrink-0 self-start md:block md:w-[50%] md:sticky md:top-24 xl:w-[40%] ${
-              activeSessionHasItems ? "h-[calc(100vh-7rem)]" : ""
-            }`}
-          >
-            {activeSession && (
-              <div
-                className={`flex flex-col gap-3 ${
-                  activeSessionHasItems ? "h-full overflow-hidden" : ""
-                }`}
-              >
-                <ActiveSessionPanel
-                  session={activeSession}
-                  sessionIndex={activeSessionIndex}
-                  sessionTotal={getSessionTotal(activeSessionIndex)}
-                  sessionDiscount={getSessionDiscount(activeSessionIndex).discount}
-                  sessionPromotion={getSessionDiscount(activeSessionIndex).promotion}
-                  validationError={sessionValidationErrors[activeSessionIndex] || null}
-                  isUnscheduled={!activeSession.sessionDate}
-                  canRemove={mealSessions.length > 1}
-                  onEditSession={() => setEditingSessionIndex(activeSessionIndex)}
-                  onRemoveSession={(e) => handleRemoveSession(activeSessionIndex, e)}
-                  onEditItem={handleEditItem}
-                  onRemoveItem={handleRemoveItem}
-                  onSwapItem={handleSwapItem}
-                  onRemoveBundle={handleRemoveBundle}
-                  collapsedCategories={collapsedCategories}
-                  onToggleCategory={handleToggleCategory}
-                  onViewMenu={handleViewMenu}
-                  isCurrentSessionValid={isCurrentSessionValid}
-                  totalPrice={getTotalPrice()}
-                  onCheckout={handleCheckout}
-                  showCheckoutButton={false}
-                  restaurants={restaurants}
-                  contentMaxHeightClass={activeSessionHasItems ? "max-h-[calc(100vh-14rem)]" : undefined}
-                />
+        {/* Right Column: Basket — full-height sticky sidebar */}
+        <div
+          ref={basketColumnRef}
+          className="hidden md:flex md:w-72 flex-shrink-0 flex-col sticky top-0 overflow-hidden"
+          style={{ height: basketHeight }}
+        >
+          {activeSession && (
+            <div className="flex h-full flex-col overflow-hidden">
+              <ActiveSessionPanel
+                session={activeSession}
+                sessionIndex={activeSessionIndex}
+                sessionTotal={getSessionTotal(activeSessionIndex)}
+                sessionDiscount={getSessionDiscount(activeSessionIndex).discount}
+                sessionPromotion={getSessionDiscount(activeSessionIndex).promotion}
+                validationError={sessionValidationErrors[activeSessionIndex] || null}
+                isUnscheduled={!activeSession.sessionDate}
+                canRemove={mealSessions.length > 1}
+                onEditSession={() => setEditingSessionIndex(activeSessionIndex)}
+                onRemoveSession={(e) => handleRemoveSession(activeSessionIndex, e)}
+                onEditItem={handleEditItem}
+                onRemoveItem={handleRemoveItem}
+                onSwapItem={handleSwapItem}
+                onRemoveBundle={handleRemoveBundle}
+                collapsedCategories={collapsedCategories}
+                onToggleCategory={handleToggleCategory}
+                onViewMenu={handleViewMenu}
+                isCurrentSessionValid={isCurrentSessionValid}
+                totalPrice={getTotalPrice()}
+                onCheckout={handleCheckout}
+                showCheckoutButton={false}
+                restaurants={restaurants}
+                className="flex-1 min-h-0"
+              />
+              <div className="flex-shrink-0 flex flex-col gap-1.5 px-2 pb-4 pt-2">
                 {desktopCheckoutNotice && <div className="hidden md:block">{desktopCheckoutNotice}</div>}
-                <div className="flex flex-shrink-0 gap-2">
-                  {totalItems > 0 && (
-                    <button
-                      onClick={handleViewMenu}
-                      disabled={generatingPdf}
-                      className="flex flex-shrink-0 items-center gap-2 rounded-xl border border-primary px-4 py-3 font-semibold text-primary transition-colors hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {generatingPdf ? (
-                        <span className="loading loading-spinner loading-sm" />
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                      )}
-                      <span className="text-sm">Download Menu</span>
-                    </button>
-                  )}
+                {totalItems > 0 && (
                   <button
-                    onClick={handleCheckout}
-                    disabled={disableCheckoutWhenEmpty && !hasAnyItems}
-                    className={`flex flex-1 items-center justify-between rounded-xl px-5 py-3 font-semibold text-white transition-colors ${
-                      disableCheckoutWhenEmpty && !hasAnyItems
-                        ? "cursor-not-allowed bg-base-300 text-base-content/50"
-                        : isCurrentSessionValid
-                        ? "bg-primary hover:bg-primary/90"
-                        : "bg-warning hover:bg-warning/90"
-                    }`}
+                    onClick={handleViewMenu}
+                    disabled={generatingPdf}
+                    className="flex items-center justify-center gap-1.5 rounded-lg border border-primary px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <div>
-                      <span className="text-sm opacity-90">Total</span>
-                      <span className="ml-2 text-lg font-bold">£{getTotalPrice().toFixed(2)}</span>
-                    </div>
-                    <span>
-                      {disableCheckoutWhenEmpty && !hasAnyItems
-                        ? "Add items to continue"
-                        : isCurrentSessionValid
-                          ? "Checkout"
-                          : "Min. Order Not Met"}
-                    </span>
+                    {generatingPdf ? (
+                      <span className="loading loading-spinner loading-xs" />
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    )}
+                    Download Menu
                   </button>
-                </div>
+                )}
+                <button
+                  onClick={handleCheckout}
+                  disabled={disableCheckoutWhenEmpty && !hasAnyItems}
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-white transition-colors ${
+                    disableCheckoutWhenEmpty && !hasAnyItems
+                      ? "cursor-not-allowed bg-base-300 text-base-content/50"
+                      : isCurrentSessionValid
+                      ? "bg-primary hover:bg-primary/90"
+                      : "bg-warning hover:bg-warning/90"
+                  }`}
+                >
+                  <div>
+                    <span className="text-xs opacity-90">Total</span>
+                    <span className="ml-1.5 font-bold">£{getTotalPrice().toFixed(2)}</span>
+                  </div>
+                  <span className="text-xs">
+                    {disableCheckoutWhenEmpty && !hasAnyItems
+                      ? "Add items to continue"
+                      : isCurrentSessionValid
+                        ? "Checkout"
+                        : "Min. Order Not Met"}
+                  </span>
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

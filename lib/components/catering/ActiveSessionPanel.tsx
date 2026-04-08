@@ -36,6 +36,7 @@ export default function ActiveSessionPanel({
   onViewMenu,
   restaurants,
   contentMaxHeightClass,
+  className,
 }: ActiveSessionPanelProps) {
   const hasItems = session.orderItems.length > 0;
   const totalItemCount = session.orderItems.reduce((sum, oi) => sum + oi.quantity, 0);
@@ -85,9 +86,7 @@ export default function ActiveSessionPanel({
 
   return (
     <div
-      className={`flex flex-col rounded-xl border border-base-200 bg-white shadow-sm ${
-        hasItems ? "overflow-hidden" : ""
-      }`}
+      className={`flex flex-col rounded-xl border border-base-200 bg-white shadow-sm overflow-hidden ${className ?? ""}`}
     >
       {isUnscheduled && (
         <div className="flex items-start gap-3 rounded-t-xl border-b border-amber-200 bg-amber-50 p-4">
@@ -157,8 +156,8 @@ export default function ActiveSessionPanel({
       <div
         className={
           hasItems
-            ? ["overflow-y-auto", contentMaxHeightClass].filter(Boolean).join(" ")
-            : ""
+            ? ["flex-1 min-h-0 overflow-y-auto", contentMaxHeightClass].filter(Boolean).join(" ")
+            : "flex-1 min-h-0"
         }
       >
         {sessionDiscount != null && sessionDiscount > 0 && sessionPromotion && (
