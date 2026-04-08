@@ -415,7 +415,37 @@ export default function RestaurantMenuBrowser({
   const [activeGroupName, setActiveGroupName] = useState<string | null>(null);
   const [stickyTopOffset, setStickyTopOffset] = useState(72);
   const [isRestaurantSearchOpen, setIsRestaurantSearchOpen] = useState(false);
+  const [showSearchInput, setShowSearchInput] = useState(false);
+  const [closedSearchColWidth, setClosedSearchColWidth] = useState<string>("2.25rem");
   const restaurantSearchInputRef = useRef<HTMLInputElement>(null);
+  const [pillRowEl, setPillRowEl] = useState<HTMLDivElement | null>(null);
+
+  // Measure pill row outer height so the closed-state search column matches it (square button)
+  useEffect(() => {
+    if (!pillRowEl) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const h = (entry.target as HTMLElement).offsetHeight;
+        if (h > 0) setClosedSearchColWidth(`${h}px`);
+      }
+    });
+    observer.observe(pillRowEl);
+    return () => observer.disconnect();
+  }, [pillRowEl]);
+
+  // Open: render input immediately, then expand grid track
+  const openRestaurantSearch = () => {
+    setShowSearchInput(true);
+    setIsRestaurantSearchOpen(true);
+    setTimeout(() => restaurantSearchInputRef.current?.focus(), 50);
+  };
+
+  // Close: shrink grid track first, then swap input → button after the animation
+  const closeRestaurantSearch = () => {
+    setRestaurantSearchQuery("");
+    setIsRestaurantSearchOpen(false);
+    setTimeout(() => setShowSearchInput(false), 300);
+  };
   const [restaurantBundles, setRestaurantBundles] = useState<
     CateringBundleResponse[]
   >([]);
@@ -1453,13 +1483,44 @@ export default function RestaurantMenuBrowser({
                 style={{
                   top: stickyTopOffset + 8,
                   gridTemplateColumns: isRestaurantSearchOpen
-                    ? "minmax(0, 1fr) min(100%, 14rem)"
-                    : "minmax(0, 1fr) auto",
+                    ? `min(100%, 14rem) minmax(0, 1fr)`
+                    : `${closedSearchColWidth} minmax(0, 1fr)`,
                   transition: "grid-template-columns 300ms ease-in-out",
                 }}
               >
-                {/* Pill row — first grid column, can shrink to 0 */}
+                {/* Search — first grid column, width set by grid track */}
+                <div className="min-w-0 overflow-hidden relative">
+                  {showSearchInput ? (
+                    <>
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none z-10" />
+                      <input
+                        ref={restaurantSearchInputRef}
+                        type="text"
+                        value={restaurantSearchQuery}
+                        onChange={(e) => setRestaurantSearchQuery(e.target.value)}
+                        placeholder="Search items..."
+                        className="w-full h-full pl-9 pr-9 rounded-full border border-primary bg-white text-sm focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
+                      />
+                      <button
+                        onClick={closeRestaurantSearch}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={openRestaurantSearch}
+                      className="h-full w-full rounded-full border border-base-300 bg-white/50 backdrop-blur-md shadow-sm flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary transition-colors"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Pill row — second grid column, can shrink to 0 */}
                 <div
+                  ref={setPillRowEl}
                   className={`min-w-0 overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 py-1.5 md:px-4 md:py-2 shadow-sm backdrop-blur-md ${isRestaurantSearchOpen ? "hidden md:block" : ""}`}
                 >
                   <div className="flex gap-2 md:gap-5">
@@ -1484,42 +1545,6 @@ export default function RestaurantMenuBrowser({
                       );
                     })}
                   </div>
-                </div>
-
-                {/* Search — second grid column, width set by grid track */}
-                <div className="min-w-0 overflow-hidden flex items-center">
-                  {isRestaurantSearchOpen ? (
-                    <div className="relative w-full h-full flex items-center">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none z-10" />
-                      <input
-                        ref={restaurantSearchInputRef}
-                        type="text"
-                        value={restaurantSearchQuery}
-                        onChange={(e) => setRestaurantSearchQuery(e.target.value)}
-                        placeholder="Search items..."
-                        className="w-full h-full pl-9 pr-9 rounded-full border border-primary bg-white text-sm focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
-                      />
-                      <button
-                        onClick={() => {
-                          setRestaurantSearchQuery("");
-                          setIsRestaurantSearchOpen(false);
-                        }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setIsRestaurantSearchOpen(true);
-                        setTimeout(() => restaurantSearchInputRef.current?.focus(), 50);
-                      }}
-                      className="h-full aspect-square rounded-full border border-base-300 bg-white/50 backdrop-blur-md shadow-sm flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary transition-colors"
-                    >
-                      <Search className="w-3.5 h-3.5" />
-                    </button>
-                  )}
                 </div>
               </div>
 
