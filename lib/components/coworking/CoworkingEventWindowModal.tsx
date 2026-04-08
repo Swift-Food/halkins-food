@@ -358,30 +358,44 @@ export default function CoworkingEventWindowModal({
           Exact time
         </label>
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
-          <select
-            value={manualTimeParts.hour}
-            onChange={(e) => handleManualTimeChange({ hour: e.target.value })}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
-          >
-            <option value="">Hour</option>
-            {Array.from({ length: 16 }, (_, index) => String(index + 7).padStart(2, "0")).map((hour) => (
-              <option key={hour} value={hour}>
-                {hour}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={manualTimeParts.hour}
+              onChange={(e) => handleManualTimeChange({ hour: e.target.value })}
+              className="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-3 py-3 pr-8 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
+            >
+              <option value="">Hour</option>
+              {Array.from({ length: 16 }, (_, index) => String(index + 7).padStart(2, "0")).map((hour) => (
+                <option key={hour} value={hour}>
+                  {hour}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
 
-          <select
-            value={manualTimeParts.minute}
-            onChange={(e) => handleManualTimeChange({ minute: e.target.value })}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
-          >
-            {["00", "15", "30", "45"].map((minute) => (
-              <option key={minute} value={minute}>
-                {minute}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={manualTimeParts.minute}
+              onChange={(e) => handleManualTimeChange({ minute: e.target.value })}
+              className="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-3 py-3 pr-8 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
+            >
+              {["00", "15", "30", "45"].map((minute) => (
+                <option key={minute} value={minute}>
+                  {minute}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
 
         </div>
         {invalidTimeMessage && (
