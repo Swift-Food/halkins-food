@@ -414,6 +414,8 @@ export default function RestaurantMenuBrowser({
   );
   const [activeGroupName, setActiveGroupName] = useState<string | null>(null);
   const [stickyTopOffset, setStickyTopOffset] = useState(72);
+  const [isRestaurantSearchOpen, setIsRestaurantSearchOpen] = useState(false);
+  const restaurantSearchInputRef = useRef<HTMLInputElement>(null);
   const [restaurantBundles, setRestaurantBundles] = useState<
     CateringBundleResponse[]
   >([]);
@@ -1435,25 +1437,6 @@ export default function RestaurantMenuBrowser({
           </div>
         </div>
 
-        <div className="relative mt-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            value={restaurantSearchQuery}
-            onChange={(e) => setRestaurantSearchQuery(e.target.value)}
-            placeholder={`Search ${selectedRestaurant.restaurant_name} items...`}
-            className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-base-300 bg-white text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-          />
-          {restaurantSearchQuery && (
-            <button
-              onClick={() => setRestaurantSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
         <div className="mt-2">{renderDietaryFilters()}</div>
 
         <div className="mt-3">
@@ -1466,30 +1449,77 @@ export default function RestaurantMenuBrowser({
           ) : (
             <>
               <div
-                className="sticky z-30 mt-2 mb-3 w-full overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 py-1.5 md:px-4 md:py-2 shadow-sm backdrop-blur-md"
-                style={{ top: stickyTopOffset + 8 }}
+                className="sticky z-30 mt-2 mb-3 grid items-stretch gap-2 w-full max-w-full box-border"
+                style={{
+                  top: stickyTopOffset + 8,
+                  gridTemplateColumns: isRestaurantSearchOpen
+                    ? "minmax(0, 1fr) min(100%, 14rem)"
+                    : "minmax(0, 1fr) auto",
+                  transition: "grid-template-columns 300ms ease-in-out",
+                }}
               >
-                <div className="flex gap-2 md:gap-5">
-                  {restaurantGroups.map((group) => {
-                    const isActive = activeGroupName === group.name;
-                    return (
+                {/* Pill row — first grid column, can shrink to 0 */}
+                <div
+                  className={`min-w-0 overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 py-1.5 md:px-4 md:py-2 shadow-sm backdrop-blur-md ${isRestaurantSearchOpen ? "hidden md:block" : ""}`}
+                >
+                  <div className="flex gap-2 md:gap-5">
+                    {restaurantGroups.map((group) => {
+                      const isActive = activeGroupName === group.name;
+                      return (
+                        <button
+                          key={group.name}
+                          ref={(el) => {
+                            if (el) groupButtonRefs.current.set(group.name, el);
+                            else groupButtonRefs.current.delete(group.name);
+                          }}
+                          onClick={() => handleGroupTabClick(group.name)}
+                          className={`flex-shrink-0 whitespace-nowrap rounded-full px-2 py-1 md:px-3 md:py-1.5 text-xs md:text-sm font-semibold transition-colors ${
+                            isActive
+                              ? "bg-primary text-white"
+                              : "text-gray-500 hover:bg-black/5 hover:text-gray-700"
+                          }`}
+                        >
+                          {group.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Search — second grid column, width set by grid track */}
+                <div className="min-w-0 overflow-hidden flex items-center">
+                  {isRestaurantSearchOpen ? (
+                    <div className="relative w-full h-full flex items-center">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none z-10" />
+                      <input
+                        ref={restaurantSearchInputRef}
+                        type="text"
+                        value={restaurantSearchQuery}
+                        onChange={(e) => setRestaurantSearchQuery(e.target.value)}
+                        placeholder="Search items..."
+                        className="w-full h-full pl-9 pr-9 rounded-full border border-primary bg-white text-sm focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
+                      />
                       <button
-                        key={group.name}
-                        ref={(el) => {
-                          if (el) groupButtonRefs.current.set(group.name, el);
-                          else groupButtonRefs.current.delete(group.name);
+                        onClick={() => {
+                          setRestaurantSearchQuery("");
+                          setIsRestaurantSearchOpen(false);
                         }}
-                        onClick={() => handleGroupTabClick(group.name)}
-                        className={`flex-shrink-0 whitespace-nowrap rounded-full px-2 py-1 md:px-3 md:py-1.5 text-xs md:text-sm font-semibold transition-colors ${
-                          isActive
-                            ? "bg-primary text-white"
-                            : "text-gray-500 hover:bg-black/5 hover:text-gray-700"
-                        }`}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
                       >
-                        {group.name}
+                        <X className="w-3.5 h-3.5" />
                       </button>
-                    );
-                  })}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setIsRestaurantSearchOpen(true);
+                        setTimeout(() => restaurantSearchInputRef.current?.focus(), 50);
+                      }}
+                      className="h-full aspect-square rounded-full border border-base-300 bg-white/50 backdrop-blur-md shadow-sm flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary transition-colors"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 
