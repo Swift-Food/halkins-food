@@ -1017,9 +1017,8 @@ export default function CateringOrderBuilder({
             firstSessionPillRef={firstSessionPillRef}
             addSessionNavButtonRef={addSessionNavButtonRef}
           />
-          <div className="flex justify-center px-2 md:px-6">
-            <div className="w-full max-w-3xl">
-              <MenuBrowserColumn
+          <div className="max-w-6xl mx-auto w-full px-2 md:px-6">
+            <MenuBrowserColumn
                 showBundleBrowser={showBundleBrowser}
                 onToggleBundleBrowser={setShowBundleBrowser}
                 sessionIndex={activeSessionIndex}
@@ -1045,7 +1044,6 @@ export default function CateringOrderBuilder({
                 autoOpenFirstRestaurant={currentTutorialStep?.id === "menu-item"}
                 tutorialResetKey={tutorialResetKey}
               />
-            </div>
           </div>
         </div>
 
