@@ -1052,7 +1052,7 @@ export default function CateringOrderBuilder({
         {/* Right Column: Basket — full-height sticky sidebar */}
         <div
           ref={basketColumnRef}
-          className="hidden md:flex md:w-72 flex-shrink-0 flex-col sticky top-0 overflow-hidden"
+          className="hidden md:flex md:w-80 flex-shrink-0 flex-col sticky top-0 overflow-hidden"
           style={{ height: basketHeight }}
         >
           {activeSession && (

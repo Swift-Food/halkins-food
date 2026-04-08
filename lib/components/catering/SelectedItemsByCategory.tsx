@@ -288,7 +288,7 @@ export default function SelectedItemsByCategory({
     const showDesktop = compactLayout ? " hidden" : " hidden sm:flex";
     const showDesktopBlock = compactLayout ? " hidden" : " hidden sm:block";
     const rootLayout = compactLayout
-      ? "flex flex-col gap-3 rounded-xl bg-base-100 p-4 min-w-0 overflow-hidden"
+      ? "flex flex-col gap-1.5 rounded-xl bg-base-100 p-2 min-w-0 overflow-hidden"
       : "flex flex-col gap-3 rounded-xl bg-base-100 p-4 min-w-0 overflow-hidden sm:flex-row sm:items-center";
 
     return (
@@ -302,7 +302,7 @@ export default function SelectedItemsByCategory({
             />
           )}
           <div className="min-w-0 flex-1">
-            <p className="font-semibold italic text-gray-800">{item.menuItemName}</p>
+            <p className="text-sm font-semibold italic text-gray-800">{item.menuItemName}</p>
             {item.selectedAddons && item.selectedAddons.length > 0 && (
               <div className="mt-1 text-sm text-gray-600">{renderAddons(item.selectedAddons)}</div>
             )}
@@ -312,8 +312,8 @@ export default function SelectedItemsByCategory({
 
         <div className={`items-center justify-between${showMobile} flex`}>
           <div>
-            <p className="text-lg font-bold text-primary">£{subtotal.toFixed(2)}</p>
-            <p className="text-sm text-gray-600">
+            <p className={`font-bold text-primary ${compactLayout ? "text-sm" : "text-lg"}`}>£{subtotal.toFixed(2)}</p>
+            <p className={`text-gray-600 ${compactLayout ? "text-xs" : "text-sm"}`}>
               {portions} portion{portions !== 1 ? "s" : ""}
             </p>
           </div>
@@ -414,7 +414,7 @@ export default function SelectedItemsByCategory({
 
   return (
     <div className="mb-6 min-w-0 overflow-hidden">
-      <div className="space-y-5">
+      <div className={compactLayout ? "space-y-3" : "space-y-5"}>
         {Array.from(restaurantGrouped.entries()).map(([restaurantName, restaurant]) => {
           const isRestaurantCollapsed = collapsedRestaurants.has(restaurantName);
           const totalRestaurantItems =
@@ -450,13 +450,13 @@ export default function SelectedItemsByCategory({
                   <img
                     src={restaurant.image}
                     alt={restaurantName}
-                    className="h-9 w-9 flex-shrink-0 rounded-lg object-cover"
+                    className={`${compactLayout ? "h-7 w-7" : "h-9 w-9"} flex-shrink-0 rounded-lg object-cover`}
                   />
                 ) : (
-                  <Store className="h-5 w-5 flex-shrink-0 text-gray-500" />
+                  <Store className={`${compactLayout ? "h-4 w-4" : "h-5 w-5"} flex-shrink-0 text-gray-500`} />
                 )}
-                <span className="text-base font-bold text-gray-800">{restaurantName}</span>
-                <span className="text-sm text-gray-400">({totalRestaurantItems})</span>
+                <span className={`${compactLayout ? "text-sm" : "text-base"} font-bold text-gray-800`}>{restaurantName}</span>
+                <span className={`${compactLayout ? "text-xs" : "text-sm"} text-gray-400`}>({totalRestaurantItems})</span>
                 <div className="flex-1" />
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -477,16 +477,16 @@ export default function SelectedItemsByCategory({
               </button>
 
               {!isRestaurantCollapsed && (
-                <div className="space-y-4">
+                <div className={compactLayout ? "space-y-2" : "space-y-4"}>
                   {Array.from(restaurant.bundles.entries()).map(([bundleId, bundle]) => (
                     <div
                       key={bundleId}
                       className="overflow-hidden rounded-2xl border-2 border-dashed border-primary/30 bg-primary/[0.02]"
                     >
-                      <div className="flex items-center gap-2 border-b border-primary/20 bg-primary/10 px-4 py-3">
-                        <Package className="h-4 w-4 flex-shrink-0 text-primary" />
+                      <div className={`flex items-center gap-2 border-b border-primary/20 bg-primary/10 ${compactLayout ? "px-3 py-2" : "px-4 py-3"}`}>
+                        <Package className={`${compactLayout ? "h-3 w-3" : "h-4 w-4"} flex-shrink-0 text-primary`} />
                         <div className="min-w-0">
-                          <span className="text-sm font-semibold text-primary">
+                          <span className={`${compactLayout ? "text-xs" : "text-sm"} font-semibold text-primary`}>
                             {bundle.name}
                           </span>
                           <span className="block text-xs text-primary/60 sm:ml-1 sm:inline">
@@ -512,7 +512,7 @@ export default function SelectedItemsByCategory({
                           </>
                         )}
                       </div>
-                      <div className="space-y-3 p-2">{bundle.items.map(renderItemRow)}</div>
+                      <div className={`${compactLayout ? "space-y-1.5 p-1.5" : "space-y-3 p-2"}`}>{bundle.items.map(renderItemRow)}</div>
                     </div>
                   ))}
 
@@ -532,11 +532,11 @@ export default function SelectedItemsByCategory({
                       >
                         <button
                           onClick={() => handleToggleCategory(categoryName)}
-                          className="flex w-full items-center justify-between bg-base-200 px-4 py-3 transition-colors hover:bg-base-200"
+                          className={`flex w-full items-center justify-between bg-base-200 ${compactLayout ? "px-3 py-2" : "px-4 py-3"} transition-colors hover:bg-base-200`}
                         >
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-800">{categoryName}</span>
-                            <span className="text-sm text-gray-500">
+                            <span className={`${compactLayout ? "text-xs" : ""} font-semibold text-gray-800`}>{categoryName}</span>
+                            <span className={`${compactLayout ? "text-xs" : "text-sm"} text-gray-500`}>
                               ({totalItems} item{totalItems !== 1 ? "s" : ""})
                             </span>
                           </div>
@@ -559,7 +559,7 @@ export default function SelectedItemsByCategory({
                         </button>
 
                         {!isCollapsed && (
-                          <div className="min-w-0 overflow-hidden p-2 space-y-3">
+                          <div className={`min-w-0 overflow-hidden ${compactLayout ? "p-1.5 space-y-1.5" : "p-2 space-y-3"}`}>
                             {categoryGroup.items.map(renderItemRow)}
                             {Array.from(categoryGroup.subcategories.values()).map((items, index) => (
                               <div key={`${categoryName}-${index}`} className="space-y-3">
