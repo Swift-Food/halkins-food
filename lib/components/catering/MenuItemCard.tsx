@@ -14,6 +14,7 @@ interface MenuItemCardProps {
   onAddOrderPress?: (item: MenuItem) => void;
   viewOnly?: boolean;
   onAddToOrder?: (item: MenuItem) => void;
+  showRestaurantName?: boolean;
 }
 
 export default function MenuItemCard({
@@ -27,6 +28,7 @@ export default function MenuItemCard({
   onAddOrderPress,
   viewOnly = false,
   onAddToOrder,
+  showRestaurantName = false,
 }: MenuItemCardProps) {
   // console.log("Item: ", JSON.stringify(item, null, 2));
   const price = parseFloat(item.price?.toString() || "0");
@@ -93,6 +95,12 @@ export default function MenuItemCard({
                   )}
                 </div>
 
+
+                {showRestaurantName && item.restaurantName && (
+                  <p className="text-[10px] text-primary font-medium mb-0.5 line-clamp-1">
+                    {item.restaurantName}
+                  </p>
+                )}
 
                 {/* Description - 1 line */}
                 {item.description && (

@@ -17,6 +17,7 @@ import { MenuItem, Restaurant } from "@/types/restaurant.types";
 import { DietaryFilter } from "@/types/menuItem";
 import { CategoryWithSubcategories } from "@/types/catering.types";
 import { CateringBundleItem, CateringBundleResponse } from "@/types/api/catering.api.types";
+import { SearchResponse, SearchResult } from "@/types/catering.types";
 import { categoryService } from "@/services/api/category.api";
 import { cateringService } from "@/services/api/catering.api";
 import { getActivePromotions, Promotion } from "@/services/api/promotion.api";
@@ -429,6 +430,8 @@ export default function RestaurantMenuBrowser({
     null
   );
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [apiSearchResults, setApiSearchResults] = useState<SearchResponse | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const groupButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const isProgrammaticScroll = useRef(false);
@@ -608,49 +611,28 @@ export default function RestaurantMenuBrowser({
     };
   }, [activeHoursInfoRestaurantId, updateHoursInfoPosition, isMobileViewport]);
 
-  const searchResults = useMemo(() => {
-    if (!isSearchActive) return null;
-    const query = searchQuery.toLowerCase();
-    const matchingItems = dietaryFilteredItems.filter(
-      (item) =>
-        item.menuItemName.toLowerCase().includes(query) ||
-        item.description?.toLowerCase().includes(query) ||
-        item.groupTitle?.toLowerCase().includes(query)
-    );
-
-    const grouped = new Map<
-      string,
-      { restaurant: Restaurant; items: MenuItem[] }
-    >();
-
-    matchingItems.forEach((item) => {
-      const restaurant = availableRestaurants.find(
-        (r) => r.id === item.restaurantId
-      );
-      if (!restaurant) return;
-
-      const existing = grouped.get(restaurant.id);
-      if (existing) {
-        existing.items.push(item);
-        return;
+  useEffect(() => {
+    if (!isSearchActive) {
+      setApiSearchResults(null);
+      setSearchLoading(false);
+      return;
+    }
+    setSearchLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const results = await cateringService.searchMenuItems(searchQuery, {
+          dietaryFilters: selectedDietaryFilters.length > 0 ? selectedDietaryFilters : undefined,
+        });
+        setApiSearchResults(results);
+      } catch (e) {
+        console.error("Search failed:", e);
+        setApiSearchResults(null);
+      } finally {
+        setSearchLoading(false);
       }
-
-      grouped.set(restaurant.id, {
-        restaurant,
-        items: [item],
-      });
-    });
-
-    return Array.from(grouped.values()).sort((a, b) =>
-      compareRestaurantsByAvailability(a.restaurant, b.restaurant)
-    );
-  }, [
-    isSearchActive,
-    searchQuery,
-    dietaryFilteredItems,
-    availableRestaurants,
-    compareRestaurantsByAvailability,
-  ]);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [isSearchActive, searchQuery, selectedDietaryFilters]);
 
   const filteredRestaurants = useMemo(() => {
     return availableRestaurants
@@ -1418,50 +1400,38 @@ export default function RestaurantMenuBrowser({
           Back to Restaurants
         </button>
 
-        <div className="flex items-center gap-3 mb-3">
+        <div className="relative w-full rounded-xl overflow-hidden mb-2" style={{ height: "175px" }}>
           {selectedRestaurant.images && selectedRestaurant.images.length > 0 ? (
             <img
               src={selectedRestaurant.images[0]}
               alt={selectedRestaurant.restaurant_name}
-              className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+              className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-14 h-14 rounded-lg bg-base-200 flex items-center justify-center flex-shrink-0">
-              <span className="text-lg font-bold text-gray-400">
+            <div className="w-full h-full bg-base-200 flex items-center justify-center">
+              <span className="text-4xl font-bold text-gray-300">
                 {selectedRestaurant.restaurant_name.charAt(0)}
               </span>
             </div>
           )}
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">
-              {selectedRestaurant.restaurant_name}
-            </h2>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {selectedRestaurant.minCateringOrderQuantity &&
-              selectedRestaurant.minCateringOrderQuantity > 0 ? (
-                <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
-                  Min order: {selectedRestaurant.minCateringOrderQuantity} items
-                </span>
-              ) : null}
-              {selectedRestaurantAdvanceNoticeText ? (
-                <span
-                  className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${
-                    isSelectedRestaurantWithinNoticeWindow
-                      ? "text-primary"
-                      : "text-gray-500"
-                  }`}
-                >
-                  <Clock3
-                    className={`h-3.5 w-3.5 ${
-                      isSelectedRestaurantWithinNoticeWindow
-                        ? "text-primary"
-                        : "text-gray-400"
-                    }`}
-                  />
-                  {selectedRestaurantAdvanceNoticeText}
-                </span>
-              ) : null}
-            </div>
+        </div>
+        <div className="mb-3">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {selectedRestaurant.restaurant_name}
+          </h2>
+          <div className="mt-0.5 flex flex-wrap gap-2">
+            {selectedRestaurant.minCateringOrderQuantity &&
+            selectedRestaurant.minCateringOrderQuantity > 0 ? (
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                Min order: {selectedRestaurant.minCateringOrderQuantity} items
+              </span>
+            ) : null}
+            {selectedRestaurantAdvanceNoticeText ? (
+              <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${isSelectedRestaurantWithinNoticeWindow ? "text-primary" : "text-gray-500"}`}>
+                <Clock3 className={`h-3.5 w-3.5 ${isSelectedRestaurantWithinNoticeWindow ? "text-primary" : "text-gray-400"}`} />
+                {selectedRestaurantAdvanceNoticeText}
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -1728,59 +1698,81 @@ export default function RestaurantMenuBrowser({
       </div>
 
       {isSearchActive ? (
-        !allMenuItems ? (
+        searchLoading ? (
           <div className="text-center py-6">
             <div className="inline-block w-6 h-6 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="mt-2 text-sm text-gray-500">Loading menu items...</p>
+            <p className="mt-2 text-sm text-gray-500">Searching...</p>
           </div>
-        ) : searchResults && searchResults.length === 0 ? (
+        ) : apiSearchResults && apiSearchResults.restaurants.length === 0 && apiSearchResults.menuItems.length === 0 ? (
           <div className="text-center py-6">
             <Search className="w-8 h-8 text-gray-300 mx-auto mb-2" />
             <p className="text-gray-500 text-sm">
-              No items found for &ldquo;{searchQuery}&rdquo;
+              No results found for &ldquo;{searchQuery}&rdquo;
             </p>
           </div>
-        ) : searchResults ? (
-          <div className="mt-3">
-            {searchResults.map((result) => (
-              <div key={result.restaurant.id} className="mb-6">
-                <div className="mb-3 max-w-sm">
-                  {renderRestaurantCard(result.restaurant, () =>
-                    handleSelectRestaurant(result.restaurant.id)
-                  )}
+        ) : apiSearchResults ? (
+          <div className="mt-3 space-y-6">
+            {apiSearchResults.restaurants.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-primary mb-2">
+                  Restaurants{" "}
+                  <span className="text-gray-400 font-normal">
+                    ({apiSearchResults.restaurants.length})
+                  </span>
+                </h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                  {apiSearchResults.restaurants.map((r: any) => {
+                    const restaurant = availableRestaurants.find((ar) => ar.id === r.id);
+                    if (!restaurant) return null;
+                    return (
+                      <div key={restaurant.id}>
+                        {renderRestaurantCard(restaurant, () =>
+                          handleSelectRestaurant(restaurant.id)
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-
-                {result.items.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-bold text-primary mb-2">
-                      Matching items{" "}
-                      <span className="text-gray-400 font-normal">
-                        ({result.items.length})
-                      </span>
-                    </h3>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                      {result.items.map((item) => (
-                        <div key={item.id}>
-                          <MenuItemCard
-                            item={item}
-                            quantity={getItemQuantity(item.id)}
-                            isExpanded={expandedItemId === item.id}
-                            onToggleExpand={() =>
-                              setExpandedItemId(
-                                expandedItemId === item.id ? null : item.id
-                              )
-                            }
-                            onAddItem={onAddItem}
-                            onUpdateQuantity={onUpdateQuantity}
-                            onAddOrderPress={onAddOrderPress}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
-            ))}
+            )}
+            {apiSearchResults.menuItems.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-primary mb-2">
+                  Menu Items{" "}
+                  <span className="text-gray-400 font-normal">
+                    ({apiSearchResults.menuItems.length})
+                  </span>
+                </h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {apiSearchResults.menuItems.map((sr: SearchResult) => {
+                    const item: MenuItem = {
+                      ...(sr as any),
+                      restaurantName: sr.restaurant?.name,
+                      addons: (sr as any).addons || [],
+                      itemDisplayOrder: (sr as any).itemDisplayOrder || 0,
+                    };
+                    return (
+                      <div key={item.id}>
+                        <MenuItemCard
+                          item={item}
+                          quantity={getItemQuantity(item.id)}
+                          isExpanded={expandedItemId === item.id}
+                          onToggleExpand={() =>
+                            setExpandedItemId(
+                              expandedItemId === item.id ? null : item.id
+                            )
+                          }
+                          onAddItem={onAddItem}
+                          onUpdateQuantity={onUpdateQuantity}
+                          onAddOrderPress={onAddOrderPress}
+                          showRestaurantName={true}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         ) : null
       ) : (
