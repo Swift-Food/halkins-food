@@ -22,10 +22,19 @@ import { categoryService } from "@/services/api/category.api";
 import { cateringService } from "@/services/api/catering.api";
 import { getActivePromotions, Promotion } from "@/services/api/promotion.api";
 import { useActiveCatering } from "@/context/useActiveCatering";
+import { useCoworking } from "@/context/CoworkingContext";
 import MenuItemCard from "./MenuItemCard";
 import BundleCard from "./BundleCard";
 import BundleDetailModal from "./modals/BundleDetailModal";
 import { mapToMenuItem } from "./catering-order-helpers";
+
+function haversineDistanceMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 3958.8;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 interface RestaurantMenuBrowserProps {
   restaurants: Restaurant[];
@@ -399,6 +408,7 @@ export default function RestaurantMenuBrowser({
   tutorialResetKey = 0,
 }: RestaurantMenuBrowserProps) {
   const { addMenuItem } = useActiveCatering();
+  const { selectedVenue } = useCoworking();
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<
     string | null
   >(null);
@@ -1237,7 +1247,7 @@ export default function RestaurantMenuBrowser({
     const hoursTooltipText = cateringWindowInfo.fullText;
 
     const cardContent = (
-      <div className="overflow-hidden rounded-xl bg-white">
+      <div className="overflow-hidden rounded-xl bg-white h-full flex flex-col">
         <div className="flex md:block">
           {restaurant.images && restaurant.images.length > 0 ? (
             <div className="relative aspect-square w-28 flex-shrink-0 bg-gray-100 md:w-full md:aspect-video">
@@ -1280,7 +1290,7 @@ export default function RestaurantMenuBrowser({
               ) : null}
             </div>
           )}
-          <div className="min-w-0 flex-1 p-3">
+          <div className="min-w-0 flex-1 p-3 flex flex-col">
           <p className="line-clamp-2 text-sm font-semibold leading-tight text-gray-900">
             {restaurant.restaurant_name}
           </p>
@@ -1292,81 +1302,111 @@ export default function RestaurantMenuBrowser({
               </span>
             </div>
           ) : null}
-          <div className="mt-1.5 min-h-8 space-y-0.5">
-            <div
-              className={`flex items-center gap-1.5 text-[11px] leading-4 ${
-                isAdvanceNoticeMet ? "text-gray-500" : "font-semibold text-primary"
-              }`}
-            >
-              <Clock3
-                className={`h-3.5 w-3.5 flex-shrink-0 ${
-                  isAdvanceNoticeMet ? "text-gray-400" : "text-primary"
-                }`}
-              />
-              <span className="line-clamp-1">
-                {advanceNoticeText || "No advance notice"}
-              </span>
-            </div>
-            <div className="relative flex items-center justify-between gap-2">
+          {isUnavailableForSession && (
+            <div className="mt-1.5 min-h-8 space-y-0.5">
               <div
-                className={`flex min-w-0 items-center gap-1.5 text-[11px] leading-4 ${
-                  cateringWindowInfo.isAvailable
-                    ? "text-gray-500"
-                    : "font-semibold text-primary"
+                className={`flex items-center gap-1.5 text-[11px] leading-4 ${
+                  isAdvanceNoticeMet ? "text-gray-500" : "font-semibold text-primary"
                 }`}
               >
                 <Clock3
                   className={`h-3.5 w-3.5 flex-shrink-0 ${
-                    cateringWindowInfo.isAvailable
-                      ? "text-gray-400"
-                      : "text-primary"
+                    isAdvanceNoticeMet ? "text-gray-400" : "text-primary"
                   }`}
                 />
-                <span className="line-clamp-1" title={hoursTooltipText}>
-                  {cateringWindowInfo.text}
+                <span className="line-clamp-1">
+                  {advanceNoticeText || "No advance notice"}
                 </span>
               </div>
-              <div className="relative flex-shrink-0">
-                <button
-                  ref={(element) => {
-                    if (element) {
-                      hoursInfoButtonRefs.current.set(restaurant.id, element);
-                    } else {
-                      hoursInfoButtonRefs.current.delete(restaurant.id);
-                    }
-                  }}
-                  type="button"
-                  aria-label={`View weekly catering hours for ${restaurant.restaurant_name}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    if (!isMobileViewport) {
-                      updateHoursInfoPosition(restaurant.id);
-                    }
-                    setOpenHoursInfoRestaurantId((current) =>
-                      current === restaurant.id ? null : restaurant.id
-                    );
-                  }}
-                  onMouseEnter={() => {
-                    if (!isMobileViewport) {
-                      updateHoursInfoPosition(restaurant.id);
-                      setHoveredHoursInfoRestaurantId(restaurant.id);
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    if (!isMobileViewport) {
-                      setHoveredHoursInfoRestaurantId((current) =>
-                        current === restaurant.id ? null : current
-                      );
-                    }
-                  }}
-                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-base-300 bg-white text-gray-500 shadow-sm transition-colors hover:text-primary focus:outline-none"
-                  title="View weekly catering hours"
+              <div className="relative flex items-center justify-between gap-2">
+                <div
+                  className={`flex min-w-0 items-center gap-1.5 text-[11px] leading-4 ${
+                    cateringWindowInfo.isAvailable
+                      ? "text-gray-500"
+                      : "font-semibold text-primary"
+                  }`}
                 >
-                  <Info className="h-4 w-4" />
-                </button>
+                  <Clock3
+                    className={`h-3.5 w-3.5 flex-shrink-0 ${
+                      cateringWindowInfo.isAvailable
+                        ? "text-gray-400"
+                        : "text-primary"
+                    }`}
+                  />
+                  <span className="line-clamp-1" title={hoursTooltipText}>
+                    {cateringWindowInfo.text}
+                  </span>
+                </div>
+                <div className="relative flex-shrink-0">
+                  <button
+                    ref={(element) => {
+                      if (element) {
+                        hoursInfoButtonRefs.current.set(restaurant.id, element);
+                      } else {
+                        hoursInfoButtonRefs.current.delete(restaurant.id);
+                      }
+                    }}
+                    type="button"
+                    aria-label={`View weekly catering hours for ${restaurant.restaurant_name}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (!isMobileViewport) {
+                        updateHoursInfoPosition(restaurant.id);
+                      }
+                      setOpenHoursInfoRestaurantId((current) =>
+                        current === restaurant.id ? null : restaurant.id
+                      );
+                    }}
+                    onMouseEnter={() => {
+                      if (!isMobileViewport) {
+                        updateHoursInfoPosition(restaurant.id);
+                        setHoveredHoursInfoRestaurantId(restaurant.id);
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      if (!isMobileViewport) {
+                        setHoveredHoursInfoRestaurantId((current) =>
+                          current === restaurant.id ? null : current
+                        );
+                      }
+                    }}
+                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-base-300 bg-white text-gray-500 shadow-sm transition-colors hover:text-primary focus:outline-none"
+                    title="View weekly catering hours"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+          {!isUnavailableForSession && (() => {
+            const restaurantLoc = (restaurant as any).pickupAddresses?.[0]?.location;
+            const userLoc = selectedVenue?.latitude && selectedVenue?.longitude
+              ? { latitude: Number(selectedVenue.latitude), longitude: Number(selectedVenue.longitude) }
+              : null;
+            const distance = userLoc && restaurantLoc
+              ? haversineDistanceMiles(userLoc.latitude, userLoc.longitude, restaurantLoc.latitude, restaurantLoc.longitude)
+              : null;
+            const rating = restaurant.averageRating && parseFloat(restaurant.averageRating) > 0
+              ? parseFloat(restaurant.averageRating)
+              : null;
+            return (
+              <div className="mt-auto pt-2 min-h-[22px] flex items-center gap-2">
+                {rating !== null && (
+                  <span className="flex items-center gap-0.5 text-[11px] text-gray-500">
+                    <span className="text-yellow-400">★</span>
+                    {rating.toFixed(1)}
+                  </span>
+                )}
+                {rating !== null && distance !== null && (
+                  <span className="text-gray-300 text-[11px]">·</span>
+                )}
+                {distance !== null && (
+                  <span className="text-[11px] text-gray-500">{distance.toFixed(1)} mi</span>
+                )}
+              </div>
+            );
+          })()}
         </div>
         </div>
       </div>
@@ -1374,7 +1414,7 @@ export default function RestaurantMenuBrowser({
 
     if (!onClick) {
       return (
-        <div className="relative w-full overflow-visible rounded-xl border border-base-300 bg-white shadow-sm">
+        <div className="relative w-full h-full overflow-visible rounded-xl border border-base-300 bg-white shadow-sm">
           {cardContent}
         </div>
       );
@@ -1391,7 +1431,7 @@ export default function RestaurantMenuBrowser({
             onClick();
           }
         }}
-        className="relative w-full overflow-visible rounded-xl border border-base-300 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+        className="relative w-full h-full overflow-visible rounded-xl border border-base-300 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
       >
         {cardContent}
       </div>
@@ -1998,33 +2038,56 @@ export default function RestaurantMenuBrowser({
           </div>
         ) : null
       ) : (
-        <div
-          ref={restaurantListRef}
-          className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 mt-3"
-        >
-          {restaurantsLoading ? (
-            <div className="col-span-full py-8">
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="inline-block w-6 h-6 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="mt-2 text-sm text-gray-500">
-                  Loading restaurants...
-                </p>
-              </div>
+        <>{restaurantsLoading ? (
+          <div className="py-8 mt-3">
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="inline-block w-6 h-6 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="mt-2 text-sm text-gray-500">Loading restaurants...</p>
             </div>
-          ) : filteredRestaurants.length === 0 ? (
-            <div className="col-span-full text-center py-6">
-              <p className="text-gray-500 text-sm">No restaurants found.</p>
+          </div>
+        ) : filteredRestaurants.length === 0 ? (
+          <div className="text-center py-6 mt-3">
+            <p className="text-gray-500 text-sm">No restaurants found.</p>
+          </div>
+        ) : (() => {
+          const available = filteredRestaurants.filter((r) => {
+            const windowInfo = getRestaurantCateringWindowInfo(r, sessionDate, eventTime);
+            const noticeMet = isRestaurantAdvanceNoticeMet(r, sessionDate, eventTime);
+            return windowInfo.isAvailable && noticeMet;
+          });
+          const unavailable = filteredRestaurants.filter((r) => {
+            const windowInfo = getRestaurantCateringWindowInfo(r, sessionDate, eventTime);
+            const noticeMet = isRestaurantAdvanceNoticeMet(r, sessionDate, eventTime);
+            return !windowInfo.isAvailable || !noticeMet;
+          });
+          return (
+            <div ref={restaurantListRef} className="mt-3 space-y-6">
+              {available.length > 0 && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                  {available.map((restaurant) => (
+                    <div key={restaurant.id} className="h-full">
+                      {renderRestaurantCard(restaurant, () => handleSelectRestaurant(restaurant.id))}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {unavailable.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                    Unavailable today
+                  </p>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {unavailable.map((restaurant) => (
+                      <div key={restaurant.id} className="h-full">
+                        {renderRestaurantCard(restaurant, () => handleSelectRestaurant(restaurant.id))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          ) : (
-            filteredRestaurants.map((restaurant) => (
-              <div key={restaurant.id}>
-                {renderRestaurantCard(restaurant, () =>
-                  handleSelectRestaurant(restaurant.id)
-                )}
-              </div>
-            ))
-          )}
-        </div>
+          );
+        })()}</>
       )}
     </div>
   );
