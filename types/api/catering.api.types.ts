@@ -322,7 +322,10 @@ export interface CateringBundleItem {
   menuItemId: string;
   menuItemName: string;
   menuItemImageUrl?: string;
+  menuItemDescription?: string;
   menuItemPrice: number;
+  menuItemFeedsPerUnit?: number;
+  menuItemDietaryFilters?: string[];
   restaurantId: string;
   restaurantName: string;
   quantity: number;

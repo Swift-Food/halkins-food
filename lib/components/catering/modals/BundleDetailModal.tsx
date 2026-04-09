@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import Image from "next/image";
 import { CateringBundleResponse } from "@/types/api/catering.api.types";
-import { MenuItem } from "@/types/restaurant.types";
 import { Package, Minus, Plus } from "lucide-react";
 
 const DIETARY_ICON_MAP: Record<string, { file: string; label: string }> = {
@@ -21,7 +20,6 @@ interface BundleDetailModalProps {
   isAdding: boolean;
   onAdd: (bundle: CateringBundleResponse, quantity: number) => void;
   onClose: () => void;
-  allMenuItems?: MenuItem[] | null;
 }
 
 export default function BundleDetailModal({
@@ -30,7 +28,6 @@ export default function BundleDetailModal({
   isAdding,
   onAdd,
   onClose,
-  allMenuItems,
 }: BundleDetailModalProps) {
   const baseGuestCount = bundle.baseGuestCount ?? 1;
   const [guestCountInput, setGuestCountInput] = useState(String(Math.max(1, defaultQuantity) * baseGuestCount));
@@ -46,40 +43,22 @@ export default function BundleDetailModal({
   const peopleServed = baseGuestCount * quantity;
 
   const sortedItems = [...bundle.items].sort((a, b) => a.sortOrder - b.sortOrder);
+  const hasAnyDescription = bundle.items.some((item) => !!item.menuItemDescription);
 
-  // Build lookup maps for item details (descriptions + prices)
-  const menuItemLookup = useMemo(() => {
-    if (!allMenuItems) return new Map<string, MenuItem>();
-    const map = new Map<string, MenuItem>();
-    for (const mi of allMenuItems) {
-      map.set(mi.id, mi);
-    }
-    return map;
-  }, [allMenuItems]);
-
-  // Calculate real total from actual menu item prices
   const estimatedTotal = useMemo(() => {
     let total = 0;
     for (const item of bundle.items) {
-      const mi = menuItemLookup.get(item.menuItemId);
-      if (!mi) continue;
-      const price = mi.isDiscount && mi.discountPrice
-        ? parseFloat(mi.discountPrice.toString())
-        : parseFloat(mi.price?.toString() || "0");
+      const scaledQty = item.quantity * quantity;
       const addonTotal = (item.selectedAddons || []).reduce(
-        (sum, a) => {
-          const addonPrice = mi.addons?.find((ma) => ma.name === a.name);
-          return sum + Number(addonPrice?.price ?? 0) * (a.quantity || 0);
-        },
+        (sum, a) => sum + Number(a.price ?? 0) * (a.quantity || 0),
         0
       );
-      const scaledQty = item.quantity * quantity;
-      total += price * scaledQty + addonTotal * quantity;
+      total += item.menuItemPrice * scaledQty + addonTotal * quantity;
     }
     return total;
-  }, [bundle.items, menuItemLookup, quantity]);
-  const estimatedPricePerPerson =
-    peopleServed > 0 ? estimatedTotal / peopleServed : 0;
+  }, [bundle.items, quantity]);
+
+  const estimatedPricePerPerson = peopleServed > 0 ? estimatedTotal / peopleServed : 0;
 
   return (
     <div
@@ -113,7 +92,7 @@ export default function BundleDetailModal({
         </div>
 
         {/* Show descriptions toggle */}
-        <div className="px-4 py-2 border-b border-base-200">
+        {hasAnyDescription && <div className="px-4 py-2 border-b border-base-200">
           <button
             onClick={() => setShowDescriptions((v) => !v)}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
@@ -124,7 +103,7 @@ export default function BundleDetailModal({
           >
             {showDescriptions ? "Hide" : "Show"} item descriptions
           </button>
-        </div>
+        </div>}
 
         {/* Guest count selector */}
         <div className="px-4 py-3 border-b border-base-200 bg-base-100/50">
@@ -191,86 +170,76 @@ export default function BundleDetailModal({
         <div className="overflow-y-auto flex-1 divide-y divide-base-200">
           {sortedItems.map((item) => {
             const scaledQty = item.quantity * quantity;
-            const mi = menuItemLookup.get(item.menuItemId);
-            const dietaryFilters = mi?.dietaryFilters || [];
-            const servesCount = scaledQty * (mi?.feedsPerUnit || 1);
-            const unitPrice = mi
-              ? (mi.isDiscount && mi.discountPrice
-                  ? parseFloat(mi.discountPrice.toString())
-                  : parseFloat(mi.price?.toString() || "0"))
-              : 0;
             const addonTotal = (item.selectedAddons || []).reduce(
-              (sum, a) => {
-                const addonPrice = mi?.addons?.find((ma) => ma.name === a.name);
-                return sum + Number(addonPrice?.price ?? 0) * (a.quantity || 0);
-              },
+              (sum, a) => sum + Number(a.price ?? 0) * (a.quantity || 0),
               0
             );
-            const lineTotal = unitPrice * scaledQty + addonTotal * quantity;
+            const lineTotal = item.menuItemPrice * scaledQty + addonTotal * quantity;
+            const dietaryFilters = item.menuItemDietaryFilters || [];
+            const servesCount = scaledQty * (item.menuItemFeedsPerUnit || 1);
             return (
-              <div key={item.id} className="px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <span className="flex-shrink-0 w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center">
-                    ×{scaledQty}
-                  </span>
+              <div key={item.id} className="px-4 py-2">
+                <div className="flex items-stretch gap-3">
+                  {/* Quantity */}
+                  <div className="flex-shrink-0 flex items-center justify-center">
+                    <span className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-bold text-sm">
+                      ×{scaledQty}
+                    </span>
+                  </div>
+                  {/* Image */}
+                  <div className="relative flex-shrink-0 w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-base-200">
+                    {item.menuItemImageUrl ? (
+                      <Image
+                        src={item.menuItemImageUrl}
+                        alt={item.menuItemName}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <svg className="w-6 h-6 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  {/* Details */}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 text-sm">{item.menuItemName}</p>
-                    {(dietaryFilters.length > 0) || servesCount > 0 ? (
+                    {(servesCount > 0 || dietaryFilters.length > 0) && (
                       <div className="mt-1 flex flex-wrap gap-1.5 items-center">
-                        <span className="text-[11px] text-gray-500">
-                          Serves ~{servesCount}
-                        </span>
+                        {servesCount > 0 && <span className="text-[11px] text-gray-500">Serves ~{servesCount}</span>}
                         {dietaryFilters.slice(0, 4).map((filter) => {
                           const icon = DIETARY_ICON_MAP[filter.toLowerCase()];
-
                           if (!icon) return null;
-
                           return (
-                            <div
-                              key={`${item.id}-${filter}`}
-                              className="relative w-4 h-4"
-                              title={icon.label}
-                            >
-                              <Image
-                                src={`/dietary-icons/unfilled/${icon.file}`}
-                                alt={icon.label}
-                                fill
-                                className="object-contain"
-                              />
+                            <div key={`${item.id}-${filter}`} className="relative w-4 h-4" title={icon.label}>
+                              <Image src={`/dietary-icons/unfilled/${icon.file}`} alt={icon.label} fill className="object-contain" />
                             </div>
                           );
                         })}
                         {dietaryFilters.length > 4 && (
-                          <span className="text-[10px] text-gray-500">
-                            +{dietaryFilters.length - 4}
-                          </span>
+                          <span className="text-[10px] text-gray-500">+{dietaryFilters.length - 4}</span>
                         )}
                       </div>
-                    ) : null}
-                    {showDescriptions && menuItemLookup.get(item.menuItemId)?.description && (
-                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-                        {menuItemLookup.get(item.menuItemId)!.description}
-                      </p>
+                    )}
+                    {showDescriptions && item.menuItemDescription && (
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{item.menuItemDescription}</p>
                     )}
                     {item.selectedAddons && item.selectedAddons.length > 0 && (
                       <div className="mt-1 space-y-0.5">
-                        {item.selectedAddons.map((addon, i) => {
-                          const matchedAddon = mi?.addons?.find((ma) => ma.name === addon.name);
-                          return (
-                            <p key={i} className="text-xs text-gray-500">
-                              • {matchedAddon?.groupTitle ?? "Options"}: {addon.name}
-                              {addon.quantity > 1 && ` (×${addon.quantity})`}
-                            </p>
-                          );
-                        })}
+                        {item.selectedAddons.map((addon, i) => (
+                          <p key={i} className="text-xs text-gray-500">
+                            • {addon.groupTitle ?? "Options"}: {addon.name}
+                            {addon.quantity > 1 && ` (×${addon.quantity})`}
+                          </p>
+                        ))}
                       </div>
                     )}
                   </div>
-                  {mi && (
-                    <span className="text-sm font-bold text-gray-800 flex-shrink-0">
-                      £{lineTotal.toFixed(2)}
-                    </span>
-                  )}
+                  <span className="text-sm font-bold text-gray-800 flex-shrink-0 pt-1">
+                    £{lineTotal.toFixed(2)}
+                  </span>
                 </div>
               </div>
             );
@@ -279,12 +248,10 @@ export default function BundleDetailModal({
 
         {/* Footer */}
         <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-base-200 space-y-3">
-          {/* Note */}
           <p className="text-xs text-gray-500 text-center">
             You can change individual item amounts after adding to your session.
           </p>
 
-          {/* Estimated total */}
           <div className="flex items-center justify-between">
             <div>
               <p className="font-bold text-gray-900">Estimated total</p>
@@ -300,7 +267,6 @@ export default function BundleDetailModal({
             </div>
           </div>
 
-          {/* Add button */}
           <button
             onClick={() => onAdd(bundle, quantity)}
             disabled={isAdding}
