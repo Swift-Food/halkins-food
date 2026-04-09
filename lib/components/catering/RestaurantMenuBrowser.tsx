@@ -417,8 +417,19 @@ export default function RestaurantMenuBrowser({
   const [isRestaurantSearchOpen, setIsRestaurantSearchOpen] = useState(false);
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [closedSearchColWidth, setClosedSearchColWidth] = useState<string>("2.25rem");
+  const [isDesktopSearch, setIsDesktopSearch] = useState(false);
   const restaurantSearchInputRef = useRef<HTMLInputElement>(null);
   const [pillRowEl, setPillRowEl] = useState<HTMLDivElement | null>(null);
+
+  // Track viewport size so the open-state search column can fill width on mobile
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(min-width: 768px)");
+    setIsDesktopSearch(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDesktopSearch(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
 
   // Measure pill row outer height so the closed-state search column matches it (square button)
   useEffect(() => {
@@ -1479,17 +1490,22 @@ export default function RestaurantMenuBrowser({
           ) : (
             <>
               <div
-                className="sticky z-30 mt-2 mb-3 grid items-stretch gap-2 w-full max-w-full box-border"
+                className="sticky z-30 mt-2 mb-3 flex items-stretch gap-2 w-full max-w-full box-border"
                 style={{
                   top: stickyTopOffset + 8,
-                  gridTemplateColumns: isRestaurantSearchOpen
-                    ? `min(100%, 14rem) minmax(0, 1fr)`
-                    : `${closedSearchColWidth} minmax(0, 1fr)`,
-                  transition: "grid-template-columns 300ms ease-in-out",
+                  minHeight: closedSearchColWidth,
                 }}
               >
-                {/* Search — first grid column, width set by grid track */}
-                <div className="min-w-0 overflow-hidden relative">
+                {/* Search — fixed width when closed, expands when open */}
+                <div
+                  className="relative flex-shrink-0"
+                  style={{
+                    width: isRestaurantSearchOpen
+                      ? (isDesktopSearch ? "min(100%, 14rem)" : "100%")
+                      : closedSearchColWidth,
+                    transition: "width 300ms ease-in-out",
+                  }}
+                >
                   {showSearchInput ? (
                     <>
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none z-10" />
@@ -1518,12 +1534,12 @@ export default function RestaurantMenuBrowser({
                   )}
                 </div>
 
-                {/* Pill row — second grid column, can shrink to 0 */}
+                {/* Pill row — takes remaining flex space, can shrink to 0 */}
                 <div
                   ref={setPillRowEl}
-                  className={`min-w-0 overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 py-1.5 md:px-4 md:py-2 shadow-sm backdrop-blur-md ${isRestaurantSearchOpen ? "hidden md:block" : ""}`}
+                  className={`flex-1 min-w-0 overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 py-0 md:px-4 md:py-1 shadow-sm backdrop-blur-md flex items-center ${isRestaurantSearchOpen ? "hidden md:flex" : ""}`}
                 >
-                  <div className="flex gap-2 md:gap-5">
+                  <div className="flex items-center gap-2 md:gap-5">
                     {restaurantGroups.map((group) => {
                       const isActive = activeGroupName === group.name;
                       return (
@@ -1534,7 +1550,7 @@ export default function RestaurantMenuBrowser({
                             else groupButtonRefs.current.delete(group.name);
                           }}
                           onClick={() => handleGroupTabClick(group.name)}
-                          className={`flex-shrink-0 whitespace-nowrap rounded-full px-2 py-1 md:px-3 md:py-1.5 text-xs md:text-sm font-semibold transition-colors ${
+                          className={`flex-shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 md:px-3 md:py-1.5 text-xs md:text-sm font-semibold transition-colors ${
                             isActive
                               ? "bg-primary text-white"
                               : "text-gray-500 hover:bg-black/5 hover:text-gray-700"
