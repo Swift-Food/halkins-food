@@ -86,6 +86,15 @@ class CateringService {
     return response.json();
   }
 
+  async getMenuItemsByRestaurant(restaurantId: string) {
+    const response = await fetchWithAuth(`${API_BASE_URL}/menu-item/restaurant/${restaurantId}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch restaurant menu items");
+    }
+    const data = await response.json();
+    return data.menuItems || [];
+  }
+
   async getBundleById(bundleId: string): Promise<CateringBundleResponse> {
     const response = await fetchWithAuth(
       `${API_BASE_URL}${API_ENDPOINTS.CATERING_BUNDLE(bundleId)}`
