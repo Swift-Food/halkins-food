@@ -6,6 +6,7 @@ interface PricingSummaryProps {
   calculatingPricing: boolean;
   estimatedTotal?: number;
   hasDeliveryAddress?: boolean;
+  compact?: boolean;
 }
 
 export default function PricingSummary({
@@ -13,16 +14,77 @@ export default function PricingSummary({
   calculatingPricing,
   estimatedTotal,
   hasDeliveryAddress = false,
+  compact = false,
 }: PricingSummaryProps) {
   const [showPromotionBreakdown, setShowPromotionBreakdown] = useState(false);
   if (calculatingPricing) {
     return (
-      <div className="text-center py-4 text-base-content/60 text-sm">
+      <div className={`text-center text-base-content/60 ${compact ? "py-2 text-xs" : "py-4 text-sm"}`}>
         Calculating pricing...
       </div>
     );
   }
 
+
+  if (pricing && compact) {
+    const pricingWithPromotions = pricing as CateringPricingResult & {
+      promotionDiscount?: number;
+      restaurantPromotionDiscount?: number;
+      mealSessions?: Array<{ distanceInMiles?: number }>;
+    };
+    const promotionDiscount =
+      pricingWithPromotions.promotionDiscount ??
+      pricingWithPromotions.restaurantPromotionDiscount ??
+      0;
+    const distanceInMiles =
+      pricing.distanceInMiles ??
+      pricingWithPromotions.mealSessions?.[0]?.distanceInMiles;
+    const hasDeliveryQuote =
+      hasDeliveryAddress ||
+      (typeof distanceInMiles === "number" && !Number.isNaN(distanceInMiles));
+
+    return (
+      <div className="space-y-1.5 border-t border-base-300 pt-3">
+        <div className="flex justify-between text-xs text-base-content/70">
+          <span>Subtotal</span>
+          <span>£{pricing.subtotal.toFixed(2)}</span>
+        </div>
+        {promotionDiscount > 0 && (
+          <div className="flex justify-between text-xs text-green-600 font-semibold">
+            <span>Promotion Savings</span>
+            <span>-£{promotionDiscount.toFixed(2)}</span>
+          </div>
+        )}
+        {(pricing.promoDiscount ?? 0) > 0 && (
+          <div className="flex justify-between text-xs text-success font-medium">
+            <span>Promo Code</span>
+            <span>-£{pricing.promoDiscount!.toFixed(2)}</span>
+          </div>
+        )}
+        <div className="flex justify-between text-xs text-base-content/70">
+          <span>Delivery</span>
+          {!hasDeliveryQuote ? (
+            <span className="italic text-base-content/50">TBC</span>
+          ) : (
+            <span>£{pricing.deliveryFee.toFixed(2)}</span>
+          )}
+        </div>
+        <div className="flex justify-between border-t border-base-300 pt-2 text-sm font-bold text-base-content">
+          <span>Total</span>
+          <div className="text-right">
+            {!hasDeliveryQuote ? (
+              <div>
+                <p>£{pricing.subtotal.toFixed(2)}</p>
+                <p className="text-[10px] font-normal text-base-content/50">+ delivery (address required)</p>
+              </div>
+            ) : (
+              <p>£{pricing.total.toFixed(2)}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (pricing) {
     const pricingWithPromotions = pricing as CateringPricingResult & {

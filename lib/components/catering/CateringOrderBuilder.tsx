@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { pdf } from "@react-pdf/renderer";
 import { MoreHorizontal, Package, ShoppingBag, Trash2, X } from "lucide-react";
 import { useActiveCatering } from "@/context/useActiveCatering";
 import { useCoworking } from "@/context/CoworkingContext";
-import { MealSessionState } from "@/types/catering.types";
+import { MealSessionState, CateringPricingResult } from "@/types/catering.types";
 import { MenuItem } from "@/types/restaurant.types";
 import { CateringBundleItem } from "@/types/api/catering.api.types";
 import { cateringService } from "@/services/api/catering.api";
@@ -28,6 +28,7 @@ import RemoveSessionConfirmModal from "./modals/RemoveSessionConfirmModal";
 import MinOrderModal from "./modals/MinOrderModal";
 import PdfDownloadModal from "./modals/PdfDownloadModal";
 import SwapItemModal from "./modals/SwapItemModal";
+import PricingSummary from "./contact/PricingSummary";
 import { useCateringTutorial } from "./hooks/useCateringTutorial";
 import { useCateringData } from "./hooks/useCateringData";
 import { groupSessionsByDay, formatTimeDisplay, mapToMenuItem } from "./catering-order-helpers";
@@ -126,6 +127,12 @@ export default function CateringOrderBuilder({
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
   const [isClearAllConfirmOpen, setIsClearAllConfirmOpen] = useState(false);
   const [isMobileCartMenuOpen, setIsMobileCartMenuOpen] = useState(false);
+  const [isDesktopCartMenuOpen, setIsDesktopCartMenuOpen] = useState(false);
+  const [desktopMenuPos, setDesktopMenuPos] = useState({ bottom: 0, left: 0 });
+  const desktopMenuBtnRef = useRef<HTMLButtonElement>(null);
+  const [pricing, setPricing] = useState<CateringPricingResult | null>(null);
+  const [calculatingPricing, setCalculatingPricing] = useState(false);
+  const pricingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasAnyItems = mealSessions.some((session) => session.orderItems.length > 0);
 
   const lastAutoSelectedSessionTime = useRef<string | null>(null);
@@ -894,6 +901,26 @@ export default function CateringOrderBuilder({
     setIsMobileCartMenuOpen(false);
   };
 
+  const fetchPricing = useCallback(async (sessions: MealSessionState[]) => {
+    const hasItems = sessions.some((s) => s.orderItems.length > 0);
+    if (!hasItems) { setPricing(null); return; }
+    setCalculatingPricing(true);
+    try {
+      const result = await cateringService.calculateCateringPricingWithMealSessions(sessions);
+      if (result.isValid) setPricing(result);
+    } catch {
+      // silently ignore
+    } finally {
+      setCalculatingPricing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (pricingDebounceRef.current) clearTimeout(pricingDebounceRef.current);
+    pricingDebounceRef.current = setTimeout(() => { fetchPricing(mealSessions); }, 600);
+    return () => { if (pricingDebounceRef.current) clearTimeout(pricingDebounceRef.current); };
+  }, [mealSessions, fetchPricing]);
+
   const handlePdfDownload = async (withPrices: boolean) => {
     if (generatingPdf) return;
     setGeneratingPdf(true);
@@ -1068,30 +1095,71 @@ export default function CateringOrderBuilder({
               <div className="flex-shrink-0 flex flex-col gap-1.5 pb-4 pt-2">
                 {desktopCheckoutNotice && <div className="hidden md:block">{desktopCheckoutNotice}</div>}
                 {totalItems > 0 && (
-                  <button
-                    onClick={handleViewMenu}
-                    disabled={generatingPdf}
-                    className="flex items-center justify-center gap-1.5 rounded-lg border border-primary px-3 py-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {generatingPdf ? (
-                      <span className="loading loading-spinner loading-xs" />
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                    )}
-                    Download Menu
-                  </button>
+                  <div className="px-2 pb-1">
+                    <PricingSummary pricing={pricing} calculatingPricing={calculatingPricing} compact />
+                  </div>
                 )}
                 <div className="flex w-full items-stretch gap-2">
                   {hasAnyItems && (
-                    <button
-                      onClick={() => setIsClearAllConfirmOpen(true)}
-                      className="flex-shrink-0 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-red-600 transition-colors hover:border-red-500 hover:bg-red-100"
-                      title="Clear all items"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="relative flex-shrink-0">
+                      <button
+                        ref={desktopMenuBtnRef}
+                        onClick={() => {
+                          if (!isDesktopCartMenuOpen && desktopMenuBtnRef.current) {
+                            const rect = desktopMenuBtnRef.current.getBoundingClientRect();
+                            setDesktopMenuPos({
+                              bottom: window.innerHeight - rect.top + 8,
+                              left: rect.left,
+                            });
+                          }
+                          setIsDesktopCartMenuOpen((v) => !v);
+                        }}
+                        className="flex h-full items-center justify-center rounded-lg border border-base-300 px-3 text-base-content/60 transition-colors hover:bg-base-200"
+                        title="More options"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                      {isDesktopCartMenuOpen && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setIsDesktopCartMenuOpen(false)}
+                          />
+                          <div
+                            className="fixed z-50 w-44 overflow-hidden rounded-xl border border-base-200 bg-white shadow-lg"
+                            style={{ bottom: desktopMenuPos.bottom, left: desktopMenuPos.left }}
+                          >
+                            <button
+                              onClick={() => {
+                                setIsDesktopCartMenuOpen(false);
+                                handleViewMenu();
+                              }}
+                              disabled={generatingPdf}
+                              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-base-100 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {generatingPdf ? (
+                                <span className="loading loading-spinner loading-xs" />
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                              )}
+                              Download Menu
+                            </button>
+                            <button
+                              onClick={() => {
+                                setIsDesktopCartMenuOpen(false);
+                                setIsClearAllConfirmOpen(true);
+                              }}
+                              className="flex w-full items-center gap-2 border-t border-base-200 px-3 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Clear Cart
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   )}
                   <button
                     onClick={handleCheckout}
