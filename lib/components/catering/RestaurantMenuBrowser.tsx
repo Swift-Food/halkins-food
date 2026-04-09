@@ -1626,6 +1626,35 @@ export default function RestaurantMenuBrowser({
           <h2 className="text-2xl font-bold text-gray-900">
             {selectedRestaurant.restaurant_name}
           </h2>
+          {(() => {
+            const restaurantLoc = (selectedRestaurant as any).pickupAddresses?.[0]?.location;
+            const userLoc = selectedVenue?.latitude && selectedVenue?.longitude
+              ? { latitude: Number(selectedVenue.latitude), longitude: Number(selectedVenue.longitude) }
+              : null;
+            const distance = userLoc && restaurantLoc
+              ? haversineDistanceMiles(userLoc.latitude, userLoc.longitude, restaurantLoc.latitude, restaurantLoc.longitude)
+              : null;
+            const rating = selectedRestaurant.averageRating && parseFloat(selectedRestaurant.averageRating) > 0
+              ? parseFloat(selectedRestaurant.averageRating)
+              : null;
+            if (!rating && !distance) return null;
+            return (
+              <div className="flex items-center gap-3 mt-1 mb-1">
+                {rating !== null && (
+                  <span className="flex items-center gap-1 text-sm text-gray-500">
+                    <span className="text-yellow-400">★</span>
+                    {rating.toFixed(1)}
+                  </span>
+                )}
+                {rating !== null && distance !== null && (
+                  <span className="text-gray-300">·</span>
+                )}
+                {distance !== null && (
+                  <span className="text-sm text-gray-500">{distance.toFixed(1)} mi away</span>
+                )}
+              </div>
+            );
+          })()}
           {selectedRestaurant.restaurant_description && (
             <>
               <p
