@@ -832,6 +832,51 @@ export default function RestaurantMenuBrowser({
     return groups;
   }, [bundlesLoading, bundlesError, filteredRestaurantBundles, groupedItems]);
 
+  // Pill row uses unfiltered group names so it stays stable while searching.
+  const pillRowGroupNames = useMemo<string[]>(() => {
+    const names: string[] = [];
+    const showBundles =
+      bundlesLoading || bundlesError !== null || restaurantBundles.length > 0;
+    if (showBundles) names.push("Bundles");
+
+    if (restaurantItems.length === 0) return names;
+
+    const restaurant = restaurants.find((r) => r.id === selectedRestaurantId);
+    const menuGroupSettings =
+      restaurant?.menuGroupSettings ||
+      restaurantItems[0]?.restaurant?.menuGroupSettings;
+    const hasSettings =
+      menuGroupSettings && Object.keys(menuGroupSettings).length > 0;
+
+    let groupNames: string[];
+    if (hasSettings) {
+      groupNames = Object.keys(menuGroupSettings!).sort((a, b) => {
+        const orderA = menuGroupSettings![a]?.displayOrder ?? 999;
+        const orderB = menuGroupSettings![b]?.displayOrder ?? 999;
+        return orderA - orderB;
+      });
+    } else {
+      groupNames = Array.from(
+        new Set(restaurantItems.map((i) => i.groupTitle || "Other")),
+      ).sort((a, b) => a.localeCompare(b));
+    }
+
+    const groupsWithItems = new Set(
+      restaurantItems.map((i) => i.groupTitle || "Other"),
+    );
+    for (const name of groupNames) {
+      if (groupsWithItems.has(name)) names.push(name);
+    }
+    return names;
+  }, [
+    restaurantItems,
+    restaurantBundles,
+    bundlesLoading,
+    bundlesError,
+    restaurants,
+    selectedRestaurantId,
+  ]);
+
   const firstMenuGroupName = groupedItems[0]?.name ?? null;
 
   const ensureMenuItems = useCallback(async (): Promise<MenuItem[]> => {
@@ -1091,6 +1136,19 @@ export default function RestaurantMenuBrowser({
     window.setTimeout(() => {
       isProgrammaticScroll.current = false;
     }, 450);
+  };
+
+  const handlePillClick = (groupName: string) => {
+    if (isRestaurantSearchActive || showSearchInput) {
+      // Clear the search and revert to the normal (unfiltered) view, then
+      // wait for the next render before scrolling so the section ref exists.
+      setRestaurantSearchQuery("");
+      setIsRestaurantSearchOpen(false);
+      setShowSearchInput(false);
+      setTimeout(() => handleGroupTabClick(groupName), 0);
+      return;
+    }
+    handleGroupTabClick(groupName);
   };
 
   const renderRestaurantCard = (
@@ -1481,14 +1539,6 @@ export default function RestaurantMenuBrowser({
         <div className="mt-2">{renderDietaryFilters()}</div>
 
         <div className="mt-3">
-          {restaurantGroups.length === 0 ? (
-            <div className="text-center py-6">
-              <p className="text-gray-500 text-sm">
-                No items match the current filters.
-              </p>
-            </div>
-          ) : (
-            <>
               <div
                 className="sticky z-30 mt-2 mb-3 flex items-center gap-2 w-full max-w-full box-border"
                 style={{
@@ -1540,29 +1590,38 @@ export default function RestaurantMenuBrowser({
                   className={`flex-1 min-w-0 overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 py-0 md:px-4 md:py-1 shadow-sm backdrop-blur-md flex items-center h-11 md:h-auto ${isRestaurantSearchOpen ? "hidden md:flex" : ""}`}
                 >
                   <div className="flex items-center gap-2 md:gap-5">
-                    {restaurantGroups.map((group) => {
-                      const isActive = activeGroupName === group.name;
+                    {pillRowGroupNames.map((name) => {
+                      const isActive =
+                        !isRestaurantSearchActive && activeGroupName === name;
                       return (
                         <button
-                          key={group.name}
+                          key={name}
                           ref={(el) => {
-                            if (el) groupButtonRefs.current.set(group.name, el);
-                            else groupButtonRefs.current.delete(group.name);
+                            if (el) groupButtonRefs.current.set(name, el);
+                            else groupButtonRefs.current.delete(name);
                           }}
-                          onClick={() => handleGroupTabClick(group.name)}
+                          onClick={() => handlePillClick(name)}
                           className={`flex-shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 md:px-3 md:py-1.5 text-xs md:text-sm font-semibold transition-colors ${
                             isActive
                               ? "bg-primary text-white"
                               : "text-gray-500 hover:bg-black/5 hover:text-gray-700"
                           }`}
                         >
-                          {group.name}
+                          {name}
                         </button>
                       );
                     })}
                   </div>
                 </div>
               </div>
+
+              {restaurantGroups.length === 0 && (
+                <div className="text-center py-6">
+                  <p className="text-gray-500 text-sm">
+                    No items match the current filters.
+                  </p>
+                </div>
+              )}
 
               {restaurantPromotions.length > 0 && (
                 <div className="mb-4 flex flex-col gap-2">
@@ -1698,8 +1757,6 @@ export default function RestaurantMenuBrowser({
                   </div>
                 );
               })}
-            </>
-          )}
         </div>
 
         {selectedBundle && (
