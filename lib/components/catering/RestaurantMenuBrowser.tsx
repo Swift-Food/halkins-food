@@ -1490,19 +1490,19 @@ export default function RestaurantMenuBrowser({
           ) : (
             <>
               <div
-                className="sticky z-30 mt-2 mb-3 flex items-stretch gap-2 w-full max-w-full box-border"
+                className="sticky z-30 mt-2 mb-3 flex items-center gap-2 w-full max-w-full box-border"
                 style={{
                   top: stickyTopOffset + 8,
-                  minHeight: closedSearchColWidth,
                 }}
               >
-                {/* Search — fixed width when closed, expands when open */}
+                {/* Search — explicit square (width=height) when closed, expands width when open */}
                 <div
                   className="relative flex-shrink-0"
                   style={{
                     width: isRestaurantSearchOpen
                       ? (isDesktopSearch ? "min(100%, 14rem)" : "100%")
                       : closedSearchColWidth,
+                    height: closedSearchColWidth,
                     transition: "width 300ms ease-in-out",
                   }}
                 >
@@ -1537,7 +1537,7 @@ export default function RestaurantMenuBrowser({
                 {/* Pill row — takes remaining flex space, can shrink to 0 */}
                 <div
                   ref={setPillRowEl}
-                  className={`flex-1 min-w-0 overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 py-0 md:px-4 md:py-1 shadow-sm backdrop-blur-md flex items-center ${isRestaurantSearchOpen ? "hidden md:flex" : ""}`}
+                  className={`flex-1 min-w-0 overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 py-0 md:px-4 md:py-1 shadow-sm backdrop-blur-md flex items-center h-11 md:h-auto ${isRestaurantSearchOpen ? "hidden md:flex" : ""}`}
                 >
                   <div className="flex items-center gap-2 md:gap-5">
                     {restaurantGroups.map((group) => {
