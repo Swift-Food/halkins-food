@@ -1071,7 +1071,7 @@ export default function CateringOrderBuilder({
                   <button
                     onClick={handleViewMenu}
                     disabled={generatingPdf}
-                    className="flex items-center justify-center gap-1.5 rounded-lg border border-primary px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex items-center justify-center gap-1.5 rounded-lg border border-primary px-3 py-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {generatingPdf ? (
                       <span className="loading loading-spinner loading-xs" />
@@ -1096,7 +1096,7 @@ export default function CateringOrderBuilder({
                   <button
                     onClick={handleCheckout}
                     disabled={disableCheckoutWhenEmpty && !hasAnyItems}
-                    className={`flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-white transition-colors ${
+                    className={`flex flex-1 items-center justify-between rounded-lg px-3 py-3 text-sm font-semibold text-white transition-colors ${
                       disableCheckoutWhenEmpty && !hasAnyItems
                         ? "cursor-not-allowed bg-base-300 text-base-content/50"
                         : isCurrentSessionValid
