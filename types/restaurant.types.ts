@@ -2,6 +2,7 @@
 export interface Restaurant {
   id: string;
   restaurant_name: string;
+  restaurant_description?: string;
   status?: "active" | "inactive" | "coming_soon";
   restaurantType: string;
   images: string[];
