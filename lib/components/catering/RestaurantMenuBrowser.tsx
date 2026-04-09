@@ -1982,7 +1982,7 @@ export default function RestaurantMenuBrowser({
                     ({apiSearchResults.restaurants.length})
                   </span>
                 </h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                   {apiSearchResults.restaurants.map((r: any) => {
                     const restaurant = availableRestaurants.find((ar) => ar.id === r.id);
                     if (!restaurant) return null;
@@ -2005,7 +2005,7 @@ export default function RestaurantMenuBrowser({
                     ({apiSearchResults.menuItems.length})
                   </span>
                 </h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {apiSearchResults.menuItems.map((sr: SearchResult) => {
                     const item: MenuItem = {
                       ...(sr as any),
@@ -2063,7 +2063,7 @@ export default function RestaurantMenuBrowser({
           return (
             <div ref={restaurantListRef} className="mt-3 space-y-6">
               {available.length > 0 && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                   {available.map((restaurant) => (
                     <div key={restaurant.id} className="h-full">
                       {renderRestaurantCard(restaurant, () => handleSelectRestaurant(restaurant.id))}
@@ -2076,7 +2076,7 @@ export default function RestaurantMenuBrowser({
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
                     Unavailable today
                   </p>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                     {unavailable.map((restaurant) => (
                       <div key={restaurant.id} className="h-full">
                         {renderRestaurantCard(restaurant, () => handleSelectRestaurant(restaurant.id))}
