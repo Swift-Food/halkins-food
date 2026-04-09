@@ -23,7 +23,9 @@ export default function DateSessionNav({
     <div
       data-catering-session-nav="true"
       className={`sticky top-0 z-40 bg-base-100 transition-shadow duration-200 ${
-        isNavSticky ? "shadow-sm border-b border-base-200" : ""
+        isNavSticky
+          ? "shadow-[0_6px_4px_-4px_rgba(0,0,0,0.1)] border-b border-base-200"
+          : ""
       }`}
     >
       <div className="max-w-6xl mx-auto px-2 md:px-6 py-2">
