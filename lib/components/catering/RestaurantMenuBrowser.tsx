@@ -1556,7 +1556,7 @@ export default function RestaurantMenuBrowser({
 
         <div className="mt-3">
               <div
-                className="sticky z-30 mt-2 mb-3 flex items-center gap-2 w-full max-w-full box-border overflow-hidden px-1 py-1"
+                className="sticky z-30 mt-2 mb-3 flex items-center justify-end gap-2 w-full max-w-full box-border overflow-hidden px-1 py-1"
                 style={{
                   top: stickyTopOffset + 8,
                 }}
