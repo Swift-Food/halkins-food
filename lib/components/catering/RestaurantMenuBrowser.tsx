@@ -974,6 +974,9 @@ export default function RestaurantMenuBrowser({
     setSelectedCategoryId(null);
     setCollapsedGroups(new Set());
     setActiveGroupName(null);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleBackToRestaurants = () => {
@@ -1852,7 +1855,7 @@ export default function RestaurantMenuBrowser({
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search across all restaurants..."
+          placeholder="Search restaurants and menu items..."
           className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-base-300 bg-white text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
         />
         {searchQuery && (
