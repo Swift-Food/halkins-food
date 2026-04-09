@@ -44,7 +44,7 @@ export default function PricingSummary({
       (typeof distanceInMiles === "number" && !Number.isNaN(distanceInMiles));
 
     return (
-      <div className={`space-y-1.5 border-t border-base-300 pt-3 transition-opacity duration-200 ${calculatingPricing ? "opacity-50" : "opacity-100"}`}>
+      <div className={`space-y-1.5 transition-opacity duration-200 ${calculatingPricing ? "opacity-50" : "opacity-100"}`}>
         <div className="flex justify-between text-xs text-base-content/70">
           <span>Subtotal</span>
           <span>£{pricing.subtotal.toFixed(2)}</span>
