@@ -925,11 +925,29 @@ export default function Step3ContactInfo() {
         })),
       }));
 
+      const restaurantNameById: Record<string, string> = {};
+      for (const session of mealSessions) {
+        for (const orderItem of session.orderItems) {
+          const item = orderItem.item as any;
+          if (item.restaurantId) {
+            const name = item.restaurant?.restaurant_name || item.restaurantName;
+            if (name) restaurantNameById[item.restaurantId] = name;
+          }
+        }
+      }
+      const pdfAppliedPromotions = (pricing?.appliedPromotions || []).map((p) => {
+        const restaurantName = restaurantNameById[p.restaurantId];
+        const label = restaurantName ? `${p.name} (${restaurantName})` : p.name;
+        return { name: label, discountAmount: p.discount };
+      }).filter((p) => p.discountAmount > 0);
+
       // Transform to PDF data format with the latest priced totals from Step 3
       const pdfData = await transformLocalSessionsToPdfData(
         sessionsForPreview,
         withPrices,
-        hasDeliveryQuote ? pricing?.deliveryFee : undefined
+        pricing?.deliveryFee || undefined,
+        pricing?.promoDiscount || undefined,
+        pdfAppliedPromotions.length > 0 ? pdfAppliedPromotions : undefined
       );
       // Generate and download PDF
       const blob = await pdf(
@@ -938,7 +956,8 @@ export default function Step3ContactInfo() {
           showPrices={pdfData.showPrices}
           deliveryCharge={pdfData.deliveryCharge}
           venueHireCharge={pricing?.venueHireFee}
-          promoDiscount={pricing?.promoDiscount}
+          promoDiscount={pdfData.promoDiscount}
+          appliedPromotions={pdfData.appliedPromotions}
           totalPrice={pricing?.total ?? pdfData.totalPrice}
           logoUrl={pdfData.logoUrl}
         />

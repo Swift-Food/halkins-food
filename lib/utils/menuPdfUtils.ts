@@ -1038,13 +1038,32 @@ export async function transformOrderToPdfData(
 
   const promoDiscount = typeof order.promoDiscount === 'string'
     ? parseFloat(order.promoDiscount)
-    : order.promoDiscount;
+    : (order.promoDiscount || 0);
+  const restaurantNameById = Object.fromEntries(
+    (order.restaurants || []).map((r) => [r.restaurantId, r.restaurantName])
+  );
+  const sessionPromotions = (order.mealSessions || []).flatMap((s) =>
+    Object.entries(s.appliedPromotions || {})
+  );
+  const promotionEntries = sessionPromotions.length > 0
+    ? sessionPromotions
+    : Object.entries(order.appliedPromotions || {});
+  const appliedPromotions = promotionEntries
+    .flatMap(([restaurantId, promos]) =>
+      promos.map((p) => {
+        const restaurantName = restaurantNameById[restaurantId];
+        const label = restaurantName ? `${p.name} (${restaurantName})` : p.name;
+        return { name: label, discountAmount: Number(p.discountAmount) };
+      })
+    )
+    .filter((p) => p.discountAmount > 0);
 
   return {
     sessions,
     showPrices,
     deliveryCharge: deliveryFee,
     promoDiscount: promoDiscount || undefined,
+    appliedPromotions: appliedPromotions.length > 0 ? appliedPromotions : undefined,
     totalPrice: totalPrice,
     logoUrl: "/Logo_Circle.png",
   };
@@ -1127,7 +1146,9 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
 export async function transformLocalSessionsToPdfData(
   mealSessions: LocalMealSession[],
   showPrices: boolean = true,
-  deliveryFee?: number
+  deliveryFee?: number,
+  promoDiscount?: number,
+  appliedPromotions?: { name: string; discountAmount: number }[]
 ): Promise<CateringMenuPdfProps> {
   const sessions: PdfSession[] = [];
   let grandTotal = 0;
@@ -1247,11 +1268,15 @@ export async function transformLocalSessionsToPdfData(
   // Calculate total including delivery fee
   const totalWithDelivery = grandTotal + (resolvedDeliveryFee || 0);
 
+  const totalPromotionDiscount = (appliedPromotions || []).reduce((s, p) => s + p.discountAmount, 0);
+
   return {
     sessions,
     showPrices,
     deliveryCharge: resolvedDeliveryFee,
-    totalPrice: totalWithDelivery,
+    totalPrice: totalWithDelivery - (promoDiscount || 0) - totalPromotionDiscount,
+    promoDiscount: promoDiscount || undefined,
+    appliedPromotions: appliedPromotions?.length ? appliedPromotions : undefined,
     logoUrl: "/Logo_Circle.png",
   };
 }

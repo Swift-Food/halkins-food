@@ -124,12 +124,18 @@ export interface PdfSession {
   deliveryFee?: number;
 }
 
+export interface PdfAppliedPromotion {
+  name: string;
+  discountAmount: number;
+}
+
 export interface CateringMenuPdfProps {
   sessions: PdfSession[];
   showPrices: boolean;
   deliveryCharge?: number;
   venueHireCharge?: number;
   promoDiscount?: number;
+  appliedPromotions?: PdfAppliedPromotion[];
   totalPrice?: number;
   logoUrl?: string;
 }
@@ -694,6 +700,7 @@ const SessionPage: React.FC<{
   deliveryCharge?: number;
   venueHireCharge?: number;
   promoDiscount?: number;
+  appliedPromotions?: PdfAppliedPromotion[];
   totalPrice?: number;
 }> = ({
   session,
@@ -705,13 +712,16 @@ const SessionPage: React.FC<{
   deliveryCharge,
   venueHireCharge,
   promoDiscount,
+  appliedPromotions,
   totalPrice,
 }) => {
   const totalCatering = allSessions.reduce((sum, s) => sum + (s.subtotal || 0), 0);
+  const totalPromotionDiscount = (appliedPromotions || []).reduce((s, p) => s + p.discountAmount, 0);
+  // Grand total excludes venue hire (totalPrice is already returned without it)
   const resolvedGrandTotal =
     totalPrice !== undefined
       ? totalPrice
-      : totalCatering + (deliveryCharge || 0) + (venueHireCharge || 0);
+      : totalCatering + (deliveryCharge || 0) - (promoDiscount || 0) - totalPromotionDiscount;
 
   return (
   <Page size="A4" style={styles.menuPage} wrap>
@@ -763,15 +773,23 @@ const SessionPage: React.FC<{
           </View>
           {(venueHireCharge ?? 0) > 0 && (
             <View style={styles.totalsBreakdownRow}>
-              <Text style={styles.totalsBreakdownLabel}>Venue Hire</Text>
+              <Text style={styles.totalsBreakdownLabel}>Venue Hire (Estimated)</Text>
               <Text style={styles.totalsBreakdownValue}>
                 £{venueHireCharge!.toFixed(2)}
               </Text>
             </View>
           )}
+          {(appliedPromotions || []).map((promo, i) => (
+            <View key={i} style={styles.totalsBreakdownRow}>
+              <Text style={{...styles.totalsBreakdownLabel, color: '#16a34a'}}>{promo.name}</Text>
+              <Text style={{...styles.totalsBreakdownValue, color: '#16a34a'}}>
+                -£{promo.discountAmount.toFixed(2)}
+              </Text>
+            </View>
+          ))}
           {(promoDiscount ?? 0) > 0 && (
             <View style={styles.totalsBreakdownRow}>
-              <Text style={{...styles.totalsBreakdownLabel, color: '#16a34a'}}>Promo Discount</Text>
+              <Text style={{...styles.totalsBreakdownLabel, color: '#16a34a'}}>Promo Code</Text>
               <Text style={{...styles.totalsBreakdownValue, color: '#16a34a'}}>
                 -£{promoDiscount!.toFixed(2)}
               </Text>
@@ -780,7 +798,7 @@ const SessionPage: React.FC<{
           <View style={styles.totalsBreakdownRow}>
             <Text style={styles.totalsBreakdownLabel}>Logistics / Delivery</Text>
             <Text style={styles.totalsBreakdownValueItalic}>
-              {deliveryCharge !== undefined ? `£${deliveryCharge.toFixed(2)}` : "TBC"}
+              {deliveryCharge !== undefined ? `£${deliveryCharge.toFixed(2)}` : "Estimated"}
             </Text>
           </View>
         </View>
@@ -788,6 +806,7 @@ const SessionPage: React.FC<{
         <View style={styles.grandTotalContainer}>
           <Text style={styles.grandTotalLabel}>
             {deliveryCharge !== undefined ? "Grand Total" : "Estimated Grand Total"}
+            {(venueHireCharge ?? 0) > 0 ? " (excl. venue hire)" : ""}
           </Text>
           <Text style={styles.grandTotalValue}>
             {deliveryCharge !== undefined
@@ -832,6 +851,7 @@ export const CateringMenuPdf: React.FC<CateringMenuPdfProps> = ({
   deliveryCharge,
   venueHireCharge,
   promoDiscount,
+  appliedPromotions,
   totalPrice,
 }) => {
   const groupedByDay = groupSessionsByDate(sessions);
@@ -862,6 +882,7 @@ export const CateringMenuPdf: React.FC<CateringMenuPdfProps> = ({
           deliveryCharge={deliveryCharge}
           venueHireCharge={venueHireCharge}
           promoDiscount={promoDiscount}
+          appliedPromotions={appliedPromotions}
           totalPrice={totalPrice}
         />
       ))}

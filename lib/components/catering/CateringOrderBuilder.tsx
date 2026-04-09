@@ -1006,13 +1006,30 @@ export default function CateringOrderBuilder({
         })),
       }));
 
-      const pdfData = await transformLocalSessionsToPdfData(sessionsForPreview, withPrices);
+      const restaurantNameById = Object.fromEntries(
+        restaurants.map((r) => [r.id, r.restaurant_name])
+      );
+      const pdfAppliedPromotions = (pricing?.appliedPromotions || []).map((p) => {
+        const restaurantName = restaurantNameById[p.restaurantId];
+        const label = restaurantName ? `${p.name} (${restaurantName})` : p.name;
+        return { name: label, discountAmount: p.discount };
+      }).filter((p) => p.discountAmount > 0);
+
+      const pdfData = await transformLocalSessionsToPdfData(
+        sessionsForPreview,
+        withPrices,
+        pricing?.deliveryFee || undefined,
+        pricing?.promoDiscount || undefined,
+        pdfAppliedPromotions.length > 0 ? pdfAppliedPromotions : undefined
+      );
       const blob = await pdf(
         <CateringMenuPdf
           sessions={pdfData.sessions}
           showPrices={pdfData.showPrices}
           deliveryCharge={pdfData.deliveryCharge}
-          totalPrice={pdfData.totalPrice}
+          totalPrice={pricing?.total ?? pdfData.totalPrice}
+          promoDiscount={pdfData.promoDiscount}
+          appliedPromotions={pdfData.appliedPromotions}
           logoUrl={pdfData.logoUrl}
         />
       ).toBlob();
