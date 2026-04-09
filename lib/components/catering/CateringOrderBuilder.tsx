@@ -145,6 +145,7 @@ export default function CateringOrderBuilder({
   const categoriesRowRef = useRef<HTMLDivElement>(null);
   const restaurantListRef = useRef<HTMLDivElement>(null);
   const firstMenuItemRef = useRef<HTMLDivElement>(null);
+  const resetRestaurantListRef = useRef<(() => void) | null>(null);
 
   const {
     categories,
@@ -167,6 +168,7 @@ export default function CateringOrderBuilder({
     handleTutorialNext,
     handleSkipTutorial,
     triggerNavigationTutorial,
+    triggerSessionCreated,
     resetTutorial,
     getTutorialSteps,
   } = useCateringTutorial({
@@ -181,8 +183,13 @@ export default function CateringOrderBuilder({
       categoriesRowRef,
       restaurantListRef,
       firstMenuItemRef,
+      resetRestaurantListRef,
     },
   });
+
+  useEffect(() => {
+    resetRestaurantListRef.current = () => setTutorialResetKey((prev) => prev + 1);
+  }, []);
 
   useEffect(() => {
     if (currentTutorialStep?.id !== "add-day-nav" || navMode === "dates") return;
@@ -556,8 +563,8 @@ export default function CateringOrderBuilder({
       }
       setActiveSessionIndex(sessionIndex);
 
-      if (wasNewSession && tutorialPhase === "initial") {
-        triggerNavigationTutorial();
+      if (wasNewSession && tutorialPhase === "navigation") {
+        triggerSessionCreated();
       }
     }
   };

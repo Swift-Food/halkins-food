@@ -10,13 +10,14 @@ export interface TutorialStep {
   description: string;
   position: "top" | "bottom" | "left" | "right";
   requiresClick?: boolean; // User must click the target to proceed
+  manualAdvance?: boolean; // Like requiresClick (shows hint + hole) but does NOT auto-advance on click
   showNext?: boolean; // Show "Next" button
   nextLabel?: string; // Custom label for the primary action
   showSkip?: boolean; // Show "Skip Tutorial" button
   highlightPadding?: number; // Padding around highlight
   highlightExtendBottom?: number; // Extra height to extend highlight downward
   highlightMinTop?: number; // Clamp the highlight top below sticky UI
-  onBeforeShow?: () => void; // Called before showing this step
+  onBeforeShow?: (onComplete: () => void) => void; // Called before showing this step; call onComplete when ready to position
 }
 
 interface HighlightRect {
@@ -47,6 +48,7 @@ export default function TutorialTooltip({
   const [arrowPosition, setArrowPosition] = useState({ top: 0, left: 0 });
   const [highlightRect, setHighlightRect] = useState<HighlightRect | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const prevStepIdRef = useRef<string | null>(null);
 
   const updatePosition = useCallback(() => {
     if (!step?.targetRef?.current || !tooltipRef.current) return;
@@ -146,26 +148,48 @@ export default function TutorialTooltip({
   useEffect(() => {
     if (!step) return;
 
-    // Call onBeforeShow if provided
-    step.onBeforeShow?.();
+    let cancelled = false;
 
-    // Initial position update
-    const timer = setTimeout(updatePosition, 50);
+    // schedulePosition: retry until targetRef is populated, then position
+    const schedulePosition = () => {
+      let attempts = 0;
+      const tryUpdate = () => {
+        if (cancelled) return;
+        if (step.targetRef?.current) {
+          updatePosition();
+        } else if (attempts < 20) {
+          attempts++;
+          setTimeout(tryUpdate, 100);
+        }
+      };
+      setTimeout(tryUpdate, 30);
+    };
+
+    // Only run onBeforeShow when step id actually changes (not on every re-render).
+    // onBeforeShow is responsible for scrolling; it calls onComplete when ready to position.
+    if (step.id !== prevStepIdRef.current) {
+      prevStepIdRef.current = step.id;
+      if (step.onBeforeShow) {
+        step.onBeforeShow(schedulePosition);
+      } else {
+        schedulePosition();
+      }
+    }
 
     // Update position on scroll/resize
     window.addEventListener("scroll", updatePosition, true);
     window.addEventListener("resize", updatePosition);
 
     return () => {
-      clearTimeout(timer);
+      cancelled = true;
       window.removeEventListener("scroll", updatePosition, true);
       window.removeEventListener("resize", updatePosition);
     };
   }, [step, updatePosition]);
 
-  // Handle click on target element for requiresClick steps
+  // Handle click on target element for requiresClick steps (not manualAdvance)
   useEffect(() => {
-    if (!step?.requiresClick || !step.targetRef?.current) return;
+    if (!step?.requiresClick || step.manualAdvance || !step.targetRef?.current) return;
 
     const targetEl = step.targetRef.current;
     const handleClick = () => {
@@ -232,7 +256,7 @@ export default function TutorialTooltip({
         style={{
           // Only create a hole in the overlay if the step requires clicking the target
           // For "showNext" steps, block all clicks including on the highlighted area
-          clipPath: highlightRect && step.requiresClick
+          clipPath: highlightRect && (step.requiresClick || step.manualAdvance)
             ? `polygon(
                 0% 0%,
                 0% 100%,
@@ -299,7 +323,7 @@ export default function TutorialTooltip({
                 {step.nextLabel || "Next"}
               </button>
             )}
-            {step.requiresClick && (
+            {(step.requiresClick || step.manualAdvance) && (
               <span className="ml-auto text-xs text-white/70 italic">
                 Click the highlighted area to continue
               </span>
