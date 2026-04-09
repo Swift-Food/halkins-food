@@ -1877,7 +1877,7 @@ export default function RestaurantMenuBrowser({
                             No bundles match the current filters.
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-1">
                             {group.bundles.map((bundle) => (
                               <BundleCard
                                 key={bundle.id}
@@ -1888,7 +1888,7 @@ export default function RestaurantMenuBrowser({
                           </div>
                         )
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-1">
                           {group.items.map((item, itemIdx) => (
                             <div
                               key={item.id}
