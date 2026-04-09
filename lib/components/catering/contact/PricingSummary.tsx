@@ -17,7 +17,7 @@ export default function PricingSummary({
   compact = false,
 }: PricingSummaryProps) {
   const [showPromotionBreakdown, setShowPromotionBreakdown] = useState(false);
-  if (calculatingPricing) {
+  if (calculatingPricing && !pricing) {
     return (
       <div className={`text-center text-base-content/60 ${compact ? "py-2 text-xs" : "py-4 text-sm"}`}>
         Calculating pricing...
@@ -44,7 +44,7 @@ export default function PricingSummary({
       (typeof distanceInMiles === "number" && !Number.isNaN(distanceInMiles));
 
     return (
-      <div className="space-y-1.5 border-t border-base-300 pt-3">
+      <div className={`space-y-1.5 border-t border-base-300 pt-3 transition-opacity duration-200 ${calculatingPricing ? "opacity-50" : "opacity-100"}`}>
         <div className="flex justify-between text-xs text-base-content/70">
           <span>Subtotal</span>
           <span>£{pricing.subtotal.toFixed(2)}</span>
@@ -147,7 +147,7 @@ export default function PricingSummary({
     const hasDeliveryQuote =
       hasDeliveryAddress || hasDistanceQuote || deliveryBreakdown !== undefined;
     return (
-      <div className="space-y-4 rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(180deg,#fcfcfd_0%,#f8fafc_100%)] p-4">
+      <div className={`space-y-4 rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(180deg,#fcfcfd_0%,#f8fafc_100%)] p-4 transition-opacity duration-200 ${calculatingPricing ? "opacity-50" : "opacity-100"}`}>
         <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
             Pending Balance
