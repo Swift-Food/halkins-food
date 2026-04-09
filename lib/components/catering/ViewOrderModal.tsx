@@ -337,7 +337,7 @@ export default function ViewOrderModal({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-bold">£{totalPrice.toFixed(2)}</span>
+              <span className="text-lg font-bold">£{(pricing?.total ?? totalPrice).toFixed(2)}</span>
               <span className="text-sm opacity-80">{totalItemCount} items</span>
             </div>
           </button>
