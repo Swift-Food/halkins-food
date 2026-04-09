@@ -149,21 +149,16 @@ export function useCateringTutorial({
             showSkip: false,
             highlightPadding: 8,
             highlightMinTop: 72,
+            autoScroll: true,
             onBeforeShow: (onComplete) => {
+              // Poll until menu items have loaded, then signal ready — updatePosition handles scrolling
               let attempts = 0;
-              const scrollToItem = () => {
-                const el = refs.firstMenuItemRef.current;
-                if (!el) {
-                  if (attempts < 20) { attempts++; setTimeout(scrollToItem, 150); }
-                  else onComplete();
-                  return;
-                }
-                const stickyOffset = 72 + 16;
-                const rect = el.getBoundingClientRect();
-                window.scrollTo({ top: window.scrollY + rect.top - stickyOffset, behavior: "instant" });
-                onComplete();
+              const waitForRef = () => {
+                if (refs.firstMenuItemRef.current) { onComplete(); return; }
+                if (attempts < 20) { attempts++; setTimeout(waitForRef, 150); }
+                else onComplete();
               };
-              scrollToItem();
+              waitForRef();
             },
           },
         ];
