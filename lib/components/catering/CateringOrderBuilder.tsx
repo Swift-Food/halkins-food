@@ -664,7 +664,7 @@ export default function CateringOrderBuilder({
     setBundleToRemove(null);
   };
 
-  const handleSwapItem = (itemIndex: number) => {
+  const handleSwapItem = async (itemIndex: number) => {
     const session = mealSessions[activeSessionIndex];
     if (!session) return;
     const orderItem = session.orderItems[itemIndex];
@@ -674,15 +674,21 @@ export default function CateringOrderBuilder({
     const restaurantId = item.restaurantId;
     const groupTitle = item.groupTitle;
 
-    let alternatives: MenuItem[] = [];
-    if (allMenuItems && restaurantId && groupTitle) {
-      alternatives = allMenuItems.filter(
-        (menuItem) => menuItem.restaurantId === restaurantId && menuItem.groupTitle === groupTitle
-      );
-    }
-
-    setSwapAlternatives(alternatives);
     setSwapItemIndex(itemIndex);
+    setSwapAlternatives([]);
+
+    if (!restaurantId) return;
+
+    try {
+      const menuItems = await cateringService.getMenuItemsByRestaurant(restaurantId);
+      const items: MenuItem[] = (menuItems || []).map(mapToMenuItem);
+      const alternatives = groupTitle
+        ? items.filter((mi) => mi.groupTitle === groupTitle)
+        : items;
+      setSwapAlternatives(alternatives);
+    } catch (error) {
+      console.error("Failed to fetch swap alternatives:", error);
+    }
   };
 
   const handleConfirmSwap = (newItem: MenuItem) => {
