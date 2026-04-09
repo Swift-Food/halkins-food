@@ -417,6 +417,7 @@ export default function RestaurantMenuBrowser({
   const [isRestaurantSearchOpen, setIsRestaurantSearchOpen] = useState(false);
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [showSearchLeftIcon, setShowSearchLeftIcon] = useState(false);
+  const [showSearchRightIcon, setShowSearchRightIcon] = useState(false);
   const [closedSearchColWidth, setClosedSearchColWidth] = useState<string>("2.25rem");
   const [isDesktopSearch, setIsDesktopSearch] = useState(false);
   const restaurantSearchInputRef = useRef<HTMLInputElement>(null);
@@ -450,13 +451,23 @@ export default function RestaurantMenuBrowser({
     setShowSearchInput(true);
     setShowSearchLeftIcon(true);
     setIsRestaurantSearchOpen(true);
-    setTimeout(() => restaurantSearchInputRef.current?.focus(), 50);
+    // preventScroll: keep the parent flex container from auto-scrolling the
+    // newly-mounted input into view, which would push the pill row off-screen.
+    setTimeout(
+      () => restaurantSearchInputRef.current?.focus({ preventScroll: true }),
+      50,
+    );
+    // Render the X (close) button only after the width animation completes,
+    // so it doesn't appear inside the still-tiny search column.
+    setTimeout(() => setShowSearchRightIcon(true), 300);
   };
 
   // Close: shrink grid track first, then swap input → button after the animation
   const closeRestaurantSearch = () => {
     setRestaurantSearchQuery("");
     setIsRestaurantSearchOpen(false);
+    // Hide the X icon immediately so it doesn't get pushed out as we shrink.
+    setShowSearchRightIcon(false);
     // Hide the left search icon near the end of the shrink animation so it
     // doesn't get pushed out of the right edge as the column collapses.
     setTimeout(() => setShowSearchLeftIcon(false), 200);
@@ -1545,7 +1556,7 @@ export default function RestaurantMenuBrowser({
 
         <div className="mt-3">
               <div
-                className="sticky z-30 mt-2 mb-3 flex items-center gap-2 w-full max-w-full box-border overflow-hidden"
+                className="sticky z-30 mt-2 mb-3 flex items-center gap-2 w-full max-w-full box-border overflow-hidden px-1 py-1"
                 style={{
                   top: stickyTopOffset + 8,
                 }}
@@ -1582,7 +1593,7 @@ export default function RestaurantMenuBrowser({
 
                 {/* Search — explicit square (width=height) when closed, expands width when open */}
                 <div
-                  className="relative flex-shrink-0 overflow-hidden"
+                  className="relative flex-shrink-0"
                   style={{
                     width: isRestaurantSearchOpen
                       ? (isDesktopSearch ? "min(100%, 14rem)" : "100%")
@@ -1603,9 +1614,9 @@ export default function RestaurantMenuBrowser({
                         onChange={(e) => setRestaurantSearchQuery(e.target.value)}
                         placeholder="Search items..."
                         style={{ minWidth: 0 }}
-                        className={`h-full w-full min-w-0 rounded-full border border-primary bg-white text-sm focus:outline-none focus:ring-1 focus:ring-primary shadow-sm ${showSearchLeftIcon ? "pl-9" : "pl-2"} ${isRestaurantSearchOpen ? "pr-9" : "pr-2"}`}
+                        className={`h-full w-full min-w-0 rounded-full border border-primary bg-white text-sm focus:outline-none focus:ring-1 focus:ring-primary shadow-sm ${showSearchLeftIcon ? "pl-9" : "pl-2"} ${showSearchRightIcon ? "pr-9" : "pr-2"}`}
                       />
-                      {isRestaurantSearchOpen && (
+                      {showSearchRightIcon && (
                         <button
                           onClick={closeRestaurantSearch}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
