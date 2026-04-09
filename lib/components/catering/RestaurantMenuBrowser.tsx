@@ -848,19 +848,26 @@ export default function RestaurantMenuBrowser({
     return groups;
   }, [bundlesLoading, bundlesError, filteredRestaurantBundles, groupedItems]);
 
-  // Pill row uses unfiltered group names so it stays stable while searching.
+  // Pill row reflects only the groups that have matching items for the
+  // current search. When search is inactive, the filtered* lists equal the
+  // unfiltered ones, so behaviour is unchanged.
   const pillRowGroupNames = useMemo<string[]>(() => {
     const names: string[] = [];
     const showBundles =
-      bundlesLoading || bundlesError !== null || restaurantBundles.length > 0;
-    if (showBundles) names.push("Bundles");
+      !isRestaurantSearchActive &&
+      (bundlesLoading ||
+        bundlesError !== null ||
+        restaurantBundles.length > 0);
+    const showFilteredBundles =
+      isRestaurantSearchActive && filteredRestaurantBundles.length > 0;
+    if (showBundles || showFilteredBundles) names.push("Bundles");
 
-    if (restaurantItems.length === 0) return names;
+    if (filteredRestaurantItems.length === 0) return names;
 
     const restaurant = restaurants.find((r) => r.id === selectedRestaurantId);
     const menuGroupSettings =
       restaurant?.menuGroupSettings ||
-      restaurantItems[0]?.restaurant?.menuGroupSettings;
+      filteredRestaurantItems[0]?.restaurant?.menuGroupSettings;
     const hasSettings =
       menuGroupSettings && Object.keys(menuGroupSettings).length > 0;
 
@@ -873,24 +880,26 @@ export default function RestaurantMenuBrowser({
       });
     } else {
       groupNames = Array.from(
-        new Set(restaurantItems.map((i) => i.groupTitle || "Other")),
+        new Set(filteredRestaurantItems.map((i) => i.groupTitle || "Other"))
       ).sort((a, b) => a.localeCompare(b));
     }
 
     const groupsWithItems = new Set(
-      restaurantItems.map((i) => i.groupTitle || "Other"),
+      filteredRestaurantItems.map((i) => i.groupTitle || "Other")
     );
     for (const name of groupNames) {
       if (groupsWithItems.has(name)) names.push(name);
     }
     return names;
   }, [
-    restaurantItems,
+    filteredRestaurantItems,
+    filteredRestaurantBundles,
     restaurantBundles,
     bundlesLoading,
     bundlesError,
     restaurants,
     selectedRestaurantId,
+    isRestaurantSearchActive,
   ]);
 
   const firstMenuGroupName = groupedItems[0]?.name ?? null;
@@ -1155,15 +1164,6 @@ export default function RestaurantMenuBrowser({
   };
 
   const handlePillClick = (groupName: string) => {
-    if (isRestaurantSearchActive || showSearchInput) {
-      // Clear the search and revert to the normal (unfiltered) view, then
-      // wait for the next render before scrolling so the section ref exists.
-      setRestaurantSearchQuery("");
-      setIsRestaurantSearchOpen(false);
-      setShowSearchInput(false);
-      setTimeout(() => handleGroupTabClick(groupName), 0);
-      return;
-    }
     handleGroupTabClick(groupName);
   };
 
@@ -1564,7 +1564,7 @@ export default function RestaurantMenuBrowser({
                 {/* Pill row — takes remaining flex space, can shrink to 0 */}
                 <div
                   ref={setPillRowEl}
-                  className={`flex-1 min-w-0 overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 py-0 md:px-4 md:py-1 shadow-sm backdrop-blur-md flex items-center h-11 md:h-auto ${isRestaurantSearchOpen ? "hidden md:flex" : ""}`}
+                  className={`flex-1 min-w-0 overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 py-0 md:px-4 md:py-1 shadow-sm backdrop-blur-md flex items-center h-11 ${isRestaurantSearchOpen ? "hidden md:flex" : ""}`}
                 >
                   <div className="flex items-center gap-2 md:gap-5">
                     {pillRowGroupNames.map((name) => {
