@@ -10,6 +10,7 @@ import { MealSessionState, CateringPricingResult } from "@/types/catering.types"
 import { MenuItem } from "@/types/restaurant.types";
 import { CateringBundleItem } from "@/types/api/catering.api.types";
 import { cateringService } from "@/services/api/catering.api";
+import { coworkingService } from "@/services/api";
 import { CateringMenuPdf } from "@/lib/components/pdf/CateringMenuPdf";
 import {
   LocalMealSession,
@@ -70,7 +71,7 @@ export default function CateringOrderBuilder({
   eventWindow,
 }: CateringOrderBuilderProps) {
   const searchParams = useSearchParams();
-  const { eventStartDate, eventStartTime, eventEndDate, eventEndTime } = useCoworking();
+  const { eventStartDate, eventStartTime, eventEndDate, eventEndTime, selectedVenue, spaceSlug } = useCoworking();
   const resolvedEventStartDate = eventWindow?.startDate || eventStartDate;
   const resolvedEventStartTime = eventWindow?.startTime || eventStartTime;
   const resolvedEventEndDate = eventWindow?.endDate || eventEndDate;
@@ -901,19 +902,59 @@ export default function CateringOrderBuilder({
     setIsMobileCartMenuOpen(false);
   };
 
+  const FALLBACK_DELIVERY_ADDRESS = "1-2 Paris Gardens, London";
+  const FALLBACK_DELIVERY_LAT = 51.50664530535029;
+  const FALLBACK_DELIVERY_LNG = -0.10636436057400264;
+
   const fetchPricing = useCallback(async (sessions: MealSessionState[]) => {
     const hasItems = sessions.some((s) => s.orderItems.length > 0);
-    if (!hasItems) { setPricing(null); return; }
+    if (!hasItems || !spaceSlug) { setPricing(null); return; }
+
+    // Build flat + per-session items (mirrors Step3 buildCoworkingOrderData)
+    const itemsByRestaurantFlat = new Map<string, { menuItemId: string; quantity: number }[]>();
+    const builtSessions = sessions
+      .filter((s) => s.orderItems.length > 0)
+      .map((session, i) => {
+        const byRestaurant = new Map<string, { menuItemId: string; quantity: number }[]>();
+        session.orderItems.forEach(({ item, quantity }) => {
+          if (!byRestaurant.has(item.restaurantId)) byRestaurant.set(item.restaurantId, []);
+          byRestaurant.get(item.restaurantId)!.push({ menuItemId: item.id, quantity });
+          if (!itemsByRestaurantFlat.has(item.restaurantId)) itemsByRestaurantFlat.set(item.restaurantId, []);
+          itemsByRestaurantFlat.get(item.restaurantId)!.push({ menuItemId: item.id, quantity });
+        });
+        return {
+          sessionName: session.sessionName || `Session ${i + 1}`,
+          sessionDate: session.sessionDate,
+          eventTime: session.eventTime,
+          collectionTime: session.eventTime,
+          guestCount: session.guestCount,
+          orderItems: Array.from(byRestaurant.entries()).map(([restaurantId, menuItems]) => ({ restaurantId, menuItems })),
+        };
+      });
+    const flatOrderItems = Array.from(itemsByRestaurantFlat.entries()).map(
+      ([restaurantId, menuItems]) => ({ restaurantId, menuItems })
+    );
+
+    const deliveryAddress = selectedVenue?.name ?? FALLBACK_DELIVERY_ADDRESS;
+    const deliveryLat = selectedVenue?.latitude ?? FALLBACK_DELIVERY_LAT;
+    const deliveryLng = selectedVenue?.longitude ?? FALLBACK_DELIVERY_LNG;
+
     setCalculatingPricing(true);
     try {
-      const result = await cateringService.calculateCateringPricingWithMealSessions(sessions);
-      if (result.isValid) setPricing(result);
+      const result = await coworkingService.getCartPricing(spaceSlug, {
+        deliveryAddress,
+        deliveryLocation: { latitude: Number(deliveryLat), longitude: Number(deliveryLng) },
+        venueId: selectedVenue?.id,
+        orderItems: flatOrderItems.length > 0 ? flatOrderItems : undefined,
+        mealSessions: builtSessions.length > 0 ? builtSessions : undefined,
+      });
+      if (result.isValid) setPricing(result as unknown as CateringPricingResult);
     } catch {
       // silently ignore
     } finally {
       setCalculatingPricing(false);
     }
-  }, []);
+  }, [spaceSlug, selectedVenue]);
 
   useEffect(() => {
     if (pricingDebounceRef.current) clearTimeout(pricingDebounceRef.current);
