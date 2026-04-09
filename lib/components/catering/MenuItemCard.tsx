@@ -72,7 +72,7 @@ export default function MenuItemCard({
     <>
       <div
         key={item.id}
-        className="bg-white rounded-lg border border-gray-200 transition-shadow overflow-hidden cursor-pointer h-[140px]"
+        className="bg-white rounded-lg border border-gray-200 transition-shadow overflow-hidden cursor-pointer h-[158px]"
         onClick={() => {
           setActiveTooltip(null);
           onToggleExpand();
@@ -80,7 +80,7 @@ export default function MenuItemCard({
       >
         <div className="flex flex-row h-full">
           {/* Left Side - Content */}
-          <div className="flex-1 px-3 pt-2 pb-1">
+          <div className="flex-1 px-3 pt-2 pb-3">
             {/* Header - Name */}
             <div className="flex flex-col h-full justify-between">
               <div>
@@ -119,7 +119,7 @@ export default function MenuItemCard({
 
               {/* Price and Add to Order / Quantity */}
               <div className="flex items-end justify-between gap-2">
-                {/* Left: total price stacked above £/pp */}
+                {/* Left: total price + £/pp on top row, dietary icons below */}
                 <div className="flex flex-col min-w-0">
                   <div className="flex flex-row items-center gap-2">
                     {item.isDiscount && discountPrice > 0 ? (
@@ -136,74 +136,74 @@ export default function MenuItemCard({
                         £{(price * BACKEND_QUANTITY_UNIT).toFixed(2)}
                       </p>
                     )}
-                    {/* Dietary Filters */}
-                    {item.dietaryFilters && item.dietaryFilters.length > 0 && (
-                      <div className="flex flex-wrap gap-0.5 items-center">
-                        {item.dietaryFilters.slice(0, 4).map((filter) => {
-                          const iconMap: Record<string, string> = {
-                            vegetarian: "vegetarian.png",
-                            halal: "halal.png",
-                            no_nut: "no_nut.png",
-                            no_dairy: "no_dairy.png",
-                            pescatarian: "pescatarian.png",
-                            vegan: "vegan.png",
-                          };
-                          const labelMap: Record<string, string> = {
-                            vegetarian: "Vegetarian",
-                            halal: "Halal",
-                            no_nut: "No Nuts",
-                            no_dairy: "No Dairy",
-                            pescatarian: "Pescatarian",
-                            vegan: "Vegan",
-                          };
-                          const iconFile = iconMap[filter.toLowerCase()];
-                          const label = labelMap[filter.toLowerCase()] || filter;
-                          const tooltipKey = `${item.id}-${filter}`;
-                          const isTooltipActive = activeTooltip === tooltipKey;
-
-                          if (!iconFile) return null;
-
-                          return (
-                            <div
-                              key={filter}
-                              className="relative w-4 h-4 group cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveTooltip(isTooltipActive ? null : tooltipKey);
-                              }}
-                            >
-                              <Image
-                                src={`/dietary-icons/unfilled/${iconFile}`}
-                                alt={label}
-                                fill
-                                className="object-contain"
-                              />
-                              {/* Tooltip */}
-                              <div
-                                className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-gray-900 text-white text-[9px] rounded whitespace-nowrap transition-opacity z-10 ${
-                                  isTooltipActive
-                                    ? "opacity-100"
-                                    : "opacity-0 group-hover:opacity-100 pointer-events-none"
-                                }`}
-                              >
-                                {label}
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-900"></div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                        {item.dietaryFilters.length > 4 && (
-                          <span className="text-[9px] text-gray-500">
-                            +{item.dietaryFilters.length - 4}
-                          </span>
-                        )}
-                      </div>
+                    {DISPLAY_FEEDS_PER_UNIT > 1 && (
+                      <p className="text-[9px] text-gray-500 leading-none">
+                        £{((item.isDiscount && discountPrice > 0 ? discountPrice : price) * BACKEND_QUANTITY_UNIT / DISPLAY_FEEDS_PER_UNIT).toFixed(2)}/pp
+                      </p>
                     )}
                   </div>
-                  {DISPLAY_FEEDS_PER_UNIT > 1 && (
-                    <p className="text-[9px] text-gray-500 leading-none mt-1">
-                      £{((item.isDiscount && discountPrice > 0 ? discountPrice : price) * BACKEND_QUANTITY_UNIT / DISPLAY_FEEDS_PER_UNIT).toFixed(2)}/pp
-                    </p>
+                  {/* Dietary Filters */}
+                  {item.dietaryFilters && item.dietaryFilters.length > 0 && (
+                    <div className="flex flex-wrap gap-0.5 items-center mt-1">
+                      {item.dietaryFilters.slice(0, 4).map((filter) => {
+                        const iconMap: Record<string, string> = {
+                          vegetarian: "vegetarian.png",
+                          halal: "halal.png",
+                          no_nut: "no_nut.png",
+                          no_dairy: "no_dairy.png",
+                          pescatarian: "pescatarian.png",
+                          vegan: "vegan.png",
+                        };
+                        const labelMap: Record<string, string> = {
+                          vegetarian: "Vegetarian",
+                          halal: "Halal",
+                          no_nut: "No Nuts",
+                          no_dairy: "No Dairy",
+                          pescatarian: "Pescatarian",
+                          vegan: "Vegan",
+                        };
+                        const iconFile = iconMap[filter.toLowerCase()];
+                        const label = labelMap[filter.toLowerCase()] || filter;
+                        const tooltipKey = `${item.id}-${filter}`;
+                        const isTooltipActive = activeTooltip === tooltipKey;
+
+                        if (!iconFile) return null;
+
+                        return (
+                          <div
+                            key={filter}
+                            className="relative w-4 h-4 group cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveTooltip(isTooltipActive ? null : tooltipKey);
+                            }}
+                          >
+                            <Image
+                              src={`/dietary-icons/unfilled/${iconFile}`}
+                              alt={label}
+                              fill
+                              className="object-contain"
+                            />
+                            {/* Tooltip */}
+                            <div
+                              className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-gray-900 text-white text-[9px] rounded whitespace-nowrap transition-opacity z-10 ${
+                                isTooltipActive
+                                  ? "opacity-100"
+                                  : "opacity-0 group-hover:opacity-100 pointer-events-none"
+                              }`}
+                            >
+                              {label}
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-900"></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {item.dietaryFilters.length > 4 && (
+                        <span className="text-[9px] text-gray-500">
+                          +{item.dietaryFilters.length - 4}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
 
