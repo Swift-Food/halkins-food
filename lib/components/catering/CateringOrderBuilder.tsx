@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { pdf } from "@react-pdf/renderer";
-import { Package, ShoppingBag, X } from "lucide-react";
+import { MoreHorizontal, Package, ShoppingBag, Trash2, X } from "lucide-react";
 import { useActiveCatering } from "@/context/useActiveCatering";
 import { useCoworking } from "@/context/CoworkingContext";
 import { MealSessionState } from "@/types/catering.types";
@@ -124,6 +124,8 @@ export default function CateringOrderBuilder({
   );
   const [isViewOrderOpen, setIsViewOrderOpen] = useState(false);
   const [removeItemIndex, setRemoveItemIndex] = useState<number | null>(null);
+  const [isClearAllConfirmOpen, setIsClearAllConfirmOpen] = useState(false);
+  const [isMobileCartMenuOpen, setIsMobileCartMenuOpen] = useState(false);
   const hasAnyItems = mealSessions.some((session) => session.orderItems.length > 0);
 
   const lastAutoSelectedSessionTime = useRef<string | null>(null);
@@ -881,6 +883,17 @@ export default function CateringOrderBuilder({
     setShowPdfModal(true);
   };
 
+  const handleClearAllItems = () => {
+    // Remove sessions from highest index down. When the last one is removed,
+    // the context resets to a single fresh default session.
+    for (let i = mealSessions.length - 1; i >= 0; i--) {
+      removeMealSession(i);
+    }
+    setActiveSessionIndex(0);
+    setIsClearAllConfirmOpen(false);
+    setIsMobileCartMenuOpen(false);
+  };
+
   const handlePdfDownload = async (withPrices: boolean) => {
     if (generatingPdf) return;
     setGeneratingPdf(true);
@@ -1070,29 +1083,40 @@ export default function CateringOrderBuilder({
                     Download Menu
                   </button>
                 )}
-                <button
-                  onClick={handleCheckout}
-                  disabled={disableCheckoutWhenEmpty && !hasAnyItems}
-                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-white transition-colors ${
-                    disableCheckoutWhenEmpty && !hasAnyItems
-                      ? "cursor-not-allowed bg-base-300 text-base-content/50"
-                      : isCurrentSessionValid
-                      ? "bg-primary hover:bg-primary/90"
-                      : "bg-warning hover:bg-warning/90"
-                  }`}
-                >
-                  <div>
-                    <span className="text-xs opacity-90">Total</span>
-                    <span className="ml-1.5 font-bold">£{getTotalPrice().toFixed(2)}</span>
-                  </div>
-                  <span className="text-xs">
-                    {disableCheckoutWhenEmpty && !hasAnyItems
-                      ? "Add items to continue"
-                      : isCurrentSessionValid
-                        ? "Checkout"
-                        : "Min. Order Not Met"}
-                  </span>
-                </button>
+                <div className="flex w-full items-stretch gap-2">
+                  {hasAnyItems && (
+                    <button
+                      onClick={() => setIsClearAllConfirmOpen(true)}
+                      className="flex-shrink-0 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-red-600 transition-colors hover:border-red-500 hover:bg-red-100"
+                      title="Clear all items"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={handleCheckout}
+                    disabled={disableCheckoutWhenEmpty && !hasAnyItems}
+                    className={`flex flex-1 items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-white transition-colors ${
+                      disableCheckoutWhenEmpty && !hasAnyItems
+                        ? "cursor-not-allowed bg-base-300 text-base-content/50"
+                        : isCurrentSessionValid
+                        ? "bg-primary hover:bg-primary/90"
+                        : "bg-warning hover:bg-warning/90"
+                    }`}
+                  >
+                    <div>
+                      <span className="text-xs opacity-90">Total</span>
+                      <span className="ml-1.5 font-bold">£{getTotalPrice().toFixed(2)}</span>
+                    </div>
+                    <span className="text-xs">
+                      {disableCheckoutWhenEmpty && !hasAnyItems
+                        ? "Add items to continue"
+                        : isCurrentSessionValid
+                          ? "Checkout"
+                          : "Min. Order Not Met"}
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -1101,7 +1125,7 @@ export default function CateringOrderBuilder({
 
       {mealSessions.some((session) => session.orderItems.length > 0) && (
         <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-          <div className="flex justify-center px-4 pb-2">
+          <div className="flex justify-center items-center gap-2 px-4 pb-2">
             <div className="flex flex-col items-center rounded-2xl border border-base-200 bg-white/50 px-3 py-1.5 shadow-sm backdrop-blur-sm">
               <span className="text-xs font-semibold text-gray-800">
                 {mealSessions[activeSessionIndex]?.sessionName}
@@ -1116,6 +1140,48 @@ export default function CateringOrderBuilder({
                 {mealSessions[activeSessionIndex]?.eventTime &&
                   ` · ${formatTimeDisplay(mealSessions[activeSessionIndex].eventTime)}`}
               </span>
+            </div>
+            <div className="relative">
+              <button
+                onClick={() => setIsMobileCartMenuOpen((v) => !v)}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-base-200 bg-white/70 text-gray-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+                title="More actions"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+              {isMobileCartMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsMobileCartMenuOpen(false)}
+                  />
+                  <div className="absolute bottom-full right-0 z-50 mb-2 w-44 overflow-hidden rounded-xl border border-base-200 bg-white shadow-lg">
+                    <button
+                      onClick={() => {
+                        setIsMobileCartMenuOpen(false);
+                        handleViewMenu();
+                      }}
+                      disabled={generatingPdf}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-base-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download Menu
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsMobileCartMenuOpen(false);
+                        setIsClearAllConfirmOpen(true);
+                      }}
+                      className="flex w-full items-center gap-2 border-t border-base-200 px-3 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Clear Cart
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <div className="bg-primary p-4">
@@ -1257,6 +1323,43 @@ export default function CateringOrderBuilder({
           onConfirm={confirmRemoveSession}
           onCancel={() => setSessionToRemove(null)}
         />
+      )}
+
+      {isClearAllConfirmOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                <Trash2 className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Clear Cart</h3>
+                <p className="text-sm text-gray-500">
+                  Remove all items and sessions
+                </p>
+              </div>
+            </div>
+            <p className="mb-6 text-gray-600">
+              This will delete every session and remove all items you&apos;ve
+              added, returning your order to a single empty session. This
+              action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsClearAllConfirmOpen(false)}
+                className="flex-1 rounded-xl border border-base-300 px-4 py-3 font-medium text-gray-600 transition-colors hover:bg-base-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClearAllItems}
+                className="flex-1 rounded-xl bg-red-500 px-4 py-3 font-medium text-white transition-colors hover:bg-red-600"
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {minOrderModalSession !== null && (
