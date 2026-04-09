@@ -416,6 +416,7 @@ export default function RestaurantMenuBrowser({
   const [stickyTopOffset, setStickyTopOffset] = useState(72);
   const [isRestaurantSearchOpen, setIsRestaurantSearchOpen] = useState(false);
   const [showSearchInput, setShowSearchInput] = useState(false);
+  const [showSearchLeftIcon, setShowSearchLeftIcon] = useState(false);
   const [closedSearchColWidth, setClosedSearchColWidth] = useState<string>("2.25rem");
   const [isDesktopSearch, setIsDesktopSearch] = useState(false);
   const restaurantSearchInputRef = useRef<HTMLInputElement>(null);
@@ -447,6 +448,7 @@ export default function RestaurantMenuBrowser({
   // Open: render input immediately, then expand grid track
   const openRestaurantSearch = () => {
     setShowSearchInput(true);
+    setShowSearchLeftIcon(true);
     setIsRestaurantSearchOpen(true);
     setTimeout(() => restaurantSearchInputRef.current?.focus(), 50);
   };
@@ -455,6 +457,9 @@ export default function RestaurantMenuBrowser({
   const closeRestaurantSearch = () => {
     setRestaurantSearchQuery("");
     setIsRestaurantSearchOpen(false);
+    // Hide the left search icon near the end of the shrink animation so it
+    // doesn't get pushed out of the right edge as the column collapses.
+    setTimeout(() => setShowSearchLeftIcon(false), 200);
     setTimeout(() => setShowSearchInput(false), 300);
   };
   const [restaurantBundles, setRestaurantBundles] = useState<
@@ -1540,50 +1545,11 @@ export default function RestaurantMenuBrowser({
 
         <div className="mt-3">
               <div
-                className="sticky z-30 mt-2 mb-3 flex items-center gap-2 w-full max-w-full box-border"
+                className="sticky z-30 mt-2 mb-3 flex items-center gap-2 w-full max-w-full box-border overflow-hidden"
                 style={{
                   top: stickyTopOffset + 8,
                 }}
               >
-                {/* Search — explicit square (width=height) when closed, expands width when open */}
-                <div
-                  className="relative flex-shrink-0"
-                  style={{
-                    width: isRestaurantSearchOpen
-                      ? (isDesktopSearch ? "min(100%, 14rem)" : "100%")
-                      : closedSearchColWidth,
-                    height: closedSearchColWidth,
-                    transition: "width 300ms ease-in-out",
-                  }}
-                >
-                  {showSearchInput ? (
-                    <>
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none z-10" />
-                      <input
-                        ref={restaurantSearchInputRef}
-                        type="text"
-                        value={restaurantSearchQuery}
-                        onChange={(e) => setRestaurantSearchQuery(e.target.value)}
-                        placeholder="Search items..."
-                        className="w-full h-full pl-9 pr-9 rounded-full border border-primary bg-white text-sm focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
-                      />
-                      <button
-                        onClick={closeRestaurantSearch}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={openRestaurantSearch}
-                      className="h-full w-full rounded-full border border-base-300 bg-white/50 backdrop-blur-md shadow-sm flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary transition-colors"
-                    >
-                      <Search className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-
                 {/* Pill row — takes remaining flex space, can shrink to 0 */}
                 <div
                   ref={setPillRowEl}
@@ -1612,6 +1578,50 @@ export default function RestaurantMenuBrowser({
                       );
                     })}
                   </div>
+                </div>
+
+                {/* Search — explicit square (width=height) when closed, expands width when open */}
+                <div
+                  className="relative flex-shrink-0 overflow-hidden"
+                  style={{
+                    width: isRestaurantSearchOpen
+                      ? (isDesktopSearch ? "min(100%, 14rem)" : "100%")
+                      : closedSearchColWidth,
+                    height: closedSearchColWidth,
+                    transition: "width 300ms ease-in-out",
+                  }}
+                >
+                  {showSearchInput ? (
+                    <>
+                      {showSearchLeftIcon && (
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none z-10" />
+                      )}
+                      <input
+                        ref={restaurantSearchInputRef}
+                        type="text"
+                        value={restaurantSearchQuery}
+                        onChange={(e) => setRestaurantSearchQuery(e.target.value)}
+                        placeholder="Search items..."
+                        style={{ minWidth: 0 }}
+                        className={`h-full w-full min-w-0 rounded-full border border-primary bg-white text-sm focus:outline-none focus:ring-1 focus:ring-primary shadow-sm ${showSearchLeftIcon ? "pl-9" : "pl-2"} ${isRestaurantSearchOpen ? "pr-9" : "pr-2"}`}
+                      />
+                      {isRestaurantSearchOpen && (
+                        <button
+                          onClick={closeRestaurantSearch}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <button
+                      onClick={openRestaurantSearch}
+                      className="h-full w-full rounded-full border border-base-300 bg-white/50 backdrop-blur-md shadow-sm flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary transition-colors"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 
