@@ -1,6 +1,6 @@
 "use client";
 
-import { createRef } from "react";
+import { createRef, useEffect } from "react";
 import { X, Clock, Tag, Pencil, ShoppingBag, AlertTriangle } from "lucide-react";
 import { ViewOrderModalProps } from "./types";
 import SelectedItemsByCategory from "./SelectedItemsByCategory";
@@ -45,6 +45,16 @@ export default function ViewOrderModal({
   onAddSessionToDay,
   restaurants,
 }: ViewOrderModalProps) {
+  // Lock body scroll while the modal is open so the page behind doesn't scroll
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const activeSession = mealSessions[activeSessionIndex];

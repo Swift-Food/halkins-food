@@ -1065,7 +1065,7 @@ export default function CateringOrderBuilder({
                 restaurants={restaurants}
                 className="flex-1 min-h-0"
               />
-              <div className="flex-shrink-0 flex flex-col gap-1.5 px-2 pb-4 pt-2">
+              <div className="flex-shrink-0 flex flex-col gap-1.5 pb-4 pt-2">
                 {desktopCheckoutNotice && <div className="hidden md:block">{desktopCheckoutNotice}</div>}
                 {totalItems > 0 && (
                   <button
