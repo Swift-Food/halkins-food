@@ -70,32 +70,30 @@ export default function BundleDetailModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 flex items-start justify-between gap-3">
+        <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-3">
           <div>
-            <h3 className="font-bold text-lg text-gray-900">{bundle.name}</h3>
+            <h3 className="font-bold text-base text-gray-900">{bundle.name}</h3>
             {bundle.description && (
-              <div className="mt-1 max-h-[4.5rem] overflow-y-auto pr-1">
-                <p className="text-sm leading-6 text-gray-500">
-                  {bundle.description}
-                </p>
+              <div className="mt-0.5 max-h-[3.5rem] overflow-y-auto pr-1">
+                <p className="text-xs leading-5 text-gray-500">{bundle.description}</p>
               </div>
             )}
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-base-200 transition-colors flex-shrink-0"
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-base-200 transition-colors flex-shrink-0"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           </button>
         </div>
 
         {/* Show descriptions toggle */}
-        {hasAnyDescription && <div className="px-4 py-2 border-b border-base-200">
+        {hasAnyDescription && <div className="px-4 py-1.5 border-b border-base-200">
           <button
             onClick={() => setShowDescriptions((v) => !v)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+            className={`px-2.5 py-1 text-xs font-medium rounded-lg border transition-colors ${
               showDescriptions
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-base-300 text-gray-600 hover:bg-base-100"
@@ -106,21 +104,21 @@ export default function BundleDetailModal({
         </div>}
 
         {/* Guest count selector */}
-        <div className="px-4 py-3 border-b border-base-200 bg-base-100/50">
-          <div className="space-y-2">
+        <div className="px-4 py-2 border-b border-base-200 bg-base-100/50">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700">Number of guests</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs font-medium text-gray-700">Number of guests</p>
+                <p className="text-[11px] text-gray-500">
                   {quantity} bundle{quantity !== 1 ? "s" : ""} • Serves ~{peopleServed} people
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setGuestCountInput((v) => String(Math.max(1, (parseInt(v, 10) || 1) - 1)))}
-                  className="w-8 h-8 flex items-center justify-center rounded-full border border-base-300 hover:bg-base-200 transition-colors"
+                  className="w-7 h-7 flex items-center justify-center rounded-full border border-base-300 hover:bg-base-200 transition-colors"
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-3 h-3" />
                 </button>
                 <input
                   type="text"
@@ -129,13 +127,13 @@ export default function BundleDetailModal({
                   value={guestCountInput}
                   onChange={(e) => setGuestCountInput(e.target.value.replace(/\D/g, ""))}
                   onBlur={() => setGuestCountInput(String(Math.max(1, parseInt(guestCountInput, 10) || 1)))}
-                  className="w-14 text-center font-bold text-lg border border-base-300 rounded-lg py-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-12 text-center font-bold text-base border border-base-300 rounded-lg py-0.5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
                 <button
                   onClick={() => setGuestCountInput((v) => String((parseInt(v, 10) || 1) + 1))}
-                  className="w-8 h-8 flex items-center justify-center rounded-full border border-base-300 hover:bg-base-200 transition-colors"
+                  className="w-7 h-7 flex items-center justify-center rounded-full border border-base-300 hover:bg-base-200 transition-colors"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -143,7 +141,7 @@ export default function BundleDetailModal({
               <div className="flex gap-2">
                 <button
                   onClick={() => setRoundUp(false)}
-                  className={`flex-1 text-xs py-1.5 rounded-lg border transition-colors ${
+                  className={`flex-1 text-xs py-1 rounded-lg border transition-colors ${
                     !roundUp
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-base-300 text-gray-600 hover:bg-base-100"
@@ -153,7 +151,7 @@ export default function BundleDetailModal({
                 </button>
                 <button
                   onClick={() => setRoundUp(true)}
-                  className={`flex-1 text-xs py-1.5 rounded-lg border transition-colors ${
+                  className={`flex-1 text-xs py-1 rounded-lg border transition-colors ${
                     roundUp
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-base-300 text-gray-600 hover:bg-base-100"
@@ -181,13 +179,13 @@ export default function BundleDetailModal({
               <div key={item.id} className="px-4 py-2">
                 <div className="flex items-stretch gap-3">
                   {/* Quantity */}
-                  <div className="flex-shrink-0 flex items-center justify-center">
+                  <div className="flex-shrink-0 flex items-start sm:items-center justify-center pt-1 sm:pt-0">
                     <span className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-bold text-sm">
                       ×{scaledQty}
                     </span>
                   </div>
                   {/* Image */}
-                  <div className="relative flex-shrink-0 w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-base-200">
+                  <div className="relative flex-shrink-0 w-16 h-16 sm:w-24 sm:h-24 rounded-lg overflow-hidden bg-base-200">
                     {item.menuItemImageUrl ? (
                       <Image
                         src={item.menuItemImageUrl}
@@ -205,10 +203,15 @@ export default function BundleDetailModal({
                   </div>
                   {/* Details */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 text-sm">{item.menuItemName}</p>
-                    {(servesCount > 0 || dietaryFilters.length > 0) && (
-                      <div className="mt-1 flex flex-wrap gap-1.5 items-center">
-                        {servesCount > 0 && <span className="text-[11px] text-gray-500">Serves ~{servesCount}</span>}
+                    <div className="flex items-start justify-between gap-1">
+                      <p className="font-semibold text-gray-900 text-sm">{item.menuItemName}</p>
+                      <span className="text-sm font-bold text-gray-800 flex-shrink-0">£{lineTotal.toFixed(2)}</span>
+                    </div>
+                    {servesCount > 0 && (
+                      <p className="text-[11px] text-gray-500 mt-0.5">Serves ~{servesCount}</p>
+                    )}
+                    {dietaryFilters.length > 0 && (
+                      <div className="mt-0.5 flex flex-wrap gap-1 items-center">
                         {dietaryFilters.slice(0, 4).map((filter) => {
                           const icon = DIETARY_ICON_MAP[filter.toLowerCase()];
                           if (!icon) return null;
@@ -224,7 +227,7 @@ export default function BundleDetailModal({
                       </div>
                     )}
                     {showDescriptions && item.menuItemDescription && (
-                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{item.menuItemDescription}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 break-words w-full">{item.menuItemDescription}</p>
                     )}
                     {item.selectedAddons && item.selectedAddons.length > 0 && (
                       <div className="mt-1 space-y-0.5">
@@ -237,9 +240,6 @@ export default function BundleDetailModal({
                       </div>
                     )}
                   </div>
-                  <span className="text-sm font-bold text-gray-800 flex-shrink-0 pt-1">
-                    £{lineTotal.toFixed(2)}
-                  </span>
                 </div>
               </div>
             );
