@@ -10,7 +10,7 @@ const TUTORIAL_STORAGE_KEY = "catering_tutorial_completed";
 interface TutorialRefs {
   addDayNavButtonRef: RefObject<HTMLButtonElement | null>;
   backButtonRef: RefObject<HTMLButtonElement | null>;
-  firstDayTabRef: RefObject<HTMLButtonElement | null>;
+  firstDayTabRef: RefObject<HTMLDivElement | null>;
   firstSessionPillRef: RefObject<HTMLButtonElement | null>;
   addSessionNavButtonRef: RefObject<HTMLButtonElement | null>;
   categoriesRowRef: RefObject<HTMLDivElement | null>;

@@ -22,9 +22,9 @@ export default function AddDayModal({
             <Calendar className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Add New Day</h3>
+            <h3 className="text-lg font-bold text-gray-900">Add Session</h3>
             <p className="text-sm text-gray-500">
-              Select a date for your event
+              Select a date for the new session
             </p>
           </div>
         </div>
@@ -70,7 +70,7 @@ export default function AddDayModal({
             onClick={onConfirm}
             className="flex-1 px-4 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors font-medium"
           >
-            Add Day
+            Add Session
           </button>
         </div>
       </div>

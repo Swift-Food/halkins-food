@@ -22,6 +22,7 @@ export interface SessionEditorProps {
   eventStartTime?: string;
   eventEndDate?: string;
   eventEndTime?: string;
+  existingDates?: { date: string; dayName: string; displayDate: string }[];
 }
 
 // SessionAccordion component props
@@ -56,7 +57,7 @@ export interface DateSessionNavProps {
   // Tutorial refs
   addDayNavButtonRef: React.RefObject<HTMLButtonElement | null>;
   backButtonRef: React.RefObject<HTMLButtonElement | null>;
-  firstDayTabRef: React.RefObject<HTMLButtonElement | null>;
+  firstDayTabRef: React.RefObject<HTMLDivElement | null>;
   firstSessionPillRef: React.RefObject<HTMLButtonElement | null>;
   addSessionNavButtonRef: React.RefObject<HTMLButtonElement | null>;
 }

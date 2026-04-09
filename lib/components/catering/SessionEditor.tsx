@@ -25,6 +25,7 @@ export default function SessionEditor({
   eventStartTime,
   eventEndDate,
   eventEndTime,
+  existingDates = [],
 }: SessionEditorProps) {
   const [sessionName, setSessionName] = useState(session.sessionName);
   const [sessionDate, setSessionDate] = useState(session.sessionDate);
@@ -164,6 +165,35 @@ export default function SessionEditor({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Date
             </label>
+            {existingDates.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-2">
+                {existingDates.map((d) => {
+                  const isActive = sessionDate === d.date;
+                  return (
+                    <button
+                      key={d.date}
+                      type="button"
+                      onClick={() => {
+                        setSessionDate(d.date);
+                        setValidationError(null);
+                      }}
+                      className={`flex-shrink-0 px-3 py-2 rounded-lg border transition-colors ${
+                        isActive
+                          ? "bg-primary text-white border-primary"
+                          : "bg-base-100 text-gray-700 border-base-300 hover:border-primary"
+                      }`}
+                    >
+                      <div className="text-[10px] font-medium opacity-80 text-center">
+                        {d.dayName}
+                      </div>
+                      <div className="text-sm font-bold whitespace-nowrap">
+                        {d.displayDate}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <input
               type="date"
               value={sessionDate}
