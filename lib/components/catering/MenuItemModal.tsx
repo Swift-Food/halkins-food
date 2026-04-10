@@ -1287,22 +1287,22 @@ export default function MenuItemModal({
         {/* Sticky Action Buttons */}
         {viewOnly ? (
           onAddToOrder && (
-            <div className="sticky bottom-0 p-4 pt-3 md:p-6 md:pt-4 bg-base-100 border-t border-base-300 rounded-b-xl">
+            <div className="sticky bottom-0 px-4 py-3 md:px-6 md:py-4 bg-base-100 border-t border-base-300 rounded-b-xl">
               <button
                 onClick={() => onAddToOrder(item)}
-                className="w-full bg-primary hover:opacity-90 text-white py-2 md:py-3 rounded-lg font-medium transition-all text-sm md:text-base"
+                className="w-full bg-primary hover:opacity-90 text-white py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm"
               >
                 Add to Order
               </button>
             </div>
           )
         ) : (
-          <div className="sticky bottom-0 p-4 pt-3 md:p-6 md:pt-4 bg-base-100 border-t border-base-300 rounded-b-xl">
+          <div className="sticky bottom-0 px-4 py-3 md:px-6 md:py-4 bg-base-100 border-t border-base-300 rounded-b-xl">
             {forceAddMode ? (
               <button
                 onClick={handleAddToCart}
                 disabled={isMinSelectionsUnmet}
-                className={`w-full py-2 md:py-3 rounded-lg font-medium transition-all text-sm md:text-base ${
+                className={`w-full py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm ${
                   isMinSelectionsUnmet
                     ? "bg-base-300 text-base-content/50 cursor-not-allowed"
                     : "bg-primary hover:opacity-90 text-white"
@@ -1315,7 +1315,7 @@ export default function MenuItemModal({
                 <button
                   onClick={handleAddToCart}
                   disabled={isMinSelectionsUnmet}
-                  className={`w-full py-2 md:py-3 rounded-lg font-medium transition-all text-sm md:text-base ${
+                  className={`w-full py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm ${
                     isMinSelectionsUnmet
                       ? "bg-base-300 text-base-content/50 cursor-not-allowed"
                       : "bg-primary hover:opacity-90 text-white"
@@ -1330,7 +1330,7 @@ export default function MenuItemModal({
                       onClose();
                     }
                   }}
-                  className="w-full bg-error hover:opacity-90 text-white py-2 md:py-3 rounded-lg font-medium transition-all text-sm md:text-base"
+                  className="w-full bg-error hover:opacity-90 text-white py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm"
                 >
                   Remove from Order
                 </button>
@@ -1345,7 +1345,7 @@ export default function MenuItemModal({
                       onUpdateQuantity?.(item.id, newBackendQty);
                       onClose();
                     }}
-                    className="w-full bg-primary hover:opacity-90 text-white py-2 md:py-3 rounded-lg font-medium transition-all text-sm md:text-base"
+                    className="w-full bg-primary hover:opacity-90 text-white py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm"
                   >
                     Save Order
                   </button>
@@ -1355,7 +1355,7 @@ export default function MenuItemModal({
                     onUpdateQuantity?.(item.id, 0);
                     onClose();
                   }}
-                  className="w-full bg-error hover:opacity-90 text-white py-2 md:py-3 rounded-lg font-medium transition-all text-sm md:text-base"
+                  className="w-full bg-error hover:opacity-90 text-white py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm"
                 >
                   Remove from Order
                 </button>
@@ -1364,7 +1364,7 @@ export default function MenuItemModal({
               <button
                 onClick={handleAddToCart}
                 disabled={isMinSelectionsUnmet}
-                className={`w-full py-2 md:py-3 rounded-lg font-medium transition-all text-sm md:text-base ${
+                className={`w-full py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm ${
                   isMinSelectionsUnmet
                     ? "bg-base-300 text-base-content/50 cursor-not-allowed"
                     : "bg-primary hover:opacity-90 text-white"
