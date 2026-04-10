@@ -2011,19 +2011,52 @@ export default function RestaurantMenuBrowser({
                     ({apiSearchResults.restaurants.length})
                   </span>
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {apiSearchResults.restaurants.map((r: any) => {
-                    const restaurant = availableRestaurants.find((ar) => ar.id === r.id);
-                    if (!restaurant) return null;
-                    return (
-                      <div key={restaurant.id}>
-                        {renderRestaurantCard(restaurant, () =>
-                          handleSelectRestaurant(restaurant.id)
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                {(() => {
+                  const matched = apiSearchResults.restaurants
+                    .map((r: any) => availableRestaurants.find((ar) => ar.id === r.id))
+                    .filter((r): r is Restaurant => r !== undefined);
+                  const available = matched.filter((r) => {
+                    const windowInfo = getRestaurantCateringWindowInfo(r, sessionDate, eventTime);
+                    const noticeMet = isRestaurantAdvanceNoticeMet(r, sessionDate, eventTime);
+                    return windowInfo.isAvailable && noticeMet;
+                  });
+                  const unavailable = matched.filter((r) => {
+                    const windowInfo = getRestaurantCateringWindowInfo(r, sessionDate, eventTime);
+                    const noticeMet = isRestaurantAdvanceNoticeMet(r, sessionDate, eventTime);
+                    return !windowInfo.isAvailable || !noticeMet;
+                  });
+                  return (
+                    <div className="space-y-4">
+                      {available.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                          {available.map((restaurant) => (
+                            <div key={restaurant.id} className="h-full">
+                              {renderRestaurantCard(restaurant, () =>
+                                handleSelectRestaurant(restaurant.id)
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {unavailable.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                            Unavailable today
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                            {unavailable.map((restaurant) => (
+                              <div key={restaurant.id} className="h-full">
+                                {renderRestaurantCard(restaurant, () =>
+                                  handleSelectRestaurant(restaurant.id)
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
             {apiSearchResults.menuItems.length > 0 && (
