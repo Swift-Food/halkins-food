@@ -1637,7 +1637,7 @@ export default function RestaurantMenuBrowser({
             const rating = selectedRestaurant.averageRating && parseFloat(selectedRestaurant.averageRating) > 0
               ? parseFloat(selectedRestaurant.averageRating)
               : null;
-            if (!rating && !distance) return null;
+            if (!rating && !distance && !selectedRestaurantAdvanceNoticeText) return null;
             return (
               <div className="flex items-center gap-3 mt-1 mb-1">
                 {rating !== null && (
@@ -1651,6 +1651,15 @@ export default function RestaurantMenuBrowser({
                 )}
                 {distance !== null && (
                   <span className="text-sm text-gray-500">{distance.toFixed(1)} mi away</span>
+                )}
+                {selectedRestaurantAdvanceNoticeText && (
+                  <>
+                    {(rating !== null || distance !== null) && <span className="text-gray-300">·</span>}
+                    <span className={`flex items-center gap-1 text-sm ${isSelectedRestaurantWithinNoticeWindow ? "text-primary" : "text-gray-500"}`}>
+                      <Clock3 className={`h-3.5 w-3.5 ${isSelectedRestaurantWithinNoticeWindow ? "text-primary" : "text-gray-400"}`} />
+                      {selectedRestaurantAdvanceNoticeText}
+                    </span>
+                  </>
                 )}
               </div>
             );
@@ -1674,21 +1683,71 @@ export default function RestaurantMenuBrowser({
               )}
             </>
           )}
-          <div className="mt-0.5 flex flex-wrap gap-2">
-            {selectedRestaurant.minCateringOrderQuantity &&
-            selectedRestaurant.minCateringOrderQuantity > 0 ? (
+          {selectedRestaurant.minCateringOrderQuantity &&
+          selectedRestaurant.minCateringOrderQuantity > 0 && (
+            <div className="mt-0.5">
               <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
                 Min order: {selectedRestaurant.minCateringOrderQuantity} items
               </span>
-            ) : null}
-            {selectedRestaurantAdvanceNoticeText ? (
-              <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${isSelectedRestaurantWithinNoticeWindow ? "text-primary" : "text-gray-500"}`}>
-                <Clock3 className={`h-3.5 w-3.5 ${isSelectedRestaurantWithinNoticeWindow ? "text-primary" : "text-gray-400"}`} />
-                {selectedRestaurantAdvanceNoticeText}
-              </span>
-            ) : null}
-          </div>
+            </div>
+          )}
         </div>
+
+        {restaurantPromotions.length > 0 && (
+          <div className="mt-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-sm font-semibold text-gray-900">Active Offers</span>
+              <span className="bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                {restaurantPromotions.length}
+              </span>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory">
+              {restaurantPromotions.map((promo) => {
+                let headline = "";
+                const sortedTiers = [...(promo.discountTiers ?? [])].sort((a, b) => a.minQuantity - b.minQuantity);
+                if (promo.promotionType === "BUY_MORE_SAVE_MORE" && sortedTiers.length) {
+                  const max = Math.max(...sortedTiers.map((t) => Number(t.discountPercentage)));
+                  headline = `Up to ${max}% OFF`;
+                } else if (promo.promotionType === "BOGO") {
+                  headline = promo.buyQuantity && promo.getQuantity
+                    ? `Buy ${promo.buyQuantity} Get ${promo.getQuantity} Free`
+                    : "Buy One Get One Free";
+                } else if (promo.discountPercentage) {
+                  headline = `${Number(promo.discountPercentage)}% OFF`;
+                } else {
+                  headline = promo.name;
+                }
+                const endDate = new Date(promo.endDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+                return (
+                  <div key={promo.id} className="flex-shrink-0 snap-start bg-white border border-base-200 rounded-2xl p-4 min-w-[220px] max-w-[280px] shadow-sm">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide truncate">{promo.name}</p>
+                      <Tag className="w-4 h-4 flex-shrink-0 text-primary" />
+                    </div>
+                    <p className="text-lg font-black text-gray-900 leading-none">{headline}</p>
+                    {promo.promotionType === "BUY_MORE_SAVE_MORE" && sortedTiers.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2.5">
+                        {sortedTiers.map((tier, idx) => (
+                          <span key={idx} className="text-[11px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            {tier.minQuantity}+ → {Number(tier.discountPercentage)}%
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {promo.description && (
+                      <p className="text-xs text-gray-400 mt-1.5 line-clamp-2">{promo.description}</p>
+                    )}
+                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-2.5 text-xs text-gray-400">
+                      {promo.minOrderAmount > 0 && <span>Min. £{promo.minOrderAmount}</span>}
+                      {promo.maxDiscountAmount && <span>· Max. £{promo.maxDiscountAmount} off</span>}
+                      <span>· Until {endDate}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="mt-2">{renderDietaryFilters()}</div>
 
@@ -1783,49 +1842,6 @@ export default function RestaurantMenuBrowser({
                   <p className="text-gray-500 text-sm">
                     No items match the current filters.
                   </p>
-                </div>
-              )}
-
-              {restaurantPromotions.length > 0 && (
-                <div className="mb-4 flex flex-col gap-2">
-                  {restaurantPromotions.map((promo) => {
-                    let label = "";
-                    let detail = "";
-
-                    if (promo.promotionType === "BUY_MORE_SAVE_MORE" && promo.discountTiers?.length) {
-                      const sorted = [...promo.discountTiers].sort((a, b) => a.minQuantity - b.minQuantity);
-                      label = "Buy More, Save More";
-                      detail = sorted.map((t) => `${t.minQuantity}+ items: ${t.discountPercentage}% off`).join(" · ");
-                    } else if (promo.promotionType === "BOGO") {
-                      label = "Buy One Get One";
-                      detail =
-                        promo.buyQuantity && promo.getQuantity
-                          ? `Buy ${promo.buyQuantity} get ${promo.getQuantity} free`
-                          : "Buy one get one free";
-                    } else if (promo.discountPercentage) {
-                      label = promo.name;
-                      detail = `${promo.discountPercentage}% off`;
-                      if (promo.minOrderAmount) detail += ` on orders over £${promo.minOrderAmount}`;
-                    } else {
-                      label = promo.name;
-                      detail = promo.description;
-                    }
-
-                    return (
-                      <div
-                        key={promo.id}
-                        className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3"
-                      >
-                        <Tag className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-green-800">{label}</p>
-                          {detail && (
-                            <p className="text-xs text-green-700 mt-0.5">{detail}</p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
               )}
 
