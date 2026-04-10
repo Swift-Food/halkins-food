@@ -69,11 +69,7 @@ export default function DateSessionNav({
 
               {/* Sessions for this day */}
               {day.sessions.length > 0 && (
-                <div
-                  className={`flex items-center gap-1.5 pl-3.5 pr-1.5 py-1 rounded-lg -ml-2 ${
-                    isActiveDay ? "bg-primary/10" : "bg-base-200/70"
-                  }`}
-                >
+                <div className="flex items-stretch gap-0.5 pl-3.5 pr-1.5 bg-white border border-base-300 rounded-lg -ml-2">
                   {day.sessions.map(({ session, index }, sIdx) => (
                     <button
                       key={index}
@@ -91,10 +87,10 @@ export default function DateSessionNav({
                         }
                       }}
                       onClick={() => onSessionPillClick(index)}
-                      className={`flex-shrink-0 px-2.5 py-1 rounded transition-all ${
+                      className={`flex flex-col justify-center flex-shrink-0 px-2.5 pb-0.5 transition-all border-b-2 ${
                         expandedSessionIndex === index
-                          ? "bg-white text-primary border border-primary"
-                          : "bg-white/60 text-gray-600 hover:bg-white border border-transparent"
+                          ? "border-primary text-primary"
+                          : "border-transparent text-gray-500 hover:text-gray-700"
                       }`}
                     >
                       <div className="text-[9px] font-medium opacity-70">
