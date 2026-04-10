@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { MenuItem } from "@/types/restaurant.types";
 import MenuItemModal from "../MenuItemModal";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, ImageOff } from "lucide-react";
 
 interface SwapItemModalProps {
   currentItem: MenuItem;
@@ -92,8 +92,8 @@ export default function SwapItemModal({
                       className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
                     />
                   ) : (
-                    <div className="w-14 h-14 rounded-lg bg-base-200 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs text-gray-400">No img</span>
+                    <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center flex-shrink-0">
+                      <ImageOff className="w-5 h-5 text-primary/40" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
