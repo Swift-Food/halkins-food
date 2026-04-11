@@ -1748,7 +1748,7 @@ export default function RestaurantMenuBrowser({
                 {/* Pill row — takes remaining flex space, can shrink to 0 */}
                 <div
                   ref={setPillRowEl}
-                  className={`flex-1 min-w-0 overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 py-0 md:px-4 md:py-1 shadow-sm backdrop-blur-md flex items-center h-11 ${isRestaurantSearchOpen ? "hidden md:flex" : ""}`}
+                  className={`flex-1 min-w-0 overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 shadow-sm backdrop-blur-md flex items-center h-11 ${isRestaurantSearchOpen ? "hidden md:flex" : ""}`}
                 >
                   <div className="flex items-center gap-2 md:gap-5">
                     {pillRowGroupNames.map((name) => {
@@ -1762,7 +1762,7 @@ export default function RestaurantMenuBrowser({
                             else groupButtonRefs.current.delete(name);
                           }}
                           onClick={() => handlePillClick(name)}
-                          className={`flex-shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 md:px-3 md:py-1.5 text-xs md:text-sm font-semibold transition-colors ${
+                          className={`flex-shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
                             isActive
                               ? "bg-primary text-white"
                               : "text-gray-500 hover:bg-black/5 hover:text-gray-700"
