@@ -1,13 +1,12 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { DateSessionNavProps } from "./types";
 
 export default function DateSessionNav({
   dayGroups,
   expandedSessionIndex,
-  isNavSticky,
   onSessionPillClick,
   onAddDay,
   formatTimeDisplay,
@@ -19,8 +18,23 @@ export default function DateSessionNav({
   const sessionButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const visibleDayGroups = dayGroups.filter((day) => day.date !== "unscheduled");
 
+  const navRef = useRef<HTMLDivElement>(null);
+  const [isNavSticky, setIsNavSticky] = useState(false);
+
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsNavSticky(entry.intersectionRatio < 1),
+      { threshold: [1], rootMargin: "-1px 0px 0px 0px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div
+      ref={navRef}
       data-catering-session-nav="true"
       className={`sticky top-0 z-40 bg-base-100 transition-shadow duration-200 ${
         isNavSticky

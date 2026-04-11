@@ -47,7 +47,7 @@ export interface DateSessionNavProps {
   selectedDayDate: string | null;
   currentDayGroup: DayGroup | null;
   expandedSessionIndex: number | null;
-  isNavSticky: boolean;
+  isNavSticky?: boolean;
   onDateClick: (dayDate: string) => void;
   onBackToDates: () => void;
   onSessionPillClick: (sessionIndex: number) => void;
