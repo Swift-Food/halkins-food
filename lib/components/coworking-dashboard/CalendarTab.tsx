@@ -123,6 +123,21 @@ function shouldCountForCalendarIndicator(order: CalendarOrderItem): boolean {
   return true;
 }
 
+function getOrderDates(order: CalendarOrderItem, fallbackDate: string): string[] {
+  if (!order.bookingStartTime) return [fallbackDate];
+  const s = new Date(order.bookingStartTime);
+  const e = order.bookingEndTime ? new Date(order.bookingEndTime) : s;
+  const start = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+  const end = new Date(e.getFullYear(), e.getMonth(), e.getDate());
+  const dates: string[] = [];
+  const cur = new Date(start);
+  while (cur <= end) {
+    dates.push(`${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, "0")}-${String(cur.getDate()).padStart(2, "0")}`);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates.length > 0 ? dates : [fallbackDate];
+}
+
 export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabProps) {
   const [calendarData, setCalendarData] = useState<CalendarResponse | null>(null);
   const [venues, setVenues] = useState<CoworkingVenueAdmin[]>([]);
@@ -196,23 +211,36 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
 
   const dateIndicators = useMemo(() => {
     if (!calendarData) return {};
-    const indicators: Record<string, { venueId: string | null; venueName: string | null; color: string; count: number }[]> = {};
+    // date -> venueKey -> Set<orderId> to avoid double-counting
+    const dateVenueOrders: Record<string, Record<string, Set<string>>> = {};
 
     for (const venue of calendarData.venues) {
       const venueKey = venue.venueId ?? "no-venue";
       if (!selectedVenueIds.has(venueKey)) continue;
 
       for (const dateGroup of venue.dates) {
-        const visibleCount = dateGroup.orders.filter(shouldCountForCalendarIndicator).length;
-        if (!indicators[dateGroup.date]) indicators[dateGroup.date] = [];
-        if (visibleCount > 0) {
-          indicators[dateGroup.date].push({
-            venueId: venue.venueId,
-            venueName: venue.venueName,
-            color: venueColorMap[venueKey],
-            count: visibleCount,
-          });
+        for (const order of dateGroup.orders) {
+          if (!shouldCountForCalendarIndicator(order)) continue;
+          for (const date of getOrderDates(order, dateGroup.date)) {
+            if (!dateVenueOrders[date]) dateVenueOrders[date] = {};
+            if (!dateVenueOrders[date][venueKey]) dateVenueOrders[date][venueKey] = new Set();
+            dateVenueOrders[date][venueKey].add(order.id);
+          }
         }
+      }
+    }
+
+    const indicators: Record<string, { venueId: string | null; venueName: string | null; color: string; count: number }[]> = {};
+    for (const [date, venueMap] of Object.entries(dateVenueOrders)) {
+      indicators[date] = [];
+      for (const [venueKey, orderIds] of Object.entries(venueMap)) {
+        const venue = calendarData.venues.find((v) => (v.venueId ?? "no-venue") === venueKey);
+        indicators[date].push({
+          venueId: venue?.venueId ?? null,
+          venueName: venue?.venueName ?? null,
+          color: venueColorMap[venueKey] ?? VENUE_COLORS[0],
+          count: orderIds.size,
+        });
       }
     }
 
@@ -228,9 +256,9 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
       if (!selectedVenueIds.has(venueKey)) continue;
 
       for (const dateGroup of venue.dates) {
-        if (dateGroup.date === selectedDate) {
-          for (const order of dateGroup.orders) {
-            if (!shouldCountForCalendarIndicator(order)) continue;
+        for (const order of dateGroup.orders) {
+          if (!shouldCountForCalendarIndicator(order)) continue;
+          if (getOrderDates(order, dateGroup.date).includes(selectedDate)) {
             orders.push({
               order,
               venueName: venue.venueName,
@@ -260,16 +288,17 @@ export default function CalendarTab({ spaceId, refreshToken = 0 }: CalendarTabPr
       if (!selectedVenueIds.has(venueKey)) continue;
 
       for (const dateGroup of venue.dates) {
-        const visibleOrders = dateGroup.orders.filter(shouldCountForCalendarIndicator);
-        if (visibleOrders.length === 0) continue;
-        if (!result[dateGroup.date]) result[dateGroup.date] = [];
-        for (const order of visibleOrders) {
-          result[dateGroup.date].push({
-            order,
-            venueName: venue.venueName,
-            venueId: venue.venueId,
-            color: venueColorMap[venueKey],
-          });
+        for (const order of dateGroup.orders) {
+          if (!shouldCountForCalendarIndicator(order)) continue;
+          for (const date of getOrderDates(order, dateGroup.date)) {
+            if (!result[date]) result[date] = [];
+            result[date].push({
+              order,
+              venueName: venue.venueName,
+              venueId: venue.venueId,
+              color: venueColorMap[venueKey],
+            });
+          }
         }
       }
     }

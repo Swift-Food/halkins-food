@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  Pencil,
 } from "lucide-react";
 
 interface OrderDetailModalProps {
@@ -148,6 +149,13 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function toDatetimeLocalValue(isoString: string | null): string {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+}
+
 function getAdminReviewNotesPreview(notes: string | null): string | null {
   if (!notes) return null;
 
@@ -184,6 +192,12 @@ export default function OrderDetailModal({
   const [showAdminReviewNotes, setShowAdminReviewNotes] = useState(false);
   const [venueHireFeeInput, setVenueHireFeeInput] = useState("");
   const [depositAmountInput, setDepositAmountInput] = useState("");
+  const [showEditDate, setShowEditDate] = useState(false);
+  const [editStartTime, setEditStartTime] = useState("");
+  const [editEndTime, setEditEndTime] = useState("");
+  const [editDateLoading, setEditDateLoading] = useState(false);
+  const [editDateError, setEditDateError] = useState("");
+  const [editDateSuccess, setEditDateSuccess] = useState("");
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -282,6 +296,41 @@ export default function OrderDetailModal({
       setActionError(getErrorMessage(caughtError, "Failed to set venue hire fee"));
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleEditDate = async () => {
+    if (!editStartTime || !editEndTime) {
+      setEditDateError("Both start and end times are required");
+      return;
+    }
+    if (new Date(editEndTime) <= new Date(editStartTime)) {
+      setEditDateError("End time must be after start time");
+      return;
+    }
+    setEditDateLoading(true);
+    setEditDateError("");
+    setEditDateSuccess("");
+    try {
+      const updated = await coworkingDashboardService.updateEventDate(
+        spaceId,
+        orderId,
+        {
+          bookingStartTime: new Date(editStartTime).toISOString(),
+          bookingEndTime: new Date(editEndTime).toISOString(),
+        },
+      );
+      setOrder(updated);
+      onOrderUpdated?.();
+      setShowEditDate(false);
+      setEditDateSuccess("Event date updated");
+      setTimeout(() => setEditDateSuccess(""), 3000);
+    } catch (caughtError: unknown) {
+      setEditDateError(
+        caughtError instanceof Error ? caughtError.message : "Failed to update event date",
+      );
+    } finally {
+      setEditDateLoading(false);
     }
   };
 
@@ -505,12 +554,89 @@ export default function OrderDetailModal({
                       </p>
                     )}
                     {order.booking.startTime && (
-                      <p className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-gray-400" />
-                        {formatDate(order.booking.startTime)}
-                        {order.booking.endTime &&
-                          ` - ${formatDate(order.booking.endTime)}`}
-                      </p>
+                      <>
+                        {showEditDate ? (
+                          <div className="space-y-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                              Edit Event Date
+                            </p>
+                            <div className="space-y-2">
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-gray-600">
+                                  Start
+                                </label>
+                                <input
+                                  type="datetime-local"
+                                  value={editStartTime}
+                                  onChange={(e) => setEditStartTime(e.target.value)}
+                                  className="w-full rounded-lg border border-blue-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                                />
+                              </div>
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-gray-600">
+                                  End
+                                </label>
+                                <input
+                                  type="datetime-local"
+                                  value={editEndTime}
+                                  onChange={(e) => setEditEndTime(e.target.value)}
+                                  className="w-full rounded-lg border border-blue-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                                />
+                              </div>
+                            </div>
+                            {editDateError && (
+                              <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+                                {editDateError}
+                              </div>
+                            )}
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleEditDate}
+                                disabled={editDateLoading}
+                                className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {editDateLoading ? "Saving..." : "Save"}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowEditDate(false);
+                                  setEditDateError("");
+                                }}
+                                disabled={editDateLoading}
+                                className="rounded-lg px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-gray-400" />
+                            {formatDate(order.booking.startTime)}
+                            {order.booking.endTime &&
+                              ` - ${formatDate(order.booking.endTime)}`}
+                            <button
+                              onClick={() => {
+                                setEditStartTime(toDatetimeLocalValue(order.booking.startTime));
+                                setEditEndTime(toDatetimeLocalValue(order.booking.endTime));
+                                setEditDateError("");
+                                setEditDateSuccess("");
+                                setShowEditDate(true);
+                              }}
+                              className="ml-auto rounded p-0.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                              title="Edit date"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          </p>
+                        )}
+                        {editDateSuccess && (
+                          <p className="flex items-center gap-1.5 text-xs font-medium text-green-700">
+                            <Check className="h-3.5 w-3.5" />
+                            {editDateSuccess}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -719,23 +845,7 @@ export default function OrderDetailModal({
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <div>
-                          <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
-                            Customer Deposit (£) <span className="text-gray-400 font-normal normal-case">(optional)</span>
-                          </label>
-                          <div className="relative">
-                            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-gray-400">£</span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={depositAmountInput}
-                              onChange={(e) => setDepositAmountInput(e.target.value)}
-                              placeholder="0.00"
-                              className="w-full rounded-lg border border-gray-300 py-2 pl-7 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                            />
-                          </div>
-                        </div>
+                   
                         <div className="flex gap-3">
                           <button
                             onClick={handleApprove}

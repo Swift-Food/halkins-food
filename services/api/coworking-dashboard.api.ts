@@ -218,6 +218,29 @@ class CoworkingDashboardService {
   }
 
   /**
+   * Update the booking start/end times for an event.
+   */
+  async updateEventDate(
+    spaceId: string,
+    eventId: string,
+    body: { bookingStartTime: string; bookingEndTime: string },
+  ): Promise<DashboardOrderDetailResponse> {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}${API_ENDPOINTS.COWORKING_DASHBOARD_UPDATE_EVENT_DATE(spaceId, eventId)}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      },
+    );
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to update event date');
+    }
+    return response.json();
+  }
+
+  /**
    * Reject a pending order
    */
   async rejectOrder(
