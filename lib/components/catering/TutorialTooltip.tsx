@@ -48,6 +48,7 @@ export default function TutorialTooltip({
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [arrowPosition, setArrowPosition] = useState({ top: 0, left: 0 });
   const [highlightRect, setHighlightRect] = useState<HighlightRect | null>(null);
+  const [isReady, setIsReady] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const prevStepIdRef = useRef<string | null>(null);
 
@@ -157,12 +158,19 @@ export default function TutorialTooltip({
   }, [step]);
 
   useEffect(() => {
-    if (!step) return;
+    if (!step) {
+      setIsReady(false);
+      return;
+    }
 
     let cancelled = false;
 
-    // schedulePosition: retry until targetRef is populated, then position
+    // schedulePosition: called by onBeforeShow when ready — marks the step as ready to display,
+    // then retries until targetRef is populated and positions the tooltip.
     const schedulePosition = () => {
+      // Always mark ready — safe to call even if this effect invocation was superseded.
+      setIsReady(true);
+      if (cancelled) return;
       let attempts = 0;
       const tryUpdate = () => {
         if (cancelled) return;
@@ -188,6 +196,7 @@ export default function TutorialTooltip({
     // onBeforeShow is responsible for scrolling; it calls onComplete when ready to position.
     if (step.id !== prevStepIdRef.current) {
       prevStepIdRef.current = step.id;
+      setIsReady(false);
       if (step.onBeforeShow) {
         step.onBeforeShow(schedulePosition);
       } else {
@@ -206,6 +215,14 @@ export default function TutorialTooltip({
     };
   }, [step, updatePosition]);
 
+  // Once isReady flips true, trigger positioning immediately.
+  useEffect(() => {
+    if (isReady && step?.targetRef?.current) {
+      updatePosition();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady]);
+
   // Handle click on target element for requiresClick steps (not manualAdvance)
   useEffect(() => {
     if (!step?.requiresClick || step.manualAdvance || !step.targetRef?.current) return;
@@ -220,7 +237,7 @@ export default function TutorialTooltip({
     return () => targetEl.removeEventListener("click", handleClick);
   }, [step, onNext]);
 
-  if (typeof document === "undefined" || !step) return null;
+  if (typeof document === "undefined" || !step || !isReady) return null;
 
   const getArrowClasses = () => {
     const base = "absolute w-4 h-4 bg-primary transform rotate-45";
