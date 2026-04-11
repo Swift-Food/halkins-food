@@ -618,7 +618,7 @@ export default function MenuItemModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[60] flex items-end md:items-center justify-center md:p-4"
       onClick={onClose}
     >
       {/* Backdrop */}
@@ -626,7 +626,7 @@ export default function MenuItemModal({
 
       {/* Modal Content */}
       <div
-        className="relative bg-base-100 rounded-xl max-w-lg w-full max-h-[90vh] flex flex-col"
+        className="relative bg-base-100 rounded-t-2xl md:rounded-xl max-w-lg w-full h-[92dvh] md:h-auto md:max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -1287,22 +1287,22 @@ export default function MenuItemModal({
         {/* Sticky Action Buttons */}
         {viewOnly ? (
           onAddToOrder && (
-            <div className="sticky bottom-0 px-4 py-3 md:px-6 md:py-4 bg-base-100 border-t border-base-300 rounded-b-xl">
+            <div className="sticky bottom-0 px-3 py-2 bg-base-100 border-t border-base-300 rounded-b-xl">
               <button
                 onClick={() => onAddToOrder(item)}
-                className="w-full bg-primary hover:opacity-90 text-white py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm"
+                className="w-full bg-primary hover:opacity-90 text-white py-3 rounded-lg font-medium transition-all text-sm"
               >
                 Add to Order
               </button>
             </div>
           )
         ) : (
-          <div className="sticky bottom-0 px-4 py-3 md:px-6 md:py-4 bg-base-100 border-t border-base-300 rounded-b-xl">
+          <div className="sticky bottom-0 px-3 py-2 bg-base-100 border-t border-base-300 rounded-b-xl">
             {forceAddMode ? (
               <button
                 onClick={handleAddToCart}
                 disabled={isMinSelectionsUnmet}
-                className={`w-full py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm ${
+                className={`w-full py-3 rounded-lg font-medium transition-all text-sm ${
                   isMinSelectionsUnmet
                     ? "bg-base-300 text-base-content/50 cursor-not-allowed"
                     : "bg-primary hover:opacity-90 text-white"
@@ -1315,7 +1315,7 @@ export default function MenuItemModal({
                 <button
                   onClick={handleAddToCart}
                   disabled={isMinSelectionsUnmet}
-                  className={`w-full py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm ${
+                  className={`w-full py-3 rounded-lg font-medium transition-all text-sm ${
                     isMinSelectionsUnmet
                       ? "bg-base-300 text-base-content/50 cursor-not-allowed"
                       : "bg-primary hover:opacity-90 text-white"
@@ -1330,7 +1330,7 @@ export default function MenuItemModal({
                       onClose();
                     }
                   }}
-                  className="w-full bg-error hover:opacity-90 text-white py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm"
+                  className="w-full bg-error hover:opacity-90 text-white py-3 rounded-lg font-medium transition-all text-sm"
                 >
                   Remove from Order
                 </button>
@@ -1345,7 +1345,7 @@ export default function MenuItemModal({
                       onUpdateQuantity?.(item.id, newBackendQty);
                       onClose();
                     }}
-                    className="w-full bg-primary hover:opacity-90 text-white py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm"
+                    className="w-full bg-primary hover:opacity-90 text-white py-3 rounded-lg font-medium transition-all text-sm"
                   >
                     Save Order
                   </button>
@@ -1355,7 +1355,7 @@ export default function MenuItemModal({
                     onUpdateQuantity?.(item.id, 0);
                     onClose();
                   }}
-                  className="w-full bg-error hover:opacity-90 text-white py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm"
+                  className="w-full bg-error hover:opacity-90 text-white py-3 rounded-lg font-medium transition-all text-sm"
                 >
                   Remove from Order
                 </button>
@@ -1364,7 +1364,7 @@ export default function MenuItemModal({
               <button
                 onClick={handleAddToCart}
                 disabled={isMinSelectionsUnmet}
-                className={`w-full py-1.5 md:py-2 rounded-lg font-medium transition-all text-xs md:text-sm ${
+                className={`w-full py-3 rounded-lg font-medium transition-all text-sm ${
                   isMinSelectionsUnmet
                     ? "bg-base-300 text-base-content/50 cursor-not-allowed"
                     : "bg-primary hover:opacity-90 text-white"
