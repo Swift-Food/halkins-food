@@ -626,7 +626,7 @@ export default function MenuItemModal({
 
       {/* Modal Content */}
       <div
-        className="relative bg-base-100 rounded-t-2xl md:rounded-xl max-w-lg w-full h-[92dvh] md:h-auto md:max-h-[90vh] flex flex-col"
+        className="relative bg-base-100 md:rounded-xl max-w-lg w-full h-dvh md:h-auto md:max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
