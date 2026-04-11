@@ -1798,7 +1798,7 @@ export default function RestaurantMenuBrowser({
                         onChange={(e) => setRestaurantSearchQuery(e.target.value)}
                         placeholder="Search items..."
                         style={{ minWidth: 0 }}
-                        className={`h-full w-full min-w-0 rounded-full border border-primary bg-white text-sm focus:outline-none focus:ring-1 focus:ring-primary shadow-sm ${showSearchLeftIcon ? "pl-9" : "pl-2"} ${showSearchRightIcon ? "pr-9" : "pr-2"}`}
+                        className={`h-full w-full min-w-0 rounded-full border border-primary bg-white text-base focus:outline-none focus:ring-1 focus:ring-primary shadow-sm ${showSearchLeftIcon ? "pl-9" : "pl-2"} ${showSearchRightIcon ? "pr-9" : "pr-2"}`}
                       />
                       {showSearchRightIcon && (
                         <button
@@ -1949,7 +1949,7 @@ export default function RestaurantMenuBrowser({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search restaurants and menu items..."
-          className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-base-300 bg-white text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+          className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-base-300 bg-white text-base focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
         />
         {searchQuery && (
           <button

@@ -52,7 +52,7 @@ export default function DeliveryAddressForm({
         className="w-full flex items-center justify-between mb-3 group"
       >
         <div className="flex items-center gap-2">
-          <h4 className="text-sm font-bold text-base-content">
+          <h4 className="text-base font-bold text-base-content">
             Delivery Address
           </h4>
           {isComplete && (
@@ -92,7 +92,7 @@ export default function DeliveryAddressForm({
 
           {/* Address Line 1 - Read Only */}
           <div>
-            <label className="block text-sm font-semibold mb-2 text-base-content">
+            <label className="block text-base font-semibold mb-2 text-base-content">
               Address Line 1*
             </label>
             <input
@@ -102,7 +102,7 @@ export default function DeliveryAddressForm({
               value={formData.addressLine1 || ""}
               readOnly
               placeholder="Select from search above"
-              className={`w-full px-3 py-2 text-sm bg-base-300/30 border rounded-lg cursor-not-allowed outline-none ${
+              className={`w-full px-3 py-2 text-base bg-base-300/30 border rounded-lg cursor-not-allowed outline-none ${
                 errors.addressLine1 &&
                 !errors.addressLine1.includes("United Kingdom") &&
                 !errors.addressLine1.includes("London")
@@ -121,7 +121,7 @@ export default function DeliveryAddressForm({
 
           {/* Address Line 2 */}
           <div>
-            <label className="block text-sm font-semibold mb-2 text-base-content">
+            <label className="block text-base font-semibold mb-2 text-base-content">
               Address Line 2 (Optional)
             </label>
             <input
@@ -130,14 +130,14 @@ export default function DeliveryAddressForm({
               value={formData.addressLine2 || ""}
               onChange={(e) => onFieldChange("addressLine2", e.target.value)}
               placeholder="Apartment, suite, etc."
-              className="w-full px-3 py-2 text-sm bg-base-200/50 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="w-full px-3 py-2 text-base bg-base-200/50 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
           </div>
 
           {/* City and Postcode - Read Only */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-semibold mb-2 text-base-content">
+              <label className="block text-base font-semibold mb-2 text-base-content">
                 City*
               </label>
               <input
@@ -147,7 +147,7 @@ export default function DeliveryAddressForm({
                 value={formData.city || ""}
                 readOnly
                 placeholder="Auto-filled"
-                className={`w-full px-3 py-2 text-sm bg-base-300/30 border rounded-lg cursor-not-allowed outline-none ${
+                className={`w-full px-3 py-2 text-base bg-base-300/30 border rounded-lg cursor-not-allowed outline-none ${
                   errors.city ? "border-error" : "border-base-300"
                 }`}
               />
@@ -156,7 +156,7 @@ export default function DeliveryAddressForm({
               )}
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-2 text-base-content">
+              <label className="block text-base font-semibold mb-2 text-base-content">
                 Postcode*
               </label>
               <input
@@ -166,7 +166,7 @@ export default function DeliveryAddressForm({
                 value={formData.zipcode || ""}
                 readOnly
                 placeholder="Auto-filled"
-                className={`w-full px-3 py-2 text-sm bg-base-300/30 border rounded-lg cursor-not-allowed outline-none ${
+                className={`w-full px-3 py-2 text-base bg-base-300/30 border rounded-lg cursor-not-allowed outline-none ${
                   errors.zipcode ? "border-error" : "border-base-300"
                 }`}
               />

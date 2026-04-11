@@ -31,7 +31,7 @@ interface ContactInfoFormProps {
 const fieldLabelClass =
   "block text-[10px] font-bold text-base-content/60 uppercase tracking-widest mb-1.5";
 const fieldClass =
-  "w-full bg-gray-50 border border-base-300 rounded-lg px-4 py-2.5 text-sm text-base-content placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all";
+  "w-full bg-gray-50 border border-base-300 rounded-lg px-4 py-2.5 text-base text-base-content placeholder:text-base-content/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all";
 
 export default function ContactInfoForm({
   formData,
