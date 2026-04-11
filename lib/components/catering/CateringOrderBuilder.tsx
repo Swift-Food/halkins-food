@@ -1781,7 +1781,7 @@ export default function CateringOrderBuilder({
         totalSteps={getTutorialSteps().length}
       />
 
-      <div className="fixed bottom-4 left-4 z-40 md:bottom-8 md:left-8">
+      <div className="hidden md:block fixed bottom-4 left-4 z-40 md:bottom-8 md:left-8">
         {isTutorialHintVisible && (
           <div className="absolute bottom-14 left-0 w-64 rounded-2xl border border-base-300 bg-white p-3 shadow-xl md:bottom-16">
             <div className="absolute -bottom-2 left-7 h-4 w-4 rotate-45 border-b border-r border-base-300 bg-white" />
