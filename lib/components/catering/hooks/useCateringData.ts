@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   CategoryWithSubcategories,
   Subcategory,
@@ -38,8 +38,6 @@ export function useCateringData({ expandedSessionIndex }: UseCateringDataOptions
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
-  const [allMenuItems, setAllMenuItems] = useState<MenuItem[] | null>(null);
-  const [allMenuItemsLoading, setAllMenuItemsLoading] = useState(false);
 
   // Restaurants state for validation
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -151,31 +149,6 @@ export function useCateringData({ expandedSessionIndex }: UseCateringDataOptions
     fetchMenuItems();
   }, [selectedCategory, selectedSubcategory]);
 
-  // Fetch all menu items for search (cached after first fetch)
-  const allMenuItemsFetchedRef = useRef(false);
-  const fetchAllMenuItems = useCallback(async () => {
-    if (allMenuItemsFetchedRef.current) return;
-    allMenuItemsFetchedRef.current = true;
-    setAllMenuItemsLoading(true);
-    try {
-      const response = await fetchWithAuth(`${API_BASE_URL}/menu-item/catering`);
-      const data = await response.json();
-      const mapped = (data || []).map(mapToMenuItem);
-      setAllMenuItems(mapped);
-    } catch (error) {
-      console.error("Failed to fetch all menu items for search:", error);
-      allMenuItemsFetchedRef.current = false;
-    } finally {
-      setAllMenuItemsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (searchQuery.trim() && allMenuItems === null && !allMenuItemsLoading) {
-      fetchAllMenuItems();
-    }
-  }, [searchQuery, allMenuItems, allMenuItemsLoading, fetchAllMenuItems]);
-
   const filterByDietary = useCallback(
     (items: MenuItem[]) => {
       if (selectedDietaryFilters.length === 0) return items;
@@ -194,23 +167,6 @@ export function useCateringData({ expandedSessionIndex }: UseCateringDataOptions
     [menuItems, filterByDietary]
   );
 
-  const searchResults = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query || !allMenuItems) return null;
-
-    const matched = allMenuItems.filter((item) => {
-      const name = item.menuItemName?.toLowerCase() || "";
-      const description = item.description?.toLowerCase() || "";
-      const groupTitle = item.groupTitle?.toLowerCase() || "";
-      return (
-        name.includes(query) ||
-        description.includes(query) ||
-        groupTitle.includes(query)
-      );
-    });
-
-    return filterByDietary(matched);
-  }, [searchQuery, allMenuItems, filterByDietary]);
 
   // Handle category click
   const handleCategoryClick = useCallback(
@@ -278,15 +234,9 @@ export function useCateringData({ expandedSessionIndex }: UseCateringDataOptions
     // Search
     searchQuery,
     setSearchQuery,
-    searchResults,
-    searchLoading: allMenuItemsLoading,
 
     // Restaurants
     restaurants,
     restaurantsLoading,
-
-    // All menu items
-    allMenuItems,
-    fetchAllMenuItems,
   };
 }

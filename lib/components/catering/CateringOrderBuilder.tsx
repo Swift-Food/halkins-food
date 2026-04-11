@@ -182,8 +182,6 @@ export default function CateringOrderBuilder({
     restaurantsLoading,
     selectedDietaryFilters,
     toggleDietaryFilter,
-    allMenuItems,
-    fetchAllMenuItems,
   } = useCateringData({ expandedSessionIndex: activeSessionIndex });
 
   const {
@@ -1241,8 +1239,6 @@ export default function CateringOrderBuilder({
               sessionIndex={activeSessionIndex}
               sessionDate={mealSessions[activeSessionIndex]?.sessionDate}
               eventTime={mealSessions[activeSessionIndex]?.eventTime}
-              allMenuItems={allMenuItems}
-              fetchAllMenuItems={fetchAllMenuItems}
               defaultGuestCount={
                 mealSessions[activeSessionIndex]?.guestCount ??
                 eventDetails?.guestCount ??

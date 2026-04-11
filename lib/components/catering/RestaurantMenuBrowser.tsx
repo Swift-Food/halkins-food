@@ -43,8 +43,6 @@ interface RestaurantMenuBrowserProps {
   sessionDate?: string;
   eventTime?: string;
   defaultBundleGuestCount?: number;
-  allMenuItems: MenuItem[] | null;
-  fetchAllMenuItems: () => void;
   onAddItem: (item: MenuItem) => void;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onAddOrderPress: (item: MenuItem) => void;
@@ -389,8 +387,6 @@ export default function RestaurantMenuBrowser({
   sessionDate,
   eventTime,
   defaultBundleGuestCount = 1,
-  allMenuItems,
-  fetchAllMenuItems,
   onAddItem,
   onUpdateQuantity,
   onAddOrderPress,
@@ -512,12 +508,6 @@ export default function RestaurantMenuBrowser({
   const isProgrammaticScroll = useRef(false);
   const hoursInfoContainerRef = useRef<HTMLDivElement | null>(null);
   const hoursInfoButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
-
-  useEffect(() => {
-    if (allMenuItems) {
-      setMenuItemsCache(allMenuItems);
-    }
-  }, [allMenuItems]);
 
   // Fetch menu items for the selected restaurant, using a per-restaurant cache
   useEffect(() => {
@@ -937,17 +927,11 @@ export default function RestaurantMenuBrowser({
 
   const ensureMenuItems = useCallback(async (): Promise<MenuItem[]> => {
     if (menuItemsCache) return menuItemsCache;
-    if (allMenuItems) {
-      setMenuItemsCache(allMenuItems);
-      return allMenuItems;
-    }
-
-    fetchAllMenuItems();
     const response = await cateringService.getMenuItems();
     const items = (response || []).map(mapToMenuItem);
     setMenuItemsCache(items);
     return items;
-  }, [menuItemsCache, allMenuItems, fetchAllMenuItems]);
+  }, [menuItemsCache]);
 
   const handleAddBundle = useCallback(
     async (bundle: CateringBundleResponse, guestQuantity: number) => {
@@ -1738,7 +1722,7 @@ export default function RestaurantMenuBrowser({
                       <p className="text-xs text-gray-400 mt-1.5 line-clamp-2">{promo.description}</p>
                     )}
                     <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-2.5 text-xs text-gray-400">
-                      {promo.minOrderAmount > 0 && <span>Min. £{promo.minOrderAmount}</span>}
+                      {(promo.minOrderAmount ?? 0) > 0 && <span>Min. £{promo.minOrderAmount}</span>}
                       {promo.maxDiscountAmount && <span>· Max. £{promo.maxDiscountAmount} off</span>}
                       <span>· Until {endDate}</span>
                     </div>
@@ -1945,7 +1929,6 @@ export default function RestaurantMenuBrowser({
             isAdding={addingBundleId === selectedBundle.id}
             onAdd={handleAddBundle}
             onClose={() => setSelectedBundle(null)}
-            allMenuItems={menuItemsCache || allMenuItems}
           />
         )}
       </div>

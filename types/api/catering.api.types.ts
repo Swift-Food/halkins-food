@@ -332,7 +332,9 @@ export interface CateringBundleItem {
   selectedAddons?: Array<{
     addonId: string;
     name: string;
+    price?: number;
     quantity: number;
+    groupTitle?: string;
   }>;
   sortOrder: number;
 }
