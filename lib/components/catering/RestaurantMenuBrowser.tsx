@@ -491,7 +491,6 @@ export default function RestaurantMenuBrowser({
     useState<CateringBundleResponse | null>(null);
   const [addingBundleId, setAddingBundleId] = useState<string | null>(null);
   const [restaurantPromotions, setRestaurantPromotions] = useState<Promotion[]>([]);
-  const [menuItemsCache, setMenuItemsCache] = useState<MenuItem[] | null>(null);
   const [restaurantMenuItems, setRestaurantMenuItems] = useState<MenuItem[]>([]);
   const [restaurantMenuItemsLoading, setRestaurantMenuItemsLoading] = useState(false);
   const restaurantItemsCache = useRef<Map<string, MenuItem[]>>(new Map());
@@ -925,19 +924,23 @@ export default function RestaurantMenuBrowser({
 
   const firstMenuGroupName = groupedItems[0]?.name ?? null;
 
-  const ensureMenuItems = useCallback(async (): Promise<MenuItem[]> => {
-    if (menuItemsCache) return menuItemsCache;
-    const response = await cateringService.getMenuItems();
-    const items = (response || []).map(mapToMenuItem);
-    setMenuItemsCache(items);
-    return items;
-  }, [menuItemsCache]);
+  const ensureMenuItemsForBundle = useCallback(async (bundle: CateringBundleResponse): Promise<MenuItem[]> => {
+    const restaurantIds = [...new Set(bundle.items.map((i) => i.restaurantId).filter(Boolean))];
+    const missing = restaurantIds.filter((id) => !restaurantItemsCache.current.has(id));
+    if (missing.length > 0) {
+      const fetched = await Promise.all(missing.map((id) => cateringService.getMenuItemsByRestaurant(id)));
+      missing.forEach((id, idx) => {
+        restaurantItemsCache.current.set(id, (fetched[idx] || []).map(mapToMenuItem));
+      });
+    }
+    return restaurantIds.flatMap((id) => restaurantItemsCache.current.get(id) ?? []);
+  }, []);
 
   const handleAddBundle = useCallback(
     async (bundle: CateringBundleResponse, guestQuantity: number) => {
       setAddingBundleId(bundle.id);
       try {
-        const items = await ensureMenuItems();
+        const items = await ensureMenuItemsForBundle(bundle);
 
         for (const bundleItem of bundle.items) {
           const menuItem = items.find((item) => item.id === bundleItem.menuItemId);
@@ -965,7 +968,7 @@ export default function RestaurantMenuBrowser({
         setAddingBundleId(null);
       }
     },
-    [addMenuItem, ensureMenuItems, sessionIndex]
+    [addMenuItem, ensureMenuItemsForBundle, sessionIndex]
   );
 
   const toggleGroupCollapse = (groupName: string) => {
