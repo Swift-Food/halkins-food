@@ -1790,8 +1790,7 @@ export default function RestaurantMenuBrowser({
                 >
                   <div className="flex items-center gap-2 md:gap-5">
                     {pillRowGroupNames.map((name) => {
-                      const isActive =
-                        !isRestaurantSearchActive && activeGroupName === name;
+                      const isActive = activeGroupName === name;
                       return (
                         <button
                           key={name}
