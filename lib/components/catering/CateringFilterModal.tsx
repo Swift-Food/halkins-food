@@ -70,6 +70,7 @@ export default function CateringFilterModal({
     Allergens.SOYBEANS,
     Allergens.SULPHUR_DIOXIDE,
     Allergens.TREE_NUTS,
+    Allergens.NO_SPECIFIC_ALLERGENS,
   ];
 
   const ALLERGEN_LABELS: Record<Allergens, string> = {
@@ -113,6 +114,7 @@ export default function CateringFilterModal({
     [Allergens.NUTS]: "Nuts",
     [Allergens.MOLUSCS]: "Moluscs (legacy)",
     [Allergens.SOYA]: "Soya",
+    [Allergens.NO_SPECIFIC_ALLERGENS]: "No specific allergens"
   };
 
   // Dietary filters based on enum

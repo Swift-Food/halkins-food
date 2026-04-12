@@ -48,4 +48,6 @@ export enum Allergens {
   NUTS = "nuts",
   MOLUSCS = "moluscs",
   SOYA = "soya",
+
+  NO_SPECIFIC_ALLERGENS = "No specific allergens",
 }
