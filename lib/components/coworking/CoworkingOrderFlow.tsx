@@ -522,32 +522,29 @@ export default function CoworkingOrderFlow() {
                     </div>
                   </div>
                 }
+                mobileEmptyAction={
+                  <div className="bg-primary p-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowSkipCateringModal(true)}
+                      className="flex w-full items-center justify-between text-white"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">Skip catering for now</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm opacity-80">Continue</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </div>
+                    </button>
+                  </div>
+                }
               />
             </div>
           )}
           {currentStep === 4 && <Step3ContactInfo />}
         </div>
       </div>
-
-      {currentStep === 3 && !hasSelectedCatering && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-          <div className="bg-primary p-4">
-            <button
-              type="button"
-              onClick={() => setShowSkipCateringModal(true)}
-              className="flex w-full items-center justify-between text-white"
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-semibold">Skip catering for now</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm opacity-80">Continue</span>
-                <ArrowRight className="h-4 w-4" />
-              </div>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Edit modal */}
       {showEditModal && (

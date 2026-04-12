@@ -62,6 +62,7 @@ type PdfPreviewItem = LocalMealSession["orderItems"][number]["item"];
 interface CateringOrderBuilderProps {
   nextStep?: number;
   desktopCheckoutNotice?: React.ReactNode;
+  mobileEmptyAction?: React.ReactNode;
   onContinue?: () => void;
   disableCheckoutWhenEmpty?: boolean;
   eventWindow?: {
@@ -75,6 +76,7 @@ interface CateringOrderBuilderProps {
 export default function CateringOrderBuilder({
   nextStep = 2,
   desktopCheckoutNotice,
+  mobileEmptyAction,
   onContinue,
   disableCheckoutWhenEmpty = false,
   eventWindow,
@@ -1679,11 +1681,7 @@ export default function CateringOrderBuilder({
                   type="text"
                   value={mobileSearchState.query}
                   onChange={(e) => handleMobileSearchInputChange(e.target.value)}
-                  placeholder={
-                    mobileSearchState.mode === "list"
-                      ? "Search restaurants and items..."
-                      : "Search items..."
-                  }
+                  placeholder="Search Swift Food"
                   tabIndex={isMobileSearchOpen ? 0 : -1}
                   className={`h-full w-full rounded-full bg-transparent pl-9 pr-3 text-base placeholder:text-xs focus:outline-none ${
                     mobileSearchCaretVisible ? "" : "caret-transparent"
@@ -1706,7 +1704,7 @@ export default function CateringOrderBuilder({
             </button>
             </div>
           </div>
-          {mealSessions.some((session) => session.orderItems.length > 0) && (
+          {mealSessions.some((session) => session.orderItems.length > 0) ? (
             <div className="bg-primary p-4">
               <button
                 onClick={() => setIsViewOrderOpen(true)}
@@ -1724,6 +1722,8 @@ export default function CateringOrderBuilder({
                 </div>
               </button>
             </div>
+          ) : (
+            mobileEmptyAction
           )}
         </div>
 
