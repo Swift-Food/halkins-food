@@ -412,49 +412,9 @@ export default function RestaurantMenuBrowser({
 }: RestaurantMenuBrowserProps) {
   const { addMenuItem } = useActiveCatering();
   const { selectedVenue } = useCoworking();
-  // Selected restaurant is synced to the ?restaurant= URL param so that
-  // browser back/forward and direct links work.
-  const [selectedRestaurantId, setSelectedRestaurantIdState] = useState<
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<
     string | null
-  >(() => {
-    if (typeof window === "undefined") return null;
-    return new URLSearchParams(window.location.search).get("restaurant");
-  });
-
-  const updateRestaurantUrl = useCallback(
-    (id: string | null, replace = false) => {
-      if (typeof window === "undefined") return;
-      const params = new URLSearchParams(window.location.search);
-      if (id) params.set("restaurant", id);
-      else params.delete("restaurant");
-      const url = params.toString() ? `?${params.toString()}` : window.location.pathname;
-      window.history[replace ? "replaceState" : "pushState"](null, "", url);
-    },
-    [],
-  );
-
-  const setSelectedRestaurantId = useCallback(
-    (id: string | null, replace = false) => {
-      setSelectedRestaurantIdState(id);
-      updateRestaurantUrl(id, replace);
-    },
-    [updateRestaurantUrl],
-  );
-
-  // Browser back/forward: sync URL → state and reset related UI.
-  useEffect(() => {
-    const handlePopState = () => {
-      const params = new URLSearchParams(window.location.search);
-      setSelectedRestaurantIdState(params.get("restaurant"));
-      setRestaurantSearchQuery("");
-      setSelectedCategoryId(null);
-      setCollapsedGroups(new Set());
-      setActiveGroupName(null);
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
+  >(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [restaurantSearchQuery, setRestaurantSearchQuery] = useState("");
 
@@ -660,7 +620,7 @@ export default function RestaurantMenuBrowser({
   }, []);
 
   useEffect(() => {
-    setSelectedRestaurantId(null, true);
+    setSelectedRestaurantId(null);
     setSearchQuery("");
     setRestaurantSearchQuery("");
     setSelectedCategoryId(null);
@@ -668,7 +628,7 @@ export default function RestaurantMenuBrowser({
     setRestaurantBundles([]);
     setBundlesError(null);
     setSelectedBundle(null);
-  }, [tutorialResetKey, setSelectedRestaurantId]);
+  }, [tutorialResetKey]);
 
   useEffect(() => {
     if (!openHoursInfoRestaurantId) {
@@ -1117,19 +1077,12 @@ export default function RestaurantMenuBrowser({
     const firstRestaurant = filteredRestaurants[0];
     if (!firstRestaurant) return;
 
-    // Use replaceState (not pushState) so the auto-open doesn't create a
-    // history entry that the user has to "back" through.
-    setSelectedRestaurantId(firstRestaurant.id, true);
-    setRestaurantSearchQuery("");
-    setSelectedCategoryId(null);
-    setCollapsedGroups(new Set());
-    setActiveGroupName(null);
+    handleSelectRestaurant(firstRestaurant.id);
   }, [
     autoOpenFirstRestaurant,
     filteredRestaurants,
     isSearchActive,
     selectedRestaurantId,
-    setSelectedRestaurantId,
   ]);
 
   useEffect(() => {
@@ -1138,12 +1091,11 @@ export default function RestaurantMenuBrowser({
       return;
     }
 
-    // Restaurant disappeared from available list — clear URL with replaceState
-    setSelectedRestaurantId(null, true);
+    setSelectedRestaurantId(null);
     setRestaurantSearchQuery("");
     setCollapsedGroups(new Set());
     setActiveGroupName(null);
-  }, [availableRestaurants, selectedRestaurantId, setSelectedRestaurantId]);
+  }, [availableRestaurants, selectedRestaurantId]);
 
   // Reset description expansion when switching restaurants
   useEffect(() => {
