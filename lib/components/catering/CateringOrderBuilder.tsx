@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { pdf } from "@react-pdf/renderer";
-import { MoreHorizontal, Package, ShoppingBag, Trash2, X } from "lucide-react";
+import { MoreHorizontal, Package, Search, ShoppingBag, Trash2, X } from "lucide-react";
 import { useActiveCatering } from "@/context/useActiveCatering";
 import { useCoworking } from "@/context/CoworkingContext";
 import {
@@ -151,6 +151,59 @@ export default function CateringOrderBuilder({
   const [isClearAllConfirmOpen, setIsClearAllConfirmOpen] = useState(false);
   const [isMobileCartMenuOpen, setIsMobileCartMenuOpen] = useState(false);
   const [isDesktopCartMenuOpen, setIsDesktopCartMenuOpen] = useState(false);
+
+  // Mobile bottom-bar search (proxies into RestaurantMenuBrowser's internal
+  // search state via register/publish callbacks)
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [mobileSearchState, setMobileSearchState] = useState<{
+    mode: "list" | "restaurant";
+    query: string;
+  }>({ mode: "list", query: "" });
+  const mobileSearchSetterRef = useRef<((query: string) => void) | null>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+
+  // Lift the mobile bottom bar above the on-screen keyboard using the
+  // Visual Viewport API (supported on iOS Safari 15.4+ and Android Chrome).
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const update = () => {
+      const offset = Math.max(
+        0,
+        window.innerHeight - vv.height - vv.offsetTop,
+      );
+      setKeyboardOffset(offset);
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
+  const handleRegisterMobileSearchSetter = useCallback(
+    (setter: (query: string) => void) => {
+      mobileSearchSetterRef.current = setter;
+    },
+    [],
+  );
+  const handleMobileSearchInputChange = (value: string) => {
+    setMobileSearchState((prev) => ({ ...prev, query: value }));
+    mobileSearchSetterRef.current?.(value);
+  };
+  const openMobileSearch = () => {
+    setIsMobileSearchOpen(true);
+    setTimeout(() => {
+      mobileSearchInputRef.current?.focus({ preventScroll: true });
+    }, 50);
+  };
+  const closeMobileSearch = () => {
+    mobileSearchSetterRef.current?.("");
+    setMobileSearchState((prev) => ({ ...prev, query: "" }));
+    setIsMobileSearchOpen(false);
+  };
   const [desktopMenuPos, setDesktopMenuPos] = useState({ bottom: 0, left: 0 });
   const desktopMenuBtnRef = useRef<HTMLButtonElement>(null);
   const [pricing, setPricing] = useState<CateringPricingResult | null>(null);
@@ -1250,6 +1303,8 @@ export default function CateringOrderBuilder({
               expandedSessionIndex={activeSessionIndex}
               autoOpenFirstRestaurant={currentTutorialStep?.id === "menu-item"}
               tutorialResetKey={tutorialResetKey}
+              onMobileSearchStateChange={setMobileSearchState}
+              onRegisterMobileSearchSetter={handleRegisterMobileSearchSetter}
             />
           </div>
         </div>
@@ -1419,12 +1474,22 @@ export default function CateringOrderBuilder({
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-          <div className="flex justify-center items-center gap-2 px-4 pb-2">
+      <div
+        className="fixed left-0 right-0 z-50 md:hidden"
+        style={{ bottom: keyboardOffset }}
+      >
+          <div className="relative mx-auto max-w-[300px] px-1 pt-1 pb-2">
+            <div
+              className="flex w-full items-center gap-2 transition-opacity duration-200"
+              style={{
+                opacity: isMobileSearchOpen ? 0 : 1,
+                pointerEvents: isMobileSearchOpen ? "none" : "auto",
+              }}
+            >
             <div className="relative">
               <button
                 onClick={() => setIsMobileCartMenuOpen((v) => !v)}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-base-200 bg-white/70 text-gray-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-base-200 bg-white/70 text-gray-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
                 title="More actions"
               >
                 <MoreHorizontal className="h-4 w-4" />
@@ -1489,12 +1554,12 @@ export default function CateringOrderBuilder({
             </div>
             <button
               onClick={() => setEditingSessionIndex(activeSessionIndex)}
-              className="flex flex-col items-center rounded-2xl border border-base-200 bg-white/50 px-3 py-1.5 shadow-sm backdrop-blur-sm text-left"
+              className="flex h-11 min-w-0 flex-1 flex-col items-center justify-center rounded-full border border-base-200 bg-white/50 px-4 py-1 shadow-sm backdrop-blur-sm"
             >
-              <span className="text-xs font-semibold text-gray-800">
+              <span className="w-full truncate text-center text-xs font-semibold text-gray-800">
                 {mealSessions[activeSessionIndex]?.sessionName}
               </span>
-              <span className="text-[10px] text-gray-500">
+              <span className="w-full truncate text-center text-[10px] text-gray-500">
                 {mealSessions[activeSessionIndex]?.sessionDate
                   ? new Date(
                     mealSessions[activeSessionIndex].sessionDate,
@@ -1508,6 +1573,50 @@ export default function CateringOrderBuilder({
                   ` · ${formatTimeDisplay(mealSessions[activeSessionIndex].eventTime)}`}
               </span>
             </button>
+            <button
+              onClick={openMobileSearch}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-base-200 bg-white/70 text-gray-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+              title="Search"
+              aria-label="Open search"
+              type="button"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+            </div>
+            <div
+              className="absolute top-1 left-1 right-1 h-11 rounded-full border border-base-200 bg-white/70 shadow-sm backdrop-blur-sm transition-[clip-path] duration-300 ease-in-out focus-within:border-primary"
+              style={{
+                clipPath: isMobileSearchOpen
+                  ? "inset(-8px)"
+                  : "inset(-8px -8px -8px 100%)",
+                pointerEvents: isMobileSearchOpen ? "auto" : "none",
+              }}
+              aria-hidden={!isMobileSearchOpen}
+            >
+              <div className="relative h-full w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
+                <input
+                  ref={mobileSearchInputRef}
+                  type="text"
+                  value={mobileSearchState.query}
+                  onChange={(e) => handleMobileSearchInputChange(e.target.value)}
+                  placeholder={
+                    mobileSearchState.mode === "list"
+                      ? "Search restaurants and menu items..."
+                      : "Search items..."
+                  }
+                  className="h-full w-full rounded-full bg-transparent pl-9 pr-9 text-sm focus:outline-none"
+                />
+                <button
+                  onClick={closeMobileSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+                  aria-label="Close search"
+                  type="button"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
           {mealSessions.some((session) => session.orderItems.length > 0) && (
             <div className="bg-primary p-4">

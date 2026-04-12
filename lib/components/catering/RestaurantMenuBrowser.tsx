@@ -58,6 +58,11 @@ interface RestaurantMenuBrowserProps {
   expandedSessionIndex: number | null;
   autoOpenFirstRestaurant?: boolean;
   tutorialResetKey?: number;
+  onMobileSearchStateChange?: (state: {
+    mode: "list" | "restaurant";
+    query: string;
+  }) => void;
+  onRegisterMobileSearchSetter?: (setter: (query: string) => void) => void;
 }
 
 interface MenuItemGroup {
@@ -402,6 +407,8 @@ export default function RestaurantMenuBrowser({
   expandedSessionIndex,
   autoOpenFirstRestaurant = false,
   tutorialResetKey = 0,
+  onMobileSearchStateChange,
+  onRegisterMobileSearchSetter,
 }: RestaurantMenuBrowserProps) {
   const { addMenuItem } = useActiveCatering();
   const { selectedVenue } = useCoworking();
@@ -410,6 +417,32 @@ export default function RestaurantMenuBrowser({
   >(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [restaurantSearchQuery, setRestaurantSearchQuery] = useState("");
+
+  // Publish current search state to parent (mobile bottom-bar search)
+  useEffect(() => {
+    onMobileSearchStateChange?.({
+      mode: selectedRestaurantId ? "restaurant" : "list",
+      query: selectedRestaurantId ? restaurantSearchQuery : searchQuery,
+    });
+  }, [
+    selectedRestaurantId,
+    searchQuery,
+    restaurantSearchQuery,
+    onMobileSearchStateChange,
+  ]);
+
+  // Register a setter so the parent mobile search input can write into the
+  // appropriate query state based on the current view mode.
+  useEffect(() => {
+    const setter = (query: string) => {
+      if (selectedRestaurantId) {
+        setRestaurantSearchQuery(query);
+      } else {
+        setSearchQuery(query);
+      }
+    };
+    onRegisterMobileSearchSetter?.(setter);
+  }, [selectedRestaurantId, onRegisterMobileSearchSetter]);
   const [categories, setCategories] = useState<CategoryWithSubcategories[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(

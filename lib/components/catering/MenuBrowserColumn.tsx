@@ -29,6 +29,11 @@ interface MenuBrowserColumnProps {
   expandedSessionIndex: number | null;
   autoOpenFirstRestaurant?: boolean;
   tutorialResetKey?: number;
+  onMobileSearchStateChange?: (state: {
+    mode: "list" | "restaurant";
+    query: string;
+  }) => void;
+  onRegisterMobileSearchSetter?: (setter: (query: string) => void) => void;
 }
 
 export default function MenuBrowserColumn({
@@ -54,6 +59,8 @@ export default function MenuBrowserColumn({
   expandedSessionIndex,
   autoOpenFirstRestaurant = false,
   tutorialResetKey = 0,
+  onMobileSearchStateChange,
+  onRegisterMobileSearchSetter,
 }: MenuBrowserColumnProps) {
   if (showBundleBrowser) {
     return (
@@ -88,6 +95,8 @@ export default function MenuBrowserColumn({
       expandedSessionIndex={expandedSessionIndex}
       autoOpenFirstRestaurant={autoOpenFirstRestaurant}
       tutorialResetKey={tutorialResetKey}
+      onMobileSearchStateChange={onMobileSearchStateChange}
+      onRegisterMobileSearchSetter={onRegisterMobileSearchSetter}
     />
   );
 }
