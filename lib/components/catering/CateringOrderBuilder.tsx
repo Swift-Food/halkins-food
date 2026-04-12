@@ -1421,27 +1421,6 @@ export default function CateringOrderBuilder({
 
       <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
           <div className="flex justify-center items-center gap-2 px-4 pb-2">
-            <button
-              onClick={() => setEditingSessionIndex(activeSessionIndex)}
-              className="flex flex-col items-center rounded-2xl border border-base-200 bg-white/50 px-3 py-1.5 shadow-sm backdrop-blur-sm text-left"
-            >
-              <span className="text-xs font-semibold text-gray-800">
-                {mealSessions[activeSessionIndex]?.sessionName}
-              </span>
-              <span className="text-[10px] text-gray-500">
-                {mealSessions[activeSessionIndex]?.sessionDate
-                  ? new Date(
-                    mealSessions[activeSessionIndex].sessionDate,
-                  ).toLocaleDateString("en-GB", {
-                    weekday: "short",
-                    day: "numeric",
-                    month: "short",
-                  })
-                  : "Date not set"}
-                {mealSessions[activeSessionIndex]?.eventTime &&
-                  ` · ${formatTimeDisplay(mealSessions[activeSessionIndex].eventTime)}`}
-              </span>
-            </button>
             <div className="relative">
               <button
                 onClick={() => setIsMobileCartMenuOpen((v) => !v)}
@@ -1456,7 +1435,7 @@ export default function CateringOrderBuilder({
                     className="fixed inset-0 z-40"
                     onClick={() => setIsMobileCartMenuOpen(false)}
                   />
-                  <div className="absolute bottom-full right-0 z-50 mb-2 w-44 overflow-hidden rounded-xl border border-base-200 bg-white shadow-lg">
+                  <div className="absolute bottom-full left-0 z-50 mb-2 w-44 overflow-hidden rounded-xl border border-base-200 bg-white shadow-lg">
                     <button
                       onClick={() => {
                         setIsMobileCartMenuOpen(false);
@@ -1508,6 +1487,27 @@ export default function CateringOrderBuilder({
                 </>
               )}
             </div>
+            <button
+              onClick={() => setEditingSessionIndex(activeSessionIndex)}
+              className="flex flex-col items-center rounded-2xl border border-base-200 bg-white/50 px-3 py-1.5 shadow-sm backdrop-blur-sm text-left"
+            >
+              <span className="text-xs font-semibold text-gray-800">
+                {mealSessions[activeSessionIndex]?.sessionName}
+              </span>
+              <span className="text-[10px] text-gray-500">
+                {mealSessions[activeSessionIndex]?.sessionDate
+                  ? new Date(
+                    mealSessions[activeSessionIndex].sessionDate,
+                  ).toLocaleDateString("en-GB", {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                  })
+                  : "Date not set"}
+                {mealSessions[activeSessionIndex]?.eventTime &&
+                  ` · ${formatTimeDisplay(mealSessions[activeSessionIndex].eventTime)}`}
+              </span>
+            </button>
           </div>
           {mealSessions.some((session) => session.orderItems.length > 0) && (
             <div className="bg-primary p-4">
