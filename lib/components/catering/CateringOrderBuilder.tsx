@@ -1534,7 +1534,7 @@ export default function CateringOrderBuilder({
       >
           <div
             ref={mobileBarRowRef}
-            className="relative mx-auto max-w-[300px] px-1 pt-1 pb-2"
+            className="relative mx-auto max-w-[325px] px-1 pt-1 pb-2"
           >
             <div
               className="flex w-full items-center gap-2 transition-opacity duration-200"
@@ -1621,7 +1621,6 @@ export default function CateringOrderBuilder({
                   ? new Date(
                     mealSessions[activeSessionIndex].sessionDate,
                   ).toLocaleDateString("en-GB", {
-                    weekday: "short",
                     day: "numeric",
                     month: "short",
                   })
