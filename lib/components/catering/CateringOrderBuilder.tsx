@@ -206,11 +206,13 @@ export default function CateringOrderBuilder({
         return;
       }
       setIsMobileSearchOpen(false);
+      mobileSearchInputRef.current?.blur();
     };
 
     const handleScroll = () => {
       if (suppressMobileSearchScrollCloseRef.current) return;
       setIsMobileSearchOpen(false);
+      mobileSearchInputRef.current?.blur();
     };
 
     // Delay scroll listener attachment so the focus-triggered micro-scroll
@@ -247,16 +249,22 @@ export default function CateringOrderBuilder({
     mobileSearchSetterRef.current?.(value);
   };
   const openMobileSearch = () => {
-    setIsMobileSearchOpen(true);
     // Focus synchronously so iOS considers it part of the user gesture and
     // opens the on-screen keyboard. The input is always mounted, so the ref
-    // is available immediately.
+    // is available immediately even though the overlay is still clipped.
     mobileSearchInputRef.current?.focus({ preventScroll: true });
+    // Wait for the keyboard to rise (bar slides up via Visual Viewport API)
+    // before animating the search bar expansion so the two motions don't
+    // compete.
+    setTimeout(() => {
+      setIsMobileSearchOpen(true);
+    }, 300);
   };
   const closeMobileSearch = () => {
     mobileSearchSetterRef.current?.("");
     setMobileSearchState((prev) => ({ ...prev, query: "" }));
     setIsMobileSearchOpen(false);
+    mobileSearchInputRef.current?.blur();
   };
   const [desktopMenuPos, setDesktopMenuPos] = useState({ bottom: 0, left: 0 });
   const desktopMenuBtnRef = useRef<HTMLButtonElement>(null);
@@ -1640,7 +1648,7 @@ export default function CateringOrderBuilder({
             </button>
             </div>
             <div
-              className="absolute top-1 left-1 right-1 h-11 rounded-full border border-base-200 bg-white/70 shadow-sm backdrop-blur-sm transition-[clip-path] duration-300 ease-in-out focus-within:border-primary"
+              className="absolute top-1 left-1 right-1 h-11 rounded-full border border-base-200 bg-white/70 shadow-sm backdrop-blur-sm transition-[clip-path] duration-500 ease-in-out focus-within:border-primary"
               style={{
                 clipPath: isMobileSearchOpen
                   ? "inset(-8px)"
