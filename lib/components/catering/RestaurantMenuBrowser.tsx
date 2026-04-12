@@ -1845,10 +1845,10 @@ export default function RestaurantMenuBrowser({
                   </div>
                 </div>
 
-                {/* Search — explicit square (width=height) when closed, expands width when open */}
+                {/* Search — explicit square (width=height) when closed, expands width when open. Desktop only; mobile uses the bottom-bar search. */}
                 <div
                   ref={searchContainerRef}
-                  className="relative flex-shrink-0"
+                  className="relative hidden flex-shrink-0 md:block"
                   style={{
                     width: isRestaurantSearchOpen
                       ? (isDesktopSearch ? "min(100%, 14rem)" : "100%")
@@ -2013,7 +2013,8 @@ export default function RestaurantMenuBrowser({
     <div style={{ contain: "inline-size" }}>
       {hoursInfoTooltip}
       {mobileHoursInfoSheet}
-      <div className="relative mt-2 mb-2">
+      {/* Desktop-only top search; mobile uses the bottom-bar search */}
+      <div className="relative mt-2 mb-2 hidden md:block">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="text"
