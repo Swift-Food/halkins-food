@@ -163,6 +163,9 @@ export default function CateringOrderBuilder({
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileBarRowRef = useRef<HTMLDivElement>(null);
   const suppressMobileSearchScrollCloseRef = useRef(false);
+  // Caret is hidden during the slide animation so the blinking cursor
+  // doesn't distract from the pill -> input transition.
+  const [mobileSearchCaretVisible, setMobileSearchCaretVisible] = useState(false);
 
   // Lift the mobile bottom bar above the on-screen keyboard using the
   // Visual Viewport API (supported on iOS Safari 15.4+ and Android Chrome).
@@ -186,6 +189,17 @@ export default function CateringOrderBuilder({
     };
   }, []);
 
+  // Reveal the input caret only after the slide animation completes, so
+  // the blinking cursor doesn't appear mid-animation.
+  useEffect(() => {
+    if (!isMobileSearchOpen) {
+      setMobileSearchCaretVisible(false);
+      return;
+    }
+    const timer = setTimeout(() => setMobileSearchCaretVisible(true), 300);
+    return () => clearTimeout(timer);
+  }, [isMobileSearchOpen]);
+
   // Close mobile search on outside tap or scroll when the query is empty.
   // Mirrors the logic in RestaurantMenuBrowser so tapping the group-title
   // pill row (which triggers a programmatic scroll) doesn't inadvertently
@@ -193,6 +207,13 @@ export default function CateringOrderBuilder({
   useEffect(() => {
     if (!isMobileSearchOpen) return;
     if (mobileSearchState.query) return;
+
+    const triggerDelayedClose = () => {
+      mobileSearchInputRef.current?.blur();
+      setTimeout(() => {
+        setIsMobileSearchOpen(false);
+      }, 250);
+    };
 
     const handlePointerDown = (e: PointerEvent) => {
       const target = e.target as Element | null;
@@ -205,14 +226,12 @@ export default function CateringOrderBuilder({
         }, 600);
         return;
       }
-      setIsMobileSearchOpen(false);
-      mobileSearchInputRef.current?.blur();
+      triggerDelayedClose();
     };
 
     const handleScroll = () => {
       if (suppressMobileSearchScrollCloseRef.current) return;
-      setIsMobileSearchOpen(false);
-      mobileSearchInputRef.current?.blur();
+      triggerDelayedClose();
     };
 
     // Delay scroll listener attachment so the focus-triggered micro-scroll
@@ -249,22 +268,27 @@ export default function CateringOrderBuilder({
     mobileSearchSetterRef.current?.(value);
   };
   const openMobileSearch = () => {
-    // Focus synchronously so iOS considers it part of the user gesture and
-    // opens the on-screen keyboard. The input is always mounted, so the ref
-    // is available immediately even though the overlay is still clipped.
+    // Focus synchronously so iOS opens the on-screen keyboard within the
+    // user-gesture window. The input is always mounted so the ref is valid
+    // regardless of the isMobileSearchOpen state.
     mobileSearchInputRef.current?.focus({ preventScroll: true });
-    // Wait for the keyboard to rise (bar slides up via Visual Viewport API)
-    // before animating the search bar expansion so the two motions don't
-    // compete.
+    // Delay the pill -> input slide so it plays AFTER the keyboard has
+    // finished raising the bar. Otherwise the keyboard-driven translate
+    // dominates and the slide animation is hard to see.
     setTimeout(() => {
       setIsMobileSearchOpen(true);
-    }, 300);
+    }, 250);
   };
   const closeMobileSearch = () => {
     mobileSearchSetterRef.current?.("");
     setMobileSearchState((prev) => ({ ...prev, query: "" }));
-    setIsMobileSearchOpen(false);
+    // Blur first so the keyboard starts retracting (and the bar slides
+    // back down via visualViewport). Delay the state flip so the input ->
+    // pill slide runs AFTER the keyboard drop, matching the open timing.
     mobileSearchInputRef.current?.blur();
+    setTimeout(() => {
+      setIsMobileSearchOpen(false);
+    }, 250);
   };
   const [desktopMenuPos, setDesktopMenuPos] = useState({ bottom: 0, left: 0 });
   const desktopMenuBtnRef = useRef<HTMLButtonElement>(null);
@@ -1544,13 +1568,7 @@ export default function CateringOrderBuilder({
             ref={mobileBarRowRef}
             className="relative mx-auto max-w-[325px] px-1 pt-1 pb-2"
           >
-            <div
-              className="flex w-full items-center gap-2 transition-opacity duration-200"
-              style={{
-                opacity: isMobileSearchOpen ? 0 : 1,
-                pointerEvents: isMobileSearchOpen ? "none" : "auto",
-              }}
-            >
+            <div className="flex w-full items-center gap-2">
             <div className="relative">
               <button
                 onClick={() => setIsMobileCartMenuOpen((v) => !v)}
@@ -1617,48 +1635,45 @@ export default function CateringOrderBuilder({
                 </>
               )}
             </div>
-            <button
-              onClick={() => setEditingSessionIndex(activeSessionIndex)}
-              className="flex h-11 min-w-0 flex-1 flex-col items-center justify-center rounded-full border border-base-200 bg-white/50 px-4 py-1 shadow-sm backdrop-blur-sm"
-            >
-              <span className="w-full truncate text-center text-xs font-semibold text-gray-800">
-                {mealSessions[activeSessionIndex]?.sessionName}
-              </span>
-              <span className="w-full truncate text-center text-[10px] text-gray-500">
-                {mealSessions[activeSessionIndex]?.sessionDate
-                  ? new Date(
-                    mealSessions[activeSessionIndex].sessionDate,
-                  ).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                  })
-                  : "Date not set"}
-                {mealSessions[activeSessionIndex]?.eventTime &&
-                  `\u2009·\u2009${formatTimeDisplay(mealSessions[activeSessionIndex].eventTime)}`}
-              </span>
-            </button>
-            <button
-              onClick={openMobileSearch}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-base-200 bg-white/70 text-gray-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
-              title="Search"
-              aria-label="Open search"
-              type="button"
-            >
-              <Search className="h-4 w-4" />
-            </button>
-            </div>
-            <div
-              className="absolute top-1 left-1 right-1 h-11 rounded-full border border-base-200 bg-white/70 shadow-sm backdrop-blur-sm transition-[clip-path] duration-500 ease-in-out focus-within:border-primary"
-              style={{
-                clipPath: isMobileSearchOpen
-                  ? "inset(-8px)"
-                  : "inset(-8px -8px -8px 100%)",
-                pointerEvents: isMobileSearchOpen ? "auto" : "none",
-              }}
-              aria-hidden={!isMobileSearchOpen}
-            >
-              <div className="relative h-full w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
+            <div className="relative h-11 min-w-0 flex-1 overflow-hidden rounded-full border border-base-200 bg-white/70 shadow-sm backdrop-blur-sm focus-within:border-primary">
+              {/* Pill content (visible when search is closed) */}
+              <button
+                type="button"
+                onClick={() => setEditingSessionIndex(activeSessionIndex)}
+                className={`absolute inset-0 flex flex-col items-center justify-center px-4 py-1 transition duration-300 ease-out ${
+                  isMobileSearchOpen
+                    ? "pointer-events-none -translate-y-full opacity-0"
+                    : "translate-y-0 opacity-100"
+                }`}
+                aria-hidden={isMobileSearchOpen}
+                tabIndex={isMobileSearchOpen ? -1 : 0}
+              >
+                <span className="w-full truncate text-center text-xs font-semibold text-gray-800">
+                  {mealSessions[activeSessionIndex]?.sessionName}
+                </span>
+                <span className="w-full truncate text-center text-[10px] text-gray-500">
+                  {mealSessions[activeSessionIndex]?.sessionDate
+                    ? new Date(
+                      mealSessions[activeSessionIndex].sessionDate,
+                    ).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                    })
+                    : "Date not set"}
+                  {mealSessions[activeSessionIndex]?.eventTime &&
+                    `\u2009·\u2009${formatTimeDisplay(mealSessions[activeSessionIndex].eventTime)}`}
+                </span>
+              </button>
+              {/* Input content (visible when search is open) */}
+              <div
+                className={`absolute inset-0 transition duration-300 ease-out ${
+                  isMobileSearchOpen
+                    ? "translate-y-0 opacity-100"
+                    : "pointer-events-none translate-y-full opacity-0"
+                }`}
+                aria-hidden={!isMobileSearchOpen}
+              >
+                <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   ref={mobileSearchInputRef}
                   type="text"
@@ -1669,17 +1684,26 @@ export default function CateringOrderBuilder({
                       ? "Search restaurants and items..."
                       : "Search items..."
                   }
-                  className="h-full w-full rounded-full bg-transparent pl-9 pr-9 text-base placeholder:text-xs focus:outline-none"
+                  tabIndex={isMobileSearchOpen ? 0 : -1}
+                  className={`h-full w-full rounded-full bg-transparent pl-9 pr-3 text-base placeholder:text-xs focus:outline-none ${
+                    mobileSearchCaretVisible ? "" : "caret-transparent"
+                  }`}
                 />
-                <button
-                  onClick={closeMobileSearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
-                  aria-label="Close search"
-                  type="button"
-                >
-                  <X className="h-4 w-4" />
-                </button>
               </div>
+            </div>
+            <button
+              onClick={isMobileSearchOpen ? closeMobileSearch : openMobileSearch}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-base-200 bg-white/70 text-gray-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+              title={isMobileSearchOpen ? "Close search" : "Search"}
+              aria-label={isMobileSearchOpen ? "Close search" : "Open search"}
+              type="button"
+            >
+              {isMobileSearchOpen ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+            </button>
             </div>
           </div>
           {mealSessions.some((session) => session.orderItems.length > 0) && (
