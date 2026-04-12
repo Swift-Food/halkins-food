@@ -1627,7 +1627,7 @@ export default function CateringOrderBuilder({
                   })
                   : "Date not set"}
                 {mealSessions[activeSessionIndex]?.eventTime &&
-                  ` · ${formatTimeDisplay(mealSessions[activeSessionIndex].eventTime)}`}
+                  `\u2009·\u2009${formatTimeDisplay(mealSessions[activeSessionIndex].eventTime)}`}
               </span>
             </button>
             <button
@@ -1659,10 +1659,10 @@ export default function CateringOrderBuilder({
                   onChange={(e) => handleMobileSearchInputChange(e.target.value)}
                   placeholder={
                     mobileSearchState.mode === "list"
-                      ? "Search restaurants and menu items..."
+                      ? "Search restaurants and items..."
                       : "Search items..."
                   }
-                  className="h-full w-full rounded-full bg-transparent pl-9 pr-9 text-base focus:outline-none"
+                  className="h-full w-full rounded-full bg-transparent pl-9 pr-9 text-base placeholder:text-xs focus:outline-none"
                 />
                 <button
                   onClick={closeMobileSearch}
