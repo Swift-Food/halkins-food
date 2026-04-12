@@ -161,6 +161,8 @@ export default function CateringOrderBuilder({
   }>({ mode: "list", query: "" });
   const mobileSearchSetterRef = useRef<((query: string) => void) | null>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+  const mobileBarRowRef = useRef<HTMLDivElement>(null);
+  const suppressMobileSearchScrollCloseRef = useRef(false);
 
   // Lift the mobile bottom bar above the on-screen keyboard using the
   // Visual Viewport API (supported on iOS Safari 15.4+ and Android Chrome).
@@ -183,6 +185,57 @@ export default function CateringOrderBuilder({
       vv.removeEventListener("scroll", update);
     };
   }, []);
+
+  // Close mobile search on outside tap or scroll when the query is empty.
+  // Mirrors the logic in RestaurantMenuBrowser so tapping the group-title
+  // pill row (which triggers a programmatic scroll) doesn't inadvertently
+  // close the search.
+  useEffect(() => {
+    if (!isMobileSearchOpen) return;
+    if (mobileSearchState.query) return;
+
+    const handlePointerDown = (e: PointerEvent) => {
+      const target = e.target as Element | null;
+      if (!target) return;
+      if (mobileBarRowRef.current?.contains(target)) return;
+      if (target.closest?.("[data-pill-row]")) {
+        suppressMobileSearchScrollCloseRef.current = true;
+        setTimeout(() => {
+          suppressMobileSearchScrollCloseRef.current = false;
+        }, 600);
+        return;
+      }
+      setIsMobileSearchOpen(false);
+    };
+
+    const handleScroll = () => {
+      if (suppressMobileSearchScrollCloseRef.current) return;
+      setIsMobileSearchOpen(false);
+    };
+
+    // Delay scroll listener attachment so the focus-triggered micro-scroll
+    // from opening the search doesn't close it immediately.
+    const scrollTimer = setTimeout(() => {
+      document.addEventListener("scroll", handleScroll, {
+        capture: true,
+        passive: true,
+      });
+    }, 100);
+
+    document.addEventListener("pointerdown", handlePointerDown, {
+      capture: true,
+    });
+
+    return () => {
+      clearTimeout(scrollTimer);
+      document.removeEventListener("pointerdown", handlePointerDown, {
+        capture: true,
+      });
+      document.removeEventListener("scroll", handleScroll, {
+        capture: true,
+      });
+    };
+  }, [isMobileSearchOpen, mobileSearchState.query]);
   const handleRegisterMobileSearchSetter = useCallback(
     (setter: (query: string) => void) => {
       mobileSearchSetterRef.current = setter;
@@ -195,9 +248,10 @@ export default function CateringOrderBuilder({
   };
   const openMobileSearch = () => {
     setIsMobileSearchOpen(true);
-    setTimeout(() => {
-      mobileSearchInputRef.current?.focus({ preventScroll: true });
-    }, 50);
+    // Focus synchronously so iOS considers it part of the user gesture and
+    // opens the on-screen keyboard. The input is always mounted, so the ref
+    // is available immediately.
+    mobileSearchInputRef.current?.focus({ preventScroll: true });
   };
   const closeMobileSearch = () => {
     mobileSearchSetterRef.current?.("");
@@ -1478,7 +1532,10 @@ export default function CateringOrderBuilder({
         className="fixed left-0 right-0 z-50 md:hidden"
         style={{ bottom: keyboardOffset }}
       >
-          <div className="relative mx-auto max-w-[300px] px-1 pt-1 pb-2">
+          <div
+            ref={mobileBarRowRef}
+            className="relative mx-auto max-w-[300px] px-1 pt-1 pb-2"
+          >
             <div
               className="flex w-full items-center gap-2 transition-opacity duration-200"
               style={{
@@ -1605,7 +1662,7 @@ export default function CateringOrderBuilder({
                       ? "Search restaurants and menu items..."
                       : "Search items..."
                   }
-                  className="h-full w-full rounded-full bg-transparent pl-9 pr-9 text-sm focus:outline-none"
+                  className="h-full w-full rounded-full bg-transparent pl-9 pr-9 text-base focus:outline-none"
                 />
                 <button
                   onClick={closeMobileSearch}
