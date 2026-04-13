@@ -7,6 +7,8 @@ import {
   X,
   ArrowLeft,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   Clock3,
   Info,
@@ -488,6 +490,41 @@ export default function RestaurantMenuBrowser({
     observer.observe(pillRowEl);
     return () => observer.disconnect();
   }, [pillRowEl]);
+
+  // Pill row horizontal scroll: chevron buttons + overflow detection
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollFlags = useCallback(() => {
+    if (!pillRowEl) return;
+    const { scrollLeft, scrollWidth, clientWidth } = pillRowEl;
+    setCanScrollLeft(scrollLeft > 1);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
+  }, [pillRowEl]);
+
+  useEffect(() => {
+    if (!pillRowEl) return;
+    updateScrollFlags();
+    pillRowEl.addEventListener("scroll", updateScrollFlags, { passive: true });
+    const ro = new ResizeObserver(updateScrollFlags);
+    ro.observe(pillRowEl);
+    return () => {
+      pillRowEl.removeEventListener("scroll", updateScrollFlags);
+      ro.disconnect();
+    };
+  }, [pillRowEl, updateScrollFlags]);
+
+  const scrollPillRow = useCallback(
+    (direction: "left" | "right") => {
+      if (!pillRowEl) return;
+      const amount = pillRowEl.clientWidth * 0.8;
+      pillRowEl.scrollBy({
+        left: direction === "left" ? -amount : amount,
+        behavior: "smooth",
+      });
+    },
+    [pillRowEl],
+  );
 
   // Close restaurant search on outside click or scroll
   const suppressScrollCloseRef = useRef(false);
@@ -1816,33 +1853,67 @@ export default function RestaurantMenuBrowser({
                 }}
               >
                 {/* Pill row — takes remaining flex space, can shrink to 0 */}
-                <div
-                  ref={setPillRowEl}
-                  data-pill-row
-                  className={`flex-1 min-w-0 overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 shadow-sm backdrop-blur-md flex items-center h-11 ${isRestaurantSearchOpen ? "hidden md:flex" : ""}`}
-                >
-                  <div className="flex items-center gap-2 md:gap-5">
-                    {pillRowGroupNames.map((name) => {
-                      const isActive = activeGroupName === name;
-                      return (
-                        <button
-                          key={name}
-                          ref={(el) => {
-                            if (el) groupButtonRefs.current.set(name, el);
-                            else groupButtonRefs.current.delete(name);
-                          }}
-                          onClick={() => handlePillClick(name)}
-                          className={`flex-shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
-                            isActive
-                              ? "bg-primary text-white"
-                              : "text-gray-500 hover:bg-black/5 hover:text-gray-700"
-                          }`}
-                        >
-                          {name}
-                        </button>
-                      );
-                    })}
+                <div className={`relative flex-1 min-w-0 ${isRestaurantSearchOpen ? "hidden md:block" : ""}`}>
+                  <div
+                    ref={setPillRowEl}
+                    data-pill-row
+                    className="overflow-x-auto scrollbar-hide rounded-full border border-base-300 bg-white/50 px-2 shadow-sm backdrop-blur-md flex items-center h-11"
+                  >
+                    <div className="flex items-center gap-2 md:gap-5">
+                      {pillRowGroupNames.map((name) => {
+                        const isActive = activeGroupName === name;
+                        return (
+                          <button
+                            key={name}
+                            ref={(el) => {
+                              if (el) groupButtonRefs.current.set(name, el);
+                              else groupButtonRefs.current.delete(name);
+                            }}
+                            onClick={() => handlePillClick(name)}
+                            className={`flex-shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
+                              isActive
+                                ? "bg-primary text-white"
+                                : "text-gray-500 hover:bg-black/5 hover:text-gray-700"
+                            }`}
+                          >
+                            {name}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
+                  {canScrollLeft && (
+                    <button
+                      onClick={() => scrollPillRow("left")}
+                      className="group absolute left-0 top-0 bottom-0 z-10 flex w-14 items-center justify-start rounded-l-full pl-3"
+                      style={{
+                        background:
+                          "linear-gradient(to right, rgba(255,255,255,0.95) 50%, transparent)",
+                      }}
+                      aria-label="Scroll left"
+                      type="button"
+                    >
+                      <span className="flex items-center justify-center rounded-full p-1 transition-colors group-hover:bg-gray-300/50">
+                        <ChevronLeft className="h-5 w-5 text-gray-600" />
+                      </span>
+                    </button>
+                  )}
+                  {canScrollRight && (
+                    <button
+                      onClick={() => scrollPillRow("right")}
+                      className="group absolute right-0 top-0 bottom-0 z-10 flex w-14 items-center justify-end rounded-r-full pr-3"
+                      style={{
+                        background:
+                          "linear-gradient(to left, rgba(255,255,255,0.95) 50%, transparent)",
+                      }}
+                      aria-label="Scroll right"
+                      type="button"
+                    >
+                      <span className="flex items-center justify-center rounded-full p-1 transition-colors group-hover:bg-gray-300/50">
+                        <ChevronRight className="h-5 w-5 text-gray-600" />
+                      </span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Search — explicit square (width=height) when closed, expands width when open. Desktop only; mobile uses the bottom-bar search. */}
